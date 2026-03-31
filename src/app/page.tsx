@@ -1,200 +1,225 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3, LineChart, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { gsap } from "gsap";
+import { ArrowRight, TrendingUp, Target, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const subCopyRef = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    tl.from(badgeRef.current, { opacity: 0, y: 20, duration: 0.6 })
+      .from(headlineRef.current, { opacity: 0, y: 40, duration: 0.9 }, "-=0.2")
+      .from(subCopyRef.current, { opacity: 0, y: 30, duration: 0.7 }, "-=0.2")
+      .from(ctaRef.current, { opacity: 0, y: 20, duration: 0.6 }, "-=0.2");
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#FDFDFC] text-[#1A1A1A] font-sans selection:bg-stone-200">
-      {/* Sticky Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-neutral-200 bg-[#FDFDFC]/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-900 text-white">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight font-serif">TubeInsight</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link href="#" className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors">
-              로그인
-            </Link>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-stone-800 hover:shadow-lg"
-            >
-              대시보드로 이동
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <main className="bg-[#FDFDFC] text-[#1A1A1A]">
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-32">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-600 shadow-sm mb-8">
-            <Sparkles className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span>AI 기반 유튜브 성과 분석 솔루션</span>
-          </div>
-          
-          <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-[1.15] tracking-tight font-serif sm:text-7xl mb-8 text-[#1A1A1A]">
-            유튜브 알고리즘, <br />
-            <span className="italic text-stone-500">감으로 하지 마세요.</span>
-          </h1>
-          
-          <p className="mx-auto max-w-2xl text-lg text-stone-600 leading-relaxed mb-10">
-            데이터로 증명된 떡상 공식을 찾아드립니다. <br />
-            실시간 트렌드 분석부터 내 채널의 숨은 기회까지, 튜브인사이트와 함께하세요.
+      {/* ── Hero ───────────────────────────────────────── */}
+      <section className="flex flex-col items-center justify-center min-h-screen px-6 py-32 text-center">
+
+        {/* Badge */}
+        <div
+          ref={badgeRef}
+          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-1.5 text-xs font-medium text-neutral-500 mb-8"
+        >
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          매시간 업데이트 · 실시간 트렌드 분석
+        </div>
+
+        {/* H1 */}
+        <h1
+          ref={headlineRef}
+          className="max-w-4xl font-serif text-5xl font-bold leading-[1.1] tracking-tight text-[#1A1A1A] md:text-6xl lg:text-7xl mb-8"
+        >
+          트렌드는 느낌이 아니라<br />
+          <span className="italic">데이터입니다</span>
+        </h1>
+
+        {/* Sub copy */}
+        <p
+          ref={subCopyRef}
+          className="max-w-xl font-sans text-lg leading-relaxed text-[#555555] mb-10"
+        >
+          최근 48시간 동안 수집된 80,000개 영상 중<br />
+          지금 이 순간 가장 빠르게 오르고 있는 영상과<br />
+          7일간 눈에 띄게 성장한 채널을 찾아드립니다.
+        </p>
+
+        {/* CTA */}
+        <div ref={ctaRef}>
+          <Link href="/dashboard">
+            <Button
+              className="group h-14 rounded-full bg-black px-8 text-base font-medium text-white hover:scale-[0.96] active:scale-[0.93]"
+              style={{ transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+            >
+              실시간 트렌드 보러가기
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Numbers / Data ─────────────────────────────── */}
+      <section className="px-6 pb-24 max-w-5xl mx-auto">
+        <h2 className="font-serif text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-10 leading-snug">
+          매 순간 쌓이는 데이터가<br />트렌드를 만듭니다
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          {[
+            {
+              number: "80,000+",
+              label: "최근 48시간 수집된 영상",
+              sub: "2일 이내 업로드된 영상만 추적",
+            },
+            {
+              number: "8,000+",
+              label: "성장 채널 데이터베이스",
+              sub: "최근 7일 눈에 띄는 채널만 선별",
+            },
+            {
+              number: "매시간",
+              label: "데이터 갱신 주기",
+              sub: "1시간마다 최신 트렌드 반영",
+            },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="rounded-2xl border border-neutral-200 bg-[#f8f8f8] p-7 flex flex-col gap-2"
+            >
+              <span className="font-serif text-5xl md:text-6xl font-bold tracking-tight text-[#1A1A1A] leading-none">
+                {card.number}
+              </span>
+              <span className="font-sans text-[15px] font-semibold text-[#1A1A1A] mt-1">
+                {card.label}
+              </span>
+              <span className="font-sans text-sm text-[#888888]">
+                {card.sub}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="font-sans text-lg text-[#555555] leading-relaxed">
+          80,000개 영상 중 지금 이 순간<br className="hidden sm:block" />
+          가장 빠르게 오르고 있는 영상을 찾아드립니다
+        </p>
+      </section>
+
+      {/* ── Problem & Solution ─────────────────────────── */}
+      <section className="px-6 pb-32 max-w-5xl mx-auto">
+
+        {/* Problem */}
+        <div className="mb-16">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-3">
+            유튜브 시작, 막막하신가요?
+          </h2>
+          <p className="font-sans text-[#555555] mb-10">
+            많은 분들이 비슷한 벽에 부딪힙니다.
           </p>
 
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row mb-20">
-            <Link
-              href="/dashboard"
-              className="group relative flex h-14 items-center justify-center gap-2 overflow-hidden rounded-full bg-stone-900 px-8 text-lg font-bold text-white shadow-xl transition-all hover:bg-black hover:scale-105"
-            >
-              <span className="relative z-10">무료로 내 채널 분석하기</span>
-              <ArrowRight className="relative z-10 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <p className="text-sm text-stone-500 mt-4 sm:mt-0 sm:ml-4">
-              * 신용카드 등록 없이 즉시 시작 가능
+          {/* Bento grid — 3 problem cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                icon: <TrendingUp className="h-5 w-5 text-neutral-400" />,
+                title: "방송국 영상만 가득한\n인기동영상",
+                desc: "유튜브 인기 탭을 열면 대형 방송사, 연예인 채널이 독식합니다. 일반인이 참고할 만한 영상이 없어요.",
+              },
+              {
+                icon: <Target className="h-5 w-5 text-neutral-400" />,
+                title: "내 채널과 안 맞는\n트렌드",
+                desc: "수백만 구독자 채널의 성공 방식은 막 시작한 채널에 그대로 적용하기 어렵습니다.",
+              },
+              {
+                icon: <HelpCircle className="h-5 w-5 text-neutral-400" />,
+                title: "무엇을 찍을지 모르는\n막막함",
+                desc: "아이디어는 없고 시간은 흘러갑니다. 오늘도 빈 기획안 파일만 열어두고 닫았나요?",
+              },
+            ].map((card) => (
+              <div
+                key={card.title}
+                className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-6 flex flex-col gap-3"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white border border-neutral-100 flex items-center justify-center">
+                  {card.icon}
+                </div>
+                <h3 className="font-sans font-semibold text-[#1A1A1A] text-base whitespace-pre-line leading-snug">
+                  {card.title}
+                </h3>
+                <p className="font-sans text-sm text-[#555555] leading-relaxed">
+                  {card.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Solution */}
+        <div>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-3">
+            하꼬의 반란!<br />
+            <span className="italic">진짜 떡상하는 영상</span>을 찾아냅니다
+          </h2>
+          <p className="font-sans text-[#555555] mb-8">
+            저희만의 핵심 알고리즘이 숨겨진 바이럴 영상을 발굴합니다.
+          </p>
+
+          {/* Formula card */}
+          <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-8 md:p-12 text-center">
+            <p className="font-sans text-sm uppercase tracking-widest text-neutral-400 mb-6">
+              떡상 잠재력 지수
             </p>
-          </div>
-
-          {/* Dashboard Mockup */}
-          <div className="relative mx-auto max-w-6xl rounded-2xl border border-stone-200 bg-white p-2 shadow-2xl sm:p-4">
-            <div className="absolute top-0 left-1/2 h-1.5 w-1/3 -translate-x-1/2 rounded-b-xl bg-stone-100/50"></div>
-            <div className="overflow-hidden rounded-xl border border-stone-100 bg-stone-50">
-              {/* Mockup Header */}
-              <div className="flex items-center gap-4 border-b border-stone-200 bg-white px-4 py-3">
-                <div className="flex gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-red-400"></div>
-                  <div className="h-3 w-3 rounded-full bg-amber-400"></div>
-                  <div className="h-3 w-3 rounded-full bg-green-400"></div>
-                </div>
-                <div className="h-6 flex-1 rounded-md bg-stone-100"></div>
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-serif text-4xl md:text-5xl font-bold text-[#1A1A1A]">조회수</span>
+                <span className="font-sans text-xs text-neutral-400 uppercase tracking-wide">Views</span>
               </div>
-              
-              {/* Mockup Body */}
-              <div className="flex h-[400px] sm:h-[600px]">
-                {/* Mockup Sidebar */}
-                <div className="hidden w-64 flex-col border-r border-stone-200 bg-white p-4 sm:flex">
-                  <div className="mb-6 h-8 w-32 rounded-lg bg-stone-200"></div>
-                  <div className="space-y-3">
-                    <div className="h-10 w-full rounded-lg bg-stone-100"></div>
-                    <div className="h-10 w-full rounded-lg bg-white"></div>
-                    <div className="h-10 w-full rounded-lg bg-white"></div>
-                  </div>
-                </div>
-                
-                {/* Mockup Content */}
-                <div className="flex-1 p-6 bg-[#F5F5F4]">
-                  <div className="mb-6 flex items-center justify-between">
-                    <div className="h-8 w-48 rounded-lg bg-stone-200"></div>
-                    <div className="h-10 w-32 rounded-lg bg-stone-200"></div>
-                  </div>
-                  
-                  <div className="grid gap-6 sm:grid-cols-3">
-                    {/* Card 1 */}
-                    <div className="rounded-xl bg-white p-6 shadow-sm">
-                      <div className="mb-4 h-10 w-10 rounded-full bg-amber-100"></div>
-                      <div className="mb-2 h-4 w-24 rounded bg-stone-100"></div>
-                      <div className="h-8 w-32 rounded bg-stone-200"></div>
-                    </div>
-                     {/* Card 2 */}
-                     <div className="rounded-xl bg-white p-6 shadow-sm">
-                      <div className="mb-4 h-10 w-10 rounded-full bg-blue-100"></div>
-                      <div className="mb-2 h-4 w-24 rounded bg-stone-100"></div>
-                      <div className="h-8 w-32 rounded bg-stone-200"></div>
-                    </div>
-                     {/* Card 3 */}
-                     <div className="rounded-xl bg-white p-6 shadow-sm">
-                      <div className="mb-4 h-10 w-10 rounded-full bg-green-100"></div>
-                      <div className="mb-2 h-4 w-24 rounded bg-stone-100"></div>
-                      <div className="h-8 w-32 rounded bg-stone-200"></div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 h-64 w-full rounded-xl bg-white p-6 shadow-sm">
-                     <div className="mb-4 h-6 w-48 rounded bg-stone-100"></div>
-                     <div className="flex h-full items-end gap-4 pb-4">
-                        <div className="h-[40%] w-full rounded-t bg-stone-100"></div>
-                        <div className="h-[60%] w-full rounded-t bg-stone-200"></div>
-                        <div className="h-[80%] w-full rounded-t bg-stone-800"></div>
-                        <div className="h-[50%] w-full rounded-t bg-stone-100"></div>
-                        <div className="h-[70%] w-full rounded-t bg-stone-200"></div>
-                     </div>
-                  </div>
-                </div>
+              <span className="font-serif text-4xl md:text-5xl font-bold text-neutral-300">÷</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-serif text-4xl md:text-5xl font-bold text-[#1A1A1A]">구독자 수</span>
+                <span className="font-sans text-xs text-neutral-400 uppercase tracking-wide">Subscribers</span>
+              </div>
+              <span className="font-serif text-4xl md:text-5xl font-bold text-neutral-300">×</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-serif text-4xl md:text-5xl font-bold text-[#1A1A1A]">100</span>
+                <span className="font-sans text-xs text-neutral-400 uppercase tracking-wide">Multiplier</span>
+              </div>
+              <span className="font-serif text-4xl md:text-5xl font-bold text-neutral-300">=</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-serif text-4xl md:text-5xl font-bold text-black">Viral Score</span>
+                <span className="font-sans text-xs text-neutral-400 uppercase tracking-wide">떡상 잠재력 지수</span>
               </div>
             </div>
-            
-            {/* Overlay Label */}
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 rounded-full border border-stone-200 bg-white px-4 py-1 text-xs font-bold text-stone-500 shadow-sm">
-              Dashboard Preview
+            <p className="font-sans text-sm text-[#555555] mt-8 max-w-lg mx-auto leading-relaxed">
+              구독자 수 대비 조회수가 폭발적으로 높은 영상 = 알고리즘이 밀어주는 영상.<br />
+              이 공식으로 <strong className="text-[#1A1A1A]">구독자가 적어도 터진 영상</strong>을 정확히 찾아냅니다.
+            </p>
+            <div className="mt-8">
+              <Link href="/dashboard">
+                <Button
+                  className="group h-12 rounded-full bg-black px-7 text-sm font-medium text-white hover:scale-[0.96] active:scale-[0.93]"
+                  style={{ transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+                >
+                  바이럴 영상 지금 확인하기
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Bento Grid Section */}
-      <section className="bg-[#F9F9F9] py-24 border-t border-neutral-100">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-16 text-center">
-            <h2 className="text-3xl font-bold font-serif mb-4">데이터가 알려주는 성장의 비밀</h2>
-            <p className="text-stone-600">유튜브 성장에 필요한 모든 도구가 준비되어 있습니다.</p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {/* Feature 1 */}
-            <div className="group rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
-              <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 group-hover:bg-orange-100 transition-colors">
-                <Zap className="h-6 w-6" />
-              </div>
-              <h3 className="mb-3 text-xl font-bold font-serif">실시간 떡상 영상 포착</h3>
-              <p className="text-stone-600 leading-relaxed">
-                지금 이 순간 반응이 터지고 있는 영상을 실시간으로 발견하세요. 
-                조회수 급상승 알고리즘을 분석해 기회를 놓치지 않습니다.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="group rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
-              <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
-                <BarChart3 className="h-6 w-6" />
-              </div>
-              <h3 className="mb-3 text-xl font-bold font-serif">내 채널 심층 분석</h3>
-              <p className="text-stone-600 leading-relaxed">
-                단순한 조회수 확인을 넘어, 시청자의 이탈 지점과 재방문율을 분석합니다.
-                데이터 기반의 의사결정으로 성장을 가속화하세요.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="group rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
-              <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-green-600 group-hover:bg-green-100 transition-colors">
-                <LineChart className="h-6 w-6" />
-              </div>
-              <h3 className="mb-3 text-xl font-bold font-serif">키워드 트렌드 추적</h3>
-              <p className="text-stone-600 leading-relaxed">
-                경쟁도 낮고 검색량은 높은 황금 키워드를 발굴해드립니다.
-                남들보다 먼저 트렌드를 선점하고 노출 기회를 잡으세요.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-neutral-200 bg-white py-12">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-stone-400" />
-            <span className="text-lg font-bold text-stone-400 font-serif">TubeInsight</span>
-          </div>
-          <p className="text-sm text-stone-400">
-            © 2026 TubeInsight. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+    </main>
   );
 }

@@ -6,12 +6,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen w-full bg-[#F5F5F4]">
-      {/* Sidebar - Fixed Position */}
+    <div className="flex min-h-screen w-full bg-background">
       <Sidebar />
-
-      {/* Main Content - Pushed by Sidebar width */}
-      <main className="flex-1 pl-64 transition-all duration-300">
+      {/* Mobile: pt-14 for top bar. Desktop lg+: pl-64 for fixed sidebar. */}
+      <main className="flex-1 pt-14 transition-all duration-300 lg:pl-64 lg:pt-0">
         <div className="mx-auto w-full max-w-7xl">
           {children}
         </div>
