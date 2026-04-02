@@ -321,22 +321,11 @@ export function BenchmarkingDashboardClient({
                 return r.json();
             })
             .then((raw) => {
-
-                function parsePythonStr(s: unknown): unknown {
-                    if (Array.isArray(s)) return s;
-                    if (typeof s !== "string") return null;
-                    try {
-                        const jsonStr = s.replace(/'/g, '"').replace(/True/g, "true").replace(/False/g, "false").replace(/None/g, "null");
-                        return JSON.parse(jsonStr);
-                    } catch { return null; }
-                }
-
                 const rawArr: TierChannel[] = Array.isArray(raw) ? raw : [];
-                const data: TierChannel[] = rawArr.map((c) => ({ ...c, sparkline_data: parsePythonStr(c.sparkline_data) as TierChannel["sparkline_data"] }));
 
-                const dates = data.map((c) => c.target_date).filter(Boolean).sort();
+                const dates = rawArr.map((c) => c.target_date).filter(Boolean).sort();
                 const latest = dates[dates.length - 1] ?? null;
-                const latestData = latest ? data.filter((c) => c.target_date === latest) : data;
+                const latestData = latest ? rawArr.filter((c) => c.target_date === latest) : rawArr;
                 setAllChannels(latestData);
 
                 const catSet = new Set<string>();
@@ -540,7 +529,7 @@ export function BenchmarkingDashboardClient({
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {channels.map((ch, i) => (
                             <ChannelBentoCard
-                                key={ch.channel_id ?? ch.id}
+                                key={ch.channel_id}
                                 channel={ch}
                                 rank={i + 1}
                                 sortBy={sortBy}

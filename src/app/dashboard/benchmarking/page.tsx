@@ -17,31 +17,8 @@ export default async function BenchmarkingPage() {
 
         const raw = await res.json();
 
-        // Python dict 문자열(작은따옴표) → JSON 파싱 헬퍼
-        function parsePythonStr(s: unknown) {
-            if (Array.isArray(s)) return s;
-            if (typeof s !== "string") return null;
-            try {
-                // Python dict strings use single quotes → replace with double quotes
-                const jsonStr = s
-                    .replace(/'/g, '"')
-                    .replace(/True/g, "true")
-                    .replace(/False/g, "false")
-                    .replace(/None/g, "null");
-                return JSON.parse(jsonStr);
-            } catch {
-                return null;
-            }
-        }
-
         // 배열이 아닌 경우 방어 처리
-        const rawArr: TierChannel[] = Array.isArray(raw) ? raw : [];
-
-        // sparkline_data 파싱 적용
-        const allChannels: TierChannel[] = rawArr.map((c) => ({
-            ...c,
-            sparkline_data: parsePythonStr(c.sparkline_data),
-        }));
+        const allChannels: TierChannel[] = Array.isArray(raw) ? raw : [];
 
         // 최신 target_date 추출
         const dates = allChannels.map((c) => c.target_date).filter(Boolean).sort();
