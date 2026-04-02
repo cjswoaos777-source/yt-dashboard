@@ -316,8 +316,16 @@ export function BenchmarkingDashboardClient({
         setLoading(true);
         setError(null);
         fetch(CHANNELS_URL)
-            .then((r) => {
+            .then(async (r) => {
                 if (!r.ok) throw new Error(`CDN ${r.status}`);
+                // Content-Type이 gzip/octet-stream이면 수동 dicompression
+                const ct = r.headers.get("content-type") ?? "";
+                if (ct.includes("gzip") || ct.includes("octet-stream")) {
+                    const ds = new DecompressionStream("gzip");
+                    const decompressed = r.body!.pipeThrough(ds);
+                    const text = await new Response(decompressed).text();
+                    return JSON.parse(text);
+                }
                 return r.json();
             })
             .then((raw) => {

@@ -15,7 +15,20 @@ export default async function BenchmarkingPage() {
         const res = await fetch(CHANNELS_URL, { next: { revalidate: 300 } });
         if (!res.ok) throw new Error(`CDN fetch failed: ${res.status} ${res.statusText}`);
 
-        const raw = await res.json();
+        // jsDelivr가 Content-Encoding:gzip 자동 적용 → 이미 decode된 경우 .json() 직접 사용
+        // Content-Type이 application/gzip인 경우 수동 디코딩
+        let raw: unknown;
+        const contentType = res.headers.get("content-type") ?? "";
+        if (contentType.includes("gzip") || contentType.includes("octet-stream")) {
+            const { promisify } = await import("util");
+            const { gunzip } = await import("zlib");
+            const gunzipAsync = promisify(gunzip);
+            const buf = Buffer.from(await res.arrayBuffer());
+            const decompressed = await gunzipAsync(buf);
+            raw = JSON.parse(decompressed.toString("utf-8"));
+        } else {
+            raw = await res.json();
+        }
 
         // 배열이 아닌 경우 방어 처리
         const allChannels: TierChannel[] = Array.isArray(raw) ? raw : [];
