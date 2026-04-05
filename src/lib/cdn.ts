@@ -4,4 +4,4 @@ const BASE =
     "https://cdn.jsdelivr.net/gh/cjswoaos777-source/youtube-trend-bot@main/data";
 
 export const RANKING_URL = `${BASE}/tier0_realtime_ranking.json`;
-export const CHANNELS_URL = `${BASE}/dashboard_tier_channels.json.gz`;
+export const CHANNELS_URL = `${BASE}/dashboard_tier_channels.json.gz?v=1`;
