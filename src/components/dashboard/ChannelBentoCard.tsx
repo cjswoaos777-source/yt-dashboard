@@ -188,7 +188,7 @@ export function ChannelBentoCard({
                         {channel.league_group}
                     </span>
                     <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[10px] font-medium text-neutral-500">
-                        {channel.origin_type === "DOMESTIC" ? "🇰🇷 국내" : channel.origin_type === "IMPORTED" ? "🌐 해외" : `🌍 ${channel.country_code}`}
+                        {channel.origin_type === "DOMESTIC" ? "🇰🇷 국내" : channel.origin_type === "IMPORTED" ? "🌐 해외" : `🌍 ${channel.origin_type}`}
                     </span>
                 </div>
             </div>
