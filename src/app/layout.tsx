@@ -33,8 +33,17 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "유튜브 떡상 발굴기",
-  description: "조회수 대비 반응이 폭발적인 영상을 실시간으로 포착합니다.",
+  title: '유튜브 순위 분석 대시보드 - Viral Hunter',
+  description: '떡상하는 유튜브 채널 순위, 숏츠와 롱폼 채널의 바이럴 지수를 분석하여 유튜버 성장을 위한 진짜 꿀통 채널을 찾아냅니다.',
+  keywords: ['유튜브 순위', '유튜버 수익', '떡상 채널', '유튜브 알고리즘', '유튜브 벤치마킹'],
+  openGraph: {
+    title: '유튜브 순위 분석 대시보드 - Viral Hunter',
+    description: '알고리즘을 타기 시작한 유튜브 채널들의 실시간 랭킹 분석 웹입니다.',
+    url: 'https://yt-dashboard-theta.vercel.app',
+    siteName: 'Viral Hunter',
+    locale: 'ko_KR',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

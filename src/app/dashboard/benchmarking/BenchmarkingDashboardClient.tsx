@@ -377,7 +377,7 @@ export function BenchmarkingDashboardClient({
                             매일 새벽 1시 갱신 · {formatTargetDate(targetDate)} 기준
                         </span>
                     </div>
-                    <div className="flex flex-col leading-none">
+                    <h1 className="flex flex-col leading-none">
                         <span
                             className="text-[clamp(3.5rem,10vw,8rem)] leading-[0.9] tracking-tight"
                             style={{
@@ -400,9 +400,11 @@ export function BenchmarkingDashboardClient({
                                 backgroundClip: "text",
                             }}
                         >
-                            채널 분석 리포트
+                            유튜브 랭킹 및 채널 분석 리포트
                         </span>
-                    </div>
+                        {/* 검색 엔진을 위한 보이지 않는 핵심 키워드 덩어리 */}
+                        <span className="sr-only">유튜브 순위, 실시간 유튜브 떡상 알고리즘 분석, 급상승 채널 조회수 수익 벤치마킹 대시보드</span>
+                    </h1>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                         <p className="text-base text-[#555555]">성장 가능성이 높은 꿀통 채널들의 바이럴 파워와 일평균 성과를 분석합니다</p>
                         <BenchmarkingInfoPanel />
