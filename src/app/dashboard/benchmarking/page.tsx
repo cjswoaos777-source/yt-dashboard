@@ -12,7 +12,7 @@ export default async function BenchmarkingPage() {
     let errorDetail: string | null = null;
 
     try {
-        const res = await fetch(CHANNELS_URL, { next: { revalidate: 300 } });
+        const res = await fetch(CHANNELS_URL, { cache: "no-store" });
         if (!res.ok) throw new Error(`CDN fetch failed: ${res.status} ${res.statusText}`);
 
         // jsDelivr가 Content-Encoding:gzip 자동 적용 → 이미 decode된 경우 .json() 직접 사용

@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   let updatedAt = "";
 
   try {
-    const res = await fetch(RANKING_URL, { next: { revalidate: 300 } });
+    const res = await fetch(RANKING_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`CDN fetch failed: ${res.status} ${res.statusText}`);
 
     const allVideos: ViralVideo[] = await res.json();
