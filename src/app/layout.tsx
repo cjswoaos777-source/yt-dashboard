@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Bebas_Neue, Noto_Sans_KR } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SmoothScroll } from "@/components/smooth-scroll";
@@ -49,6 +50,8 @@ export const metadata: Metadata = {
   },
 };
 
+const GA_ID = "G-6NS0BQWK70";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,6 +60,20 @@ export default function RootLayout({
   return (
     <html lang="ko" className={cn(jakartaSans.variable, playfair.variable, bebasNeue.variable, notoSansKr.variable)}>
       <body className="font-sans antialiased text-foreground bg-background">
+        {/* Google Analytics GA4 */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}');
+          `}
+        </Script>
+
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
