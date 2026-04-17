@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Menu, X } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Menu, X, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+
+const RAPIDAPI_URL = "https://rapidapi.com/cjswoaos777/api/youtube-viral-tracker";
 
 const menuItems = [
   { title: "홈", href: "/dashboard", icon: LayoutDashboard },
@@ -49,6 +51,22 @@ function DesktopSidebar() {
           })}
         </nav>
 
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* API Link */}
+        <a
+          href={RAPIDAPI_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-all duration-200 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-900"
+        >
+          <Zap className="h-4 w-4 text-yellow-500" />
+          API
+          <span className="ml-auto rounded-full bg-black px-2 py-0.5 text-[10px] font-semibold text-white">
+            RapidAPI
+          </span>
+        </a>
       </div>
     </aside>
   );
@@ -60,10 +78,8 @@ function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // 경로 바뀌면 드로어 닫기
   useEffect(() => { setOpen(false); }, [pathname]);
 
-  // 드로어 열릴 때 스크롤 잠금
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -79,13 +95,25 @@ function MobileNav() {
           </div>
           <span className="font-serif text-base font-bold tracking-tight text-heading">Viral Hunter</span>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="메뉴 열기"
-          className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* API 링크 - 모바일 상단바 우측 */}
+          <a
+            href={RAPIDAPI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[12px] font-semibold text-neutral-600 transition-colors hover:bg-neutral-100"
+          >
+            <Zap className="h-3 w-3 text-yellow-500" />
+            API
+          </a>
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="메뉴 열기"
+            className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       {/* Overlay */}
@@ -145,6 +173,21 @@ function MobileNav() {
             })}
           </nav>
 
+          <div className="flex-1" />
+
+          {/* API Link in Drawer */}
+          <a
+            href={RAPIDAPI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-neutral-100"
+          >
+            <Zap className="h-4 w-4 text-yellow-500" />
+            API
+            <span className="ml-auto rounded-full bg-black px-2 py-0.5 text-[10px] font-semibold text-white">
+              RapidAPI
+            </span>
+          </a>
         </div>
       </div>
     </>
