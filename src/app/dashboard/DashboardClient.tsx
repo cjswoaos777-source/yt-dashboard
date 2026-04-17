@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ViralVideo } from "@/lib/viral-types";
-import { RANKING_URL } from "@/lib/cdn";
+import { RANKING_TIER_URLS, TierKey } from "@/lib/cdn";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
 function parseUpdatedHour(raw: string): string {
@@ -23,6 +23,26 @@ function parseUpdatedHour(raw: string): string {
 type SortKey = "hourly_views" | "total_views" | "hourly_likes" | "hourly_comments";
 type ShortsState = null | boolean;
 type OriginState = null | "DOMESTIC" | "IMPORTED";
+
+// ─── Tier Config ──────────────────────────────────────────────────────────────
+
+const TIER_CONFIG: { key: TierKey; label: string; sub: string }[] = [
+    { key: "all",   label: "전체",       sub: "" },
+    { key: "tier1", label: "Tier 1",    sub: "100만+" },
+    { key: "tier2", label: "Tier 2",    sub: "10~100만" },
+    { key: "tier3", label: "Tier 3",    sub: "1~10만" },
+    { key: "micro", label: "마이크로",   sub: "~1만" },
+];
+
+// ─── Gzip Fetch Helper (browser DecompressionStream) ─────────────────────────
+
+async function fetchGzipJson<T>(url: string): Promise<T> {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`CDN ${res.status}`);
+    const ds = new DecompressionStream("gzip");
+    const decompressed = new Response(res.body!.pipeThrough(ds));
+    return decompressed.json() as Promise<T>;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -324,11 +344,17 @@ export function DashboardClient({
         if (v === "해외" || v === "IMPORTED") return "IMPORTED";
         return null;
     }
+    function initTier(): TierKey {
+        const v = searchParams.get("tier");
+        if (v === "tier1" || v === "tier2" || v === "tier3" || v === "micro") return v;
+        return "all";
+    }
 
     const [sortBy, setSortByState] = useState<SortKey>(initSortBy);
     const [isShorts, setIsShortsState] = useState<ShortsState>(initIsShorts);
     const [origin, setOriginState] = useState<OriginState>(initOrigin);
     const [category, setCategoryState] = useState<string | null>(searchParams.get("category"));
+    const [tier, setTierState] = useState<TierKey>(initTier);
 
     // ── URL 업데이트 헬퍼 ────────────────────────────────────────────────────
     const syncUrl = useCallback((updates: Record<string, string | null>) => {
@@ -344,8 +370,9 @@ export function DashboardClient({
     function setIsShorts(v: ShortsState) { setIsShortsState(v); syncUrl({ format: v === true ? "Shorts" : v === false ? "Long-form" : null }); }
     function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v === "DOMESTIC" ? "국내" : v === "IMPORTED" ? "해외" : null }); }
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
+    function setTier(v: TierKey) { setTierState(v); syncUrl({ tier: v === "all" ? null : v }); }
 
-    // ── CDN에서 전체 JSON 최초 1회 로드 ────────────────────────────────────────
+    // ── 구독자 구간별 CDN fetch (tier 변경시 재요청) ─────────────────────────
     const [allVideos, setAllVideos] = useState<ViralVideo[]>(initialVideos);
     const [categories, setCategories] = useState<string[]>(initialCategories);
     const [loading, setLoading] = useState(false);
@@ -354,11 +381,7 @@ export function DashboardClient({
     const refetch = useCallback(() => {
         setLoading(true);
         setError(null);
-        fetch(RANKING_URL)
-            .then((r) => {
-                if (!r.ok) throw new Error(`CDN ${r.status}`);
-                return r.json() as Promise<ViralVideo[]>;
-            })
+        fetchGzipJson<ViralVideo[]>(RANKING_TIER_URLS[tier])
             .then((data) => {
                 setAllVideos(data);
                 const catSet = new Set<string>();
@@ -367,7 +390,7 @@ export function DashboardClient({
             })
             .catch((e) => { setError(e.message); })
             .finally(() => { setLoading(false); });
-    }, []);
+    }, [tier]);
 
     useEffect(() => { refetch(); }, [refetch]);
 
@@ -468,6 +491,21 @@ export function DashboardClient({
                                 <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
                                 <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>🇰🇷 국내</Pill>
                                 <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>🌐 해외</Pill>
+                            </div>
+                        </div>
+
+                        {/* Tier (구독자 구간) */}
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">구독자</span>
+                            <div className="flex flex-wrap gap-[6px]">
+                                {TIER_CONFIG.map(({ key, label, sub }) => (
+                                    <Pill key={key} active={tier === key} onClick={() => setTier(key)}>
+                                        {label}
+                                        {sub && (
+                                            <span className="ml-1 text-[10px] opacity-70">{sub}</span>
+                                        )}
+                                    </Pill>
+                                ))}
                             </div>
                         </div>
 
