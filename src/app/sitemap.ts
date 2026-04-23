@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://yt-dashboard-theta.vercel.app';
+  const baseUrl = 'https://yt-viralhunter.vercel.app';
 
   return [
     {
