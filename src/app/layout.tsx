@@ -48,6 +48,9 @@ export const metadata: Metadata = {
   verification: {
     google: 'ypjqPrO3UbGyTQ9CCkFz9SARf1bWz8HAn-GdqcNl9Ig',
   },
+  other: {
+    'naver-site-verification': '7edc64886461bfa89af80912094c25e8b18ec9d2',
+  },
 };
 
 const GA_ID = "G-6NS0BQWK70";
