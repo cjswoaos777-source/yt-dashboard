@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '유튜브 순위 분석 대시보드 - Viral Hunter',
     description: '알고리즘을 타기 시작한 유튜브 채널들의 실시간 랭킹 분석 웹입니다.',
-    url: 'https://yt-dashboard-theta.vercel.app',
+    url: 'https://yt-viralhunter.vercel.app',
     siteName: 'Viral Hunter',
     locale: 'ko_KR',
     type: 'website',
