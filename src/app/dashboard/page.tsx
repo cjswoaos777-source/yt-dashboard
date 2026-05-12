@@ -1,6 +1,7 @@
 import { ViralVideo } from "@/lib/viral-types";
 import { DashboardClient } from "./DashboardClient";
 import { RANKING_TIER_URLS } from "@/lib/cdn";
+import { getLatestNotice } from "@/lib/notices";
 
 export const dynamic = "force-dynamic";
 
@@ -43,12 +44,15 @@ export default async function DashboardPage() {
     // SSR 실패시 빈 상태로 렌더 → 클라이언트가 마운트 후 재요청
   }
 
+  const latestNotice = getLatestNotice();
+
   return (
     <DashboardClient
       initialVideos={initialVideos}
       allVideos={[]}
       categories={categories}
       updatedAt={updatedAt}
+      latestNotice={latestNotice}
     />
   );
 }
