@@ -134,3 +134,77 @@ body {
     @apply text-heading font-serif;
   }
 }
+
+/* ── 공지 본문 마크다운 스타일 ────────────────────────────────────── */
+.prose-notice h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #1A1A1A;
+  letter-spacing: -0.02em;
+}
+.prose-notice h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #1A1A1A;
+}
+.prose-notice p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+.prose-notice ul, .prose-notice ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.prose-notice ul { list-style: disc; }
+.prose-notice ol { list-style: decimal; }
+.prose-notice li {
+  margin-bottom: 0.4rem;
+  line-height: 1.7;
+}
+.prose-notice strong {
+  font-weight: 700;
+  color: #1A1A1A;
+}
+.prose-notice em { font-style: italic; }
+.prose-notice a {
+  color: #1A1A1A;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-notice a:hover { color: #555555; }
+.prose-notice code {
+  background: #F3F3F3;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: ui-monospace, monospace;
+}
+.prose-notice pre {
+  background: #1A1A1A;
+  color: #FAFAFA;
+  padding: 1rem;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+.prose-notice pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.prose-notice blockquote {
+  border-left: 3px solid #EAEAEE;
+  padding-left: 1rem;
+  color: #888888;
+  font-style: italic;
+  margin: 1rem 0;
+}
+.prose-notice hr {
+  border: none;
+  border-top: 1px solid #EAEAEE;
+  margin: 2rem 0;
+}

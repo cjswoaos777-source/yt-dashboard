@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ViralVideo } from "@/lib/viral-types";
 import { RANKING_TIER_URLS, TierKey } from "@/lib/cdn";
+import type { NoticeMeta } from "@/lib/notices";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
 function parseUpdatedHour(raw: string): string {
@@ -317,11 +318,13 @@ export function DashboardClient({
     initialVideos,
     categories: initialCategories,
     updatedAt,
+    latestNotice,
 }: {
     initialVideos: ViralVideo[];
     allVideos: ViralVideo[];
     categories: string[];
     updatedAt: string;
+    latestNotice?: NoticeMeta | null;
 }) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -451,6 +454,25 @@ export function DashboardClient({
                         <ShareButton />
                     </div>
                 </div>
+
+                {/* ── Latest Notice Banner ─────────────────────────── */}
+                {latestNotice && (
+                    <a
+                        href={`/notice/${latestNotice.slug}`}
+                        className="group mb-6 flex items-center gap-3 rounded-r-xl border-l-4 border-orange-400 bg-orange-50 px-4 py-3 transition-all hover:bg-orange-100/70"
+                    >
+                        <span className="text-base shrink-0">📢</span>
+                        <span className="shrink-0 text-[12px] font-semibold text-orange-600">
+                            [{latestNotice.date.replace(/-/g, ".")}]
+                        </span>
+                        <span className="flex-1 truncate text-[13px] font-medium text-neutral-800">
+                            {latestNotice.title}
+                        </span>
+                        <span className="shrink-0 text-[12px] font-semibold text-orange-600 transition-transform group-hover:translate-x-0.5">
+                            자세히 →
+                        </span>
+                    </a>
+                )}
 
                 {/* ── Filter Bar ────────────────────────────────────── */}
                 <div className="mb-8 space-y-3.5 rounded-2xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">

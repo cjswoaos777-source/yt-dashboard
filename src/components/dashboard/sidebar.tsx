@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Menu, X, Zap } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Menu, X, Zap, Info, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -11,6 +11,8 @@ const RAPIDAPI_URL = "https://rapidapi.com/cjswoaos777/api/youtube-viral-tracker
 const menuItems = [
   { title: "홈", href: "/dashboard", icon: LayoutDashboard },
   { title: "벤치마킹", href: "/dashboard/benchmarking", icon: TrendingUp },
+  { title: "공지사항", href: "/notice", icon: Megaphone },
+  { title: "소개", href: "/about", icon: Info },
 ];
 
 // ─── Desktop Sidebar ───────────────────────────────────────────────────────────

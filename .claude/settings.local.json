@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(wc -l /c/Users/USER/Desktop/project/yt-dashboard/.claude/worktrees/great-wilson/src/**/*.tsx)",
+      "Read(//c/Users/USER/Desktop/project/yt-dashboard/**)",
+      "Bash(gh run:*)",
+      "WebFetch(domain:yt-dashboard-theta.vercel.app)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(git add *)"
     ]
   }
 }
