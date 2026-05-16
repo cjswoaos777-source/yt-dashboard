@@ -2,8 +2,15 @@ import Link from "next/link";
 import { getAllNotices, getCategoryColor } from "@/lib/notices";
 
 export const metadata = {
-    title: "공지사항 - Viral Hunter",
+    title: "공지사항",
     description: "Viral Hunter 운영 공지, 업데이트 소식, 장애 안내를 확인하세요.",
+    alternates: { canonical: "/notice" },
+    openGraph: {
+        title: "공지사항 | Viral Hunter",
+        description: "Viral Hunter 운영 공지, 업데이트 소식, 장애 안내를 확인하세요.",
+        url: "/notice",
+        type: "website",
+    },
 };
 
 const PER_PAGE = 10;

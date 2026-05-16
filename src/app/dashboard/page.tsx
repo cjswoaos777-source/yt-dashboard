@@ -2,8 +2,24 @@ import { ViralVideo } from "@/lib/viral-types";
 import { DashboardClient } from "./DashboardClient";
 import { RANKING_TIER_URLS } from "@/lib/cdn";
 import { getLatestNotice } from "@/lib/notices";
+import { SITE } from "@/lib/site";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "실시간 떡상 영상 TOP 20",
+  description:
+    "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 20. 숏츠/롱폼, 국내/해외, 구독자 구간별 필터로 진짜 떡상 영상을 찾아보세요.",
+  alternates: { canonical: "/dashboard" },
+  openGraph: {
+    title: "실시간 떡상 영상 TOP 20 | Viral Hunter",
+    description:
+      "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 20. 매시간 자동 갱신됩니다.",
+    url: `${SITE.url}/dashboard`,
+    type: "website",
+  },
+};
 
 export default async function DashboardPage() {
   let initialVideos: ViralVideo[] = [];

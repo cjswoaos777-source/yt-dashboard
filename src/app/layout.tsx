@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SmoothScroll } from "@/components/smooth-scroll";
+import { SITE } from "@/lib/site";
 
 // Primary sans — replaces Inter; PJS 700/800 visually matches Korean glyph weight much better
 const jakartaSans = Plus_Jakarta_Sans({
@@ -34,23 +35,54 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: '유튜브 순위 분석 대시보드 - Viral Hunter',
-  description: '떡상하는 유튜브 채널 순위, 숏츠와 롱폼 채널의 바이럴 지수를 분석하여 유튜버 성장을 위한 진짜 꿀통 채널을 찾아냅니다.',
-  keywords: ['유튜브 순위', '유튜버 수익', '떡상 채널', '유튜브 알고리즘', '유튜브 벤치마킹'],
+  metadataBase: new URL(SITE.url),
+  title: {
+    default: SITE.title,
+    template: `%s | ${SITE.name}`,
+  },
+  description: SITE.description,
+  keywords: ['유튜브 순위', '유튜버 수익', '떡상 채널', '유튜브 알고리즘', '유튜브 벤치마킹', '유튜브 트렌드', '바이럴 영상'],
+  applicationName: SITE.name,
+  authors: [{ name: SITE.name }],
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: '유튜브 순위 분석 대시보드 - Viral Hunter',
-    description: '알고리즘을 타기 시작한 유튜브 채널들의 실시간 랭킹 분석 웹입니다.',
-    url: 'https://yt-viralhunter.vercel.app',
-    siteName: 'Viral Hunter',
-    locale: 'ko_KR',
+    title: SITE.title,
+    description: SITE.description,
+    url: SITE.url,
+    siteName: SITE.name,
+    locale: SITE.locale,
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE.title,
+    description: SITE.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   verification: {
     google: 'ypjqPrO3UbGyTQ9CCkFz9SARf1bWz8HAn-GdqcNl9Ig',
   },
-  other: {
-    'naver-site-verification': '7edc64886461bfa89af80912094c25e8b18ec9d2',
-  },
+};
+
+// ── WebSite JSON-LD (구조화 데이터) ──────────────────────────────────────
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE.name,
+  url: SITE.url,
+  description: SITE.description,
+  inLanguage: 'ko-KR',
 };
 
 const GA_ID = "G-6NS0BQWK70";
@@ -63,6 +95,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className={cn(jakartaSans.variable, playfair.variable, bebasNeue.variable, notoSansKr.variable)}>
       <body className="font-sans antialiased text-foreground bg-background">
+        {/* WebSite 구조화 데이터 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+
         {/* Google Analytics GA4 */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

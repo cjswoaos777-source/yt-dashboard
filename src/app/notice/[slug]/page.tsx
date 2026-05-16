@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getAllNotices, getNoticeBySlug, getCategoryColor } from "@/lib/notices";
+import { SITE } from "@/lib/site";
 
 export async function generateStaticParams() {
     return getAllNotices().map((n) => ({ slug: n.slug }));
@@ -14,10 +15,18 @@ export async function generateMetadata({
 }) {
     const { slug } = await params;
     const notice = await getNoticeBySlug(slug);
-    if (!notice) return { title: "공지사항 - Viral Hunter" };
+    if (!notice) return { title: "공지사항" };
     return {
-        title: `${notice.title} - 공지사항 - Viral Hunter`,
+        title: notice.title,
         description: notice.title,
+        alternates: { canonical: `/notice/${slug}` },
+        openGraph: {
+            title: `${notice.title} | Viral Hunter`,
+            description: notice.title,
+            url: `/notice/${slug}`,
+            type: "article",
+            publishedTime: notice.date,
+        },
     };
 }
 
@@ -35,8 +44,36 @@ export default async function NoticeDetailPage({
 
     const color = getCategoryColor(notice.category);
 
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: notice.title,
+        datePublished: notice.date,
+        dateModified: notice.date,
+        author: { "@type": "Organization", name: SITE.name },
+        publisher: { "@type": "Organization", name: SITE.name },
+        mainEntityOfPage: `${SITE.url}/notice/${slug}`,
+    };
+
+    const breadcrumbLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            { "@type": "ListItem", position: 1, name: "공지사항", item: `${SITE.url}/notice` },
+            { "@type": "ListItem", position: 2, name: notice.title, item: `${SITE.url}/notice/${slug}` },
+        ],
+    };
+
     return (
         <div className="min-h-screen bg-[#FDFDFC]">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+            />
             <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
 
                 {/* Back */}
