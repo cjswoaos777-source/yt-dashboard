@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# claude worktrees & local artifacts
+.claude/
+api_design_report.md
