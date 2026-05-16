@@ -2,8 +2,15 @@ import Link from "next/link";
 import { ArrowRight, Database, Code2, Mail, BookOpen } from "lucide-react";
 
 export const metadata = {
-    title: "소개 - Viral Hunter",
+    title: "소개",
     description: "한국 유튜브 영상의 시간당 조회수/좋아요/댓글 급상승을 실시간 추적하는 무료 데이터 분석 도구",
+    alternates: { canonical: "/about" },
+    openGraph: {
+        title: "소개 | Viral Hunter",
+        description: "한국 유튜브 영상의 시간당 조회수/좋아요/댓글 급상승을 실시간 추적하는 무료 데이터 분석 도구",
+        url: "/about",
+        type: "website",
+    },
 };
 
 export default function AboutPage() {

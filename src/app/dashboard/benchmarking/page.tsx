@@ -1,8 +1,24 @@
 import { TierChannel } from "@/lib/tier-channel-types";
 import { BenchmarkingDashboardClient } from "./BenchmarkingDashboardClient";
 import { CHANNELS_URL } from "@/lib/cdn";
+import { SITE } from "@/lib/site";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+    title: "급성장 채널 벤치마킹",
+    description:
+        "최근 7일간 눈에 띄게 성장한 유튜브 채널을 분석합니다. 구독자 증가, 조회수 효율, 참여도 지표로 벤치마킹할 채널을 찾아보세요.",
+    alternates: { canonical: "/dashboard/benchmarking" },
+    openGraph: {
+        title: "급성장 채널 벤치마킹 | Viral Hunter",
+        description:
+            "최근 7일간 눈에 띄게 성장한 유튜브 채널 분석. 매시간 자동 갱신됩니다.",
+        url: `${SITE.url}/dashboard/benchmarking`,
+        type: "website",
+    },
+};
 
 export default async function BenchmarkingPage() {
     let initialChannels: TierChannel[] = [];
