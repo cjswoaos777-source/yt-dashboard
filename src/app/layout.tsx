@@ -115,6 +115,29 @@ export default function RootLayout({
           `}
         </Script>
 
+        {/* ── 공지사항 배너 ─────────────────────────────────────── */}
+        <div
+          style={{
+            background: 'linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%)',
+            borderBottom: '1px solid #F59E0B',
+            padding: '12px 16px',
+            textAlign: 'center',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#92400E',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            lineHeight: 1.5,
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>⚠️</span>
+          <span>
+            현재 서버 에러로 인해 데이터 업데이트가 일시 중단되었습니다. 빠른 시일 내에 복구하겠습니다.
+          </span>
+        </div>
+
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
