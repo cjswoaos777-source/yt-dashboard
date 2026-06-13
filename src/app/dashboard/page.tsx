@@ -6,16 +6,17 @@ import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+const DISPLAY_LIMIT = 50;
 
 export const metadata: Metadata = {
-  title: "실시간 떡상 영상 TOP 20",
+  title: "실시간 떡상 영상 TOP 50",
   description:
-    "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 20. 숏츠/롱폼, 국내/해외, 구독자 구간별 필터로 진짜 떡상 영상을 찾아보세요.",
+    "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 50. 숏츠/롱폼, 국내/해외, 구독자 구간별 필터로 진짜 떡상 영상을 찾아보세요.",
   alternates: { canonical: "/dashboard" },
   openGraph: {
-    title: "실시간 떡상 영상 TOP 20 | Viral Hunter",
+    title: "실시간 떡상 영상 TOP 50 | Viral Hunter",
     description:
-      "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 20. 매시간 자동 갱신됩니다.",
+      "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 50. 매시간 자동 갱신됩니다.",
     url: `${SITE.url}/dashboard`,
     type: "website",
   },
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
 
     initialVideos = [...allVideos]
       .sort((a, b) => (b.hourly_view_increase ?? 0) - (a.hourly_view_increase ?? 0))
-      .slice(0, 20);
+      .slice(0, DISPLAY_LIMIT);
 
     const catSet = new Set<string>();
     for (const v of allVideos) {

@@ -24,6 +24,7 @@ function parseUpdatedHour(raw: string): string {
 type SortKey = "hourly_views" | "total_views" | "hourly_likes" | "hourly_comments";
 type ShortsState = null | boolean;
 type OriginState = null | "DOMESTIC" | "IMPORTED";
+const DISPLAY_LIMIT = 50;
 
 // ─── Tier Config ──────────────────────────────────────────────────────────────
 
@@ -407,7 +408,7 @@ export function DashboardClient({
         if (category !== null) filtered = filtered.filter((v) => v.category_name === category);
         return [...filtered]
             .sort((a, b) => getSortValue(b, sortBy) - getSortValue(a, sortBy))
-            .slice(0, 20);
+            .slice(0, DISPLAY_LIMIT);
     }, [allVideos, isShorts, origin, category, sortBy]);
 
     return (
@@ -433,7 +434,7 @@ export function DashboardClient({
                                 backgroundClip: "text",
                             }}
                         >
-                            TOP 20
+                            TOP 50
                         </span>
                         <span
                             className="text-[clamp(1.5rem,5vw,3.5rem)] font-black tracking-tight leading-snug -mt-1"
