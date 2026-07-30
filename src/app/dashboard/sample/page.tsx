@@ -4,6 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+// 디자인 샘플 페이지 — 검색 색인 제외
+export const metadata: Metadata = {
+    robots: { index: false, follow: false },
+};
 
 export default function DashboardSamplePage() {
     return (

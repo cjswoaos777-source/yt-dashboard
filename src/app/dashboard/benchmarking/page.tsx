@@ -1,9 +1,12 @@
+import { unstable_cache } from "next/cache";
 import { TierChannel } from "@/lib/tier-channel-types";
 import { BenchmarkingDashboardClient } from "./BenchmarkingDashboardClient";
 import { CHANNELS_URL } from "@/lib/cdn";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 
+// BenchmarkingDashboardClient가 useSearchParams를 쓰므로 정적 프리렌더 시 CSR bailout이
+// 발생해 채널 데이터가 HTML에서 빠진다. 크롤러 노출을 위해 SSR을 유지한다.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -20,14 +23,16 @@ export const metadata: Metadata = {
     },
 };
 
-export default async function BenchmarkingPage() {
-    let initialChannels: TierChannel[] = [];
-    let categories: string[] = [];
-    let originTypes: string[] = [];
-    let targetDate: string | null = null;
-    let errorDetail: string | null = null;
-
-    try {
+// 1.4MB gz를 매 요청마다 받아 압축 해제·정렬하는 대신 가공 결과만 캐싱한다.
+// TTL은 5분: 파이프라인 갱신 시각과 캐시 만료 시각이 어긋나면 새 데이터가 최대
+// TTL만큼 늦게 노출되므로 짧게 유지한다.
+const getBenchmarkingSnapshot = unstable_cache(
+    async (): Promise<{
+        channels: TierChannel[];
+        categories: string[];
+        originTypes: string[];
+        targetDate: string | null;
+    }> => {
         const res = await fetch(CHANNELS_URL, { cache: "no-store" });
         if (!res.ok) throw new Error(`CDN fetch failed: ${res.status} ${res.statusText}`);
 
@@ -51,14 +56,14 @@ export default async function BenchmarkingPage() {
 
         // 최신 target_date 추출
         const dates = allChannels.map((c) => c.target_date).filter(Boolean).sort();
-        targetDate = dates[dates.length - 1] ?? null;
+        const targetDate = dates[dates.length - 1] ?? null;
 
         // 최신 날짜 기준 TOP 60 (damped_score DESC)
         const latest = targetDate
             ? allChannels.filter((c) => c.target_date === targetDate)
             : allChannels;
 
-        initialChannels = [...latest]
+        const channels = [...latest]
             .sort((a, b) => (b.damped_score ?? 0) - (a.damped_score ?? 0))
             .slice(0, 60);
 
@@ -69,9 +74,31 @@ export default async function BenchmarkingPage() {
             if (ch.main_category && ch.main_category !== "overall") catSet.add(ch.main_category);
             if (ch.origin_type) originSet.add(ch.origin_type);
         }
-        categories = Array.from(catSet).sort();
-        originTypes = Array.from(originSet).sort();
 
+        return {
+            channels,
+            categories: Array.from(catSet).sort(),
+            originTypes: Array.from(originSet).sort(),
+            targetDate,
+        };
+    },
+    ["benchmarking-tier-channels"],
+    { revalidate: 300 }
+);
+
+export default async function BenchmarkingPage() {
+    let initialChannels: TierChannel[] = [];
+    let categories: string[] = [];
+    let originTypes: string[] = [];
+    let targetDate: string | null = null;
+    let errorDetail: string | null = null;
+
+    try {
+        const snapshot = await getBenchmarkingSnapshot();
+        initialChannels = snapshot.channels;
+        categories = snapshot.categories;
+        originTypes = snapshot.originTypes;
+        targetDate = snapshot.targetDate;
     } catch (e: unknown) {
         errorDetail = `CDN 로딩 실패: ${e instanceof Error ? e.message : String(e)}`;
     }

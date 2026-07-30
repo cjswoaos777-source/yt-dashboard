@@ -34,6 +34,10 @@ const notoSansKr = Noto_Sans_KR({
   display: "swap",
 });
 
+// 네이버 서치어드바이저(searchadvisor.naver.com) 소유 확인 코드.
+// 사이트 등록 → HTML 태그 방식 선택 후 content 값을 여기에 붙여넣으면 적용됩니다.
+const NAVER_SITE_VERIFICATION: string = "";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
@@ -72,6 +76,9 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'ypjqPrO3UbGyTQ9CCkFz9SARf1bWz8HAn-GdqcNl9Ig',
+    ...(NAVER_SITE_VERIFICATION
+      ? { other: { 'naver-site-verification': NAVER_SITE_VERIFICATION } }
+      : {}),
   },
 };
 

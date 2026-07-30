@@ -16,13 +16,14 @@ export async function generateMetadata({
     const { slug } = await params;
     const notice = await getNoticeBySlug(slug);
     if (!notice) return { title: "공지사항" };
+    const description = notice.excerpt || notice.title;
     return {
         title: notice.title,
-        description: notice.title,
+        description,
         alternates: { canonical: `/notice/${slug}` },
         openGraph: {
             title: `${notice.title} | Viral Hunter`,
-            description: notice.title,
+            description,
             url: `/notice/${slug}`,
             type: "article",
             publishedTime: notice.date,

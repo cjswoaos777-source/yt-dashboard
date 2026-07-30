@@ -17,6 +17,7 @@ export interface NoticeMeta {
 
 export interface Notice extends NoticeMeta {
     contentHtml: string;
+    excerpt: string;       // 본문 앞부분 발췌 — meta description 용
 }
 
 // ─── 카테고리 색상 매핑 ────────────────────────────────────────────────────
@@ -67,13 +68,22 @@ export async function getNoticeBySlug(slug: string): Promise<Notice | null> {
     const raw = fs.readFileSync(filepath, "utf-8");
     const { data, content } = matter(raw);
     const processed = await remark().use(html).process(content);
+    const contentHtml = processed.toString();
+
+    // HTML 태그 제거 후 앞 150자 발췌
+    const plain = contentHtml
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    const excerpt = plain.length > 150 ? `${plain.slice(0, 150)}…` : plain;
 
     return {
         slug,
         title: data.title ?? slug,
         date: data.date ?? "",
         category: data.category ?? "",
-        contentHtml: processed.toString(),
+        contentHtml,
+        excerpt,
     };
 }
 

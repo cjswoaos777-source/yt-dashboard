@@ -41,9 +41,15 @@ const TIER_CONFIG: { key: TierKey; label: string; sub: string }[] = [
 async function fetchGzipJson<T>(url: string): Promise<T> {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`CDN ${res.status}`);
-    const ds = new DecompressionStream("gzip");
-    const decompressed = new Response(res.body!.pipeThrough(ds));
-    return decompressed.json() as Promise<T>;
+    // jsDelivr가 Content-Encoding:gzip 자동 적용 → 이미 decode된 경우 .json() 직접 사용
+    // Content-Type이 application/gzip인 경우 수동 디코딩
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("gzip") || contentType.includes("octet-stream")) {
+        const ds = new DecompressionStream("gzip");
+        const decompressed = new Response(res.body!.pipeThrough(ds));
+        return decompressed.json() as Promise<T>;
+    }
+    return res.json() as Promise<T>;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
