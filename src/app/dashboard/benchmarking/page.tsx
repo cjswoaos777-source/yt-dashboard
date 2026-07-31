@@ -82,7 +82,8 @@ const getBenchmarkingSnapshot = unstable_cache(
             targetDate,
         };
     },
-    ["benchmarking-tier-channels"],
+    // -v2: 데이터 출처를 jsDelivr → raw 로 되돌리면서 옛 캐시 항목 무효화
+    ["benchmarking-tier-channels-v2"],
     { revalidate: 300 }
 );
 

@@ -73,7 +73,7 @@ export const getIndexableChannelIds = unstable_cache(
             .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0))
             .map((c) => c.channel_id);
     },
-    ["indexable-channel-ids"],
+    ["indexable-channel-ids-v2"],
     { revalidate: 3600 },
 );
 
@@ -121,7 +121,7 @@ export const getChannelListPage = unstable_cache(
             totalPages,
         };
     },
-    ["channel-list-page"],
+    ["channel-list-page-v2"],
     { revalidate: 3600 },
 );
 
@@ -181,7 +181,7 @@ export function getChannel(channelId: string) {
                 categoryMedianSubscribers,
             };
         },
-        ["channel-detail", channelId],
+        ["channel-detail-v2", channelId],
         { revalidate: 3600 },
     )();
 }

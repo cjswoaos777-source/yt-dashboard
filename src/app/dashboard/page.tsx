@@ -74,7 +74,10 @@ const getRankingSnapshot = unstable_cache(
 
     return { videos, categories: Array.from(catSet).sort(), updatedAt };
   },
-  ["dashboard-ranking-all"],
+  // 키 끝의 -v2: Vercel Data Cache 는 배포 간에도 유지되므로, jsDelivr 를 쓰던
+  // 시절 저장된 항목이 그대로 서빙됐다(4시간 이상 지난 데이터가 노출됨).
+  // 출처를 바꿀 때는 키도 함께 바꿔야 옛 항목이 무효화된다.
+  ["dashboard-ranking-all-v2"],
   { revalidate: 300 }
 );
 
