@@ -39,6 +39,41 @@ export function parseSparkline(
     }
 }
 
+/**
+ * sparkline 을 '실제로 측정된 날'만 남기도록 정제한다.
+ *
+ * 원본에는 측정값이 아닌 0 이 두 종류 섞여 있어 그대로 그리면 성장 추이를 왜곡한다.
+ *  1. 첫날은 비교할 전날이 없어 증가량이 언제나 0 이다(1,114개 채널 전부 확인).
+ *     '성장이 0'이 아니라 '계산 불가'이므로 버린다.
+ *  2. 조회수·구독자·영상 수가 동시에 0 인 날은 그날 수집이 안 된 것으로 본다.
+ *     구독자 1만 이상 채널이 셋 다 정확히 0 일 확률은 사실상 없다
+ *     (조회수 0인 날의 86%가 나머지 두 지표도 0이었다).
+ *
+ * 남은 지점들은 날짜가 연속하지 않을 수 있으므로, 호출부에서 끊긴 구간을 표시해야 한다.
+ */
+export function cleanSparkline(points: SparklinePoint[]): SparklinePoint[] {
+    const sorted = [...points].sort((a, b) => a.date.localeCompare(b.date));
+    // 첫날 제거 (증가량 계산 불가)
+    const withoutFirst = sorted.slice(1);
+    // 미측정으로 판단되는 날 제거
+    return withoutFirst.filter(
+        (p) =>
+            (p.view_increase ?? 0) !== 0 ||
+            (p.sub_increase ?? 0) !== 0 ||
+            (p.video_increase ?? 0) !== 0,
+    );
+}
+
+/** 날짜가 하루씩 연속하는지 (끊긴 구간이 있으면 false) */
+export function hasDateGap(points: SparklinePoint[]): boolean {
+    for (let i = 1; i < points.length; i++) {
+        const prev = new Date(`${points[i - 1].date}T00:00:00Z`).getTime();
+        const cur = new Date(`${points[i].date}T00:00:00Z`).getTime();
+        if (cur - prev > 86_400_000) return true;
+    }
+    return false;
+}
+
 async function fetchAllChannels(): Promise<TierChannel[]> {
     const res = await fetch(CHANNELS_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`CDN fetch failed: ${res.status} ${res.statusText}`);
@@ -68,6 +103,9 @@ async function fetchAllChannels(): Promise<TierChannel[]> {
 export const getIndexableChannelIds = unstable_cache(
     async (): Promise<string[]> => {
         const all = await fetchAllChannels();
+        // sitemap 용. 상세 페이지 생성 조건(구독자 1만+)과 일치해야 404 가 나지 않는다.
+        // 목록 표시와 달리 성장 여부로 거르지 않는다 — 성장이 멈췄다고 페이지를 없애면
+        // 이미 색인된 URL 이 404 가 되기 때문이다.
         return all
             .filter((c) => (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS)
             .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0))
@@ -99,9 +137,22 @@ export const getChannelListPage = unstable_cache(
         page: number,
     ): Promise<{ items: ChannelListItem[]; total: number; totalPages: number }> => {
         const all = await fetchAllChannels();
+        // 정렬은 일평균 조회수 증가 기준.
+        // 이 집합은 '구독자 대비 조회수가 터지는 채널'을 뽑은 것이라 구독자순으로
+        // 세우면 집합의 성격과 맞지 않고, 성장지수(damped_score)는 분모가 구독자라
+        // 상위가 소형 채널로만 채워져 순위로 읽기 어렵다. 일평균 조회수는 절대량이라
+        // 사용자가 바로 이해할 수 있다.
+        // 성장이 멈춘 채널은 이 목록의 취지에 맞지 않으므로 제외한다.
         const eligible = all
-            .filter((c) => (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS)
-            .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0));
+            .filter(
+                (c) =>
+                    (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS &&
+                    (c.avg_daily_view_increase ?? 0) > 0,
+            )
+            .sort(
+                (a, b) =>
+                    (b.avg_daily_view_increase ?? 0) - (a.avg_daily_view_increase ?? 0),
+            );
 
         const totalPages = Math.max(1, Math.ceil(eligible.length / CHANNEL_LIST_PAGE_SIZE));
         const safePage = Math.min(Math.max(1, page), totalPages);
@@ -121,7 +172,8 @@ export const getChannelListPage = unstable_cache(
             totalPages,
         };
     },
-    ["channel-list-page-v2"],
+    // -v3: 정렬 기준을 구독자순 → 일평균 조회수순으로 바꾸면서 옛 결과 무효화
+    ["channel-list-page-v3"],
     { revalidate: 3600 },
 );
 
@@ -173,7 +225,7 @@ export function getChannel(channelId: string) {
 
             return {
                 channel,
-                sparkline: parseSparkline(channel.sparkline_data),
+                sparkline: cleanSparkline(parseSparkline(channel.sparkline_data)),
                 overallRank: eligible.findIndex((c) => c.channel_id === channelId) + 1,
                 overallTotal: eligible.length,
                 categoryRank: sameCategory.findIndex((c) => c.channel_id === channelId) + 1,

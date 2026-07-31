@@ -11,7 +11,7 @@ const RAPIDAPI_URL = "https://rapidapi.com/cjswoaos777/api/youtube-viral-tracker
 const menuItems = [
   { title: "홈", href: "/dashboard", icon: LayoutDashboard },
   { title: "벤치마킹", href: "/dashboard/benchmarking", icon: TrendingUp },
-  { title: "채널 순위", href: "/channel", icon: ListOrdered },
+  { title: "급상승 채널", href: "/channel", icon: ListOrdered },
   { title: "공지사항", href: "/notice", icon: Megaphone },
   { title: "소개", href: "/about", icon: Info },
 ];

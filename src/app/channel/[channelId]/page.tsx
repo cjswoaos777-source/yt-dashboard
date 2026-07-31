@@ -245,12 +245,14 @@ export default async function ChannelDetailPage({
                             >
                                 {channel.channel_title}
                             </h1>
+                            {/* '순위'가 한국 유튜브 전체 순위로 오해되지 않도록,
+                                추적 대상 안에서의 상대 위치임을 문장에 드러낸다. */}
                             <p className="text-[13px] leading-relaxed text-neutral-500">
-                                {channel.main_category} 카테고리 구독자 기준{" "}
+                                추적 중인 {channel.main_category} 채널{" "}
+                                {categoryTotal.toLocaleString()}개 중 구독자{" "}
                                 <strong className="font-semibold text-neutral-700">
-                                    {categoryRank.toLocaleString()}위
+                                    {categoryRank.toLocaleString()}번째
                                 </strong>
-                                {" "}({categoryTotal.toLocaleString()}개 채널 중)
                             </p>
                         </div>
                     </div>
@@ -289,13 +291,17 @@ export default async function ChannelDetailPage({
                 <section className="mb-12">
                     <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">최근 성장 추이</h2>
                     <p className="mb-4 text-[12px] text-neutral-400">
-                        일별 구독자·조회수 증가량입니다. 데이터는 매시간 갱신됩니다.
+                        실제로 측정된 날의 구독자·조회수 증가량만 표시합니다.
                     </p>
-                    {sparkline.length >= 2 ? (
+                    {sparkline.length >= 3 ? (
                         <SparklineChart points={sparkline} />
                     ) : (
                         <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-[13px] text-neutral-400">
-                            추이를 표시할 만큼 데이터가 쌓이지 않았습니다. 며칠 뒤 다시 확인해주세요.
+                            측정된 날이 {sparkline.length}일뿐이라 추이를 표시하지 않습니다.
+                            <br />
+                            <span className="text-[12px] text-neutral-400">
+                                데이터가 더 쌓이면 자동으로 그래프가 나타납니다.
+                            </span>
                         </div>
                     )}
                 </section>

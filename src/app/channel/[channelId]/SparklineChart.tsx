@@ -45,8 +45,23 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
         return { x, y, point: p };
     });
 
-    const line = coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
-    const area = `${PAD_X},${H - PAD_Y} ${line} ${(W - PAD_X).toFixed(1)},${H - PAD_Y}`;
+    // 날짜가 하루 이상 비면 선을 끊는다. 이어 그리면 측정되지 않은 구간이
+    // 연속 측정된 것처럼 보여 추이를 왜곡한다.
+    const segments: (typeof coords)[] = [];
+    let run: typeof coords = [];
+    for (let i = 0; i < coords.length; i++) {
+        if (i > 0) {
+            const prev = new Date(`${coords[i - 1].point.date}T00:00:00Z`).getTime();
+            const cur = new Date(`${coords[i].point.date}T00:00:00Z`).getTime();
+            if (cur - prev > 86_400_000) {
+                segments.push(run);
+                run = [];
+            }
+        }
+        run.push(coords[i]);
+    }
+    if (run.length) segments.push(run);
+    const gapCount = segments.length - 1;
 
     const totalViews = values.reduce((a, b) => a + b, 0);
     const totalSubs = sorted.reduce((a, p) => a + (p.sub_increase ?? 0), 0);
@@ -57,7 +72,7 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
             <div className="border-b border-neutral-100 p-4">
                 <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
                     <span className="text-[12px] text-neutral-400">
-                        {sorted.length}일간 조회수 증가 합계{" "}
+                        측정된 {sorted.length}일 조회수 증가 합계{" "}
                         <strong className="font-semibold text-neutral-700">
                             {fmtKr(totalViews)}회
                         </strong>
@@ -69,6 +84,12 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
                         </strong>
                     </span>
                 </div>
+                {gapCount > 0 && (
+                    <p className="mb-3 text-[11px] text-amber-700">
+                        수집되지 않은 날이 있어 그래프 선이 {gapCount}곳 끊겨 있습니다.
+                        측정된 날만 표시합니다.
+                    </p>
+                )}
 
                 <svg
                     viewBox={`0 0 ${W} ${H}`}
@@ -77,16 +98,18 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
                     aria-label={`최근 ${sorted.length}일간 일별 조회수 증가 추이. 합계 ${fmtKr(totalViews)}회.`}
                     preserveAspectRatio="none"
                 >
-                    <polygon points={area} fill="#1A1A1A" fillOpacity="0.06" />
-                    <polyline
-                        points={line}
-                        fill="none"
-                        stroke="#1A1A1A"
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        vectorEffect="non-scaling-stroke"
-                    />
+                    {segments.map((seg, si) => (
+                        <polyline
+                            key={`seg-${si}`}
+                            points={seg.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ")}
+                            fill="none"
+                            stroke="#1A1A1A"
+                            strokeWidth="2"
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            vectorEffect="non-scaling-stroke"
+                        />
+                    ))}
                     {coords.map((c) => (
                         <circle
                             key={c.point.date}

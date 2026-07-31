@@ -40,11 +40,10 @@ export async function generateMetadata({
 
     const suffix = page > 1 ? ` (${page}/${totalPages}페이지)` : "";
     return {
-        title: `유튜브 채널 순위 — 구독자 기준 ${total.toLocaleString()}개${suffix}`,
+        title: `구독자 대비 조회수가 급상승한 유튜브 채널 ${total.toLocaleString()}개${suffix}`,
         description:
-            `구독자 ${fmtKr(CHANNEL_PAGE_MIN_SUBSCRIBERS, "명")} 이상 유튜브 채널 ` +
-            `${total.toLocaleString()}개의 구독자·누적 조회수·일평균 성장을 정리했습니다. ` +
-            `카테고리별 순위와 채널별 상세 추이를 확인하세요.`,
+            `구독자 수 대비 조회수가 폭발적으로 늘고 있는 유튜브 채널 ${total.toLocaleString()}개를 ` +
+            `일평균 조회수 순으로 정리했습니다. 채널별 구독자·누적 조회수·성장 추이를 확인하세요.`,
         alternates: {
             canonical: page > 1 ? `/channel?page=${page}` : "/channel",
         },
@@ -71,7 +70,7 @@ export default async function ChannelIndexPage({
     const itemListLd = {
         "@context": "https://schema.org",
         "@type": "ItemList",
-        name: "유튜브 채널 구독자 순위",
+        name: "구독자 대비 조회수 급상승 채널",
         url: `${SITE.url}/channel${page > 1 ? `?page=${page}` : ""}`,
         numberOfItems: items.length,
         itemListElement: items.map((c, i) => ({
@@ -103,14 +102,23 @@ export default async function ChannelIndexPage({
                         className="mb-2 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
                         style={{ fontFamily: "var(--font-playfair), serif" }}
                     >
-                        유튜브 채널 순위
+                        구독자 대비 조회수 급상승 채널
                     </h1>
-                    <p className="text-[13px] leading-relaxed text-neutral-500">
-                        구독자 {fmtKr(CHANNEL_PAGE_MIN_SUBSCRIBERS, "명")} 이상 채널{" "}
+                    <p className="mb-3 text-[13px] leading-relaxed text-neutral-500">
+                        구독자 수 대비 조회수가 폭발적으로 늘고 있는 채널{" "}
                         <strong className="font-semibold text-neutral-700">
                             {total.toLocaleString()}개
                         </strong>
-                        를 구독자 기준으로 정렬했습니다. 데이터는 매시간 갱신됩니다.
+                        를 일평균 조회수 순으로 정렬했습니다. 데이터는 매시간 갱신됩니다.
+                    </p>
+                    {/* 이 목록이 무엇이고 무엇이 아닌지 명시한다.
+                        '순위'로 오해하면 한국 유튜브 전체 TOP 으로 읽히는데, 실제로는
+                        구독자 대비 성과가 높은 채널을 골라낸 집합이라 대형 채널이 빠져 있다. */}
+                    <p className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[12px] leading-relaxed text-neutral-500">
+                        이 목록은 <strong className="text-neutral-700">구독자 수 대비 조회 성과가 높은 채널</strong>을
+                        선별해 추적한 결과입니다. 구독자가 매우 많은 대형 채널은 선별 기준상 포함되지 않으므로,
+                        한국 유튜브 전체 구독자 순위와는 다릅니다.
+                        수록 기준은 구독자 {fmtKr(CHANNEL_PAGE_MIN_SUBSCRIBERS, "명")} 이상입니다.
                     </p>
                 </header>
 
@@ -123,6 +131,7 @@ export default async function ChannelIndexPage({
                                     <th scope="col" className="px-4 py-2.5 font-medium">순위</th>
                                     <th scope="col" className="px-4 py-2.5 font-medium">채널</th>
                                     <th scope="col" className="px-4 py-2.5 font-medium">카테고리</th>
+                                    <th scope="col" className="px-4 py-2.5 text-right font-medium">일평균 조회수</th>
                                     <th scope="col" className="px-4 py-2.5 text-right font-medium">구독자</th>
                                     <th scope="col" className="px-4 py-2.5 text-right font-medium">누적 조회수</th>
                                 </tr>
@@ -146,6 +155,9 @@ export default async function ChannelIndexPage({
                                         </th>
                                         <td className="px-4 py-2.5 text-[12px] text-neutral-500">
                                             {c.main_category}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-[#1A1A1A]">
+                                            {fmtKr(c.avg_daily_view_increase, "회")}
                                         </td>
                                         <td className="px-4 py-2.5 text-right tabular-nums text-neutral-700">
                                             {fmtKr(c.subscriber_count, "명")}
