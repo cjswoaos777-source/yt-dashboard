@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { hasChannelPage } from "@/lib/channel-constants";
 import { TierChannel } from "@/lib/tier-channel-types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -41,13 +43,31 @@ export function ChannelBentoCard({
     const [imgError, setImgError] = useState(false);
     const tierMeta = TIER_LABELS[channel.tier] ?? { label: `Tier ${channel.tier}`, color: "#888" };
 
+    // 구독자 1만 이상은 사이트 내 분석 페이지가 있으므로 내부 링크로 보낸다.
+    // (내부 링크가 있어야 크롤러가 채널 페이지를 발견한다.)
+    // 기준 미달 채널은 페이지가 없어 404 가 되므로 기존처럼 유튜브로 보낸다.
+    const internal = hasChannelPage(channel.subscriber_count);
+    const cardClassName =
+        "group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl";
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) =>
+        internal ? (
+            <Link href={`/channel/${channel.channel_id}`} className={cardClassName}>
+                {children}
+            </Link>
+        ) : (
+            <a
+                href={`https://www.youtube.com/channel/${channel.channel_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cardClassName}
+            >
+                {children}
+            </a>
+        );
+
     return (
-        <a
-            href={`https://www.youtube.com/channel/${channel.channel_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-        >
+        <Wrapper>
             {/* ── Thumbnail Zone ─────────────────────────────────────── */}
             <div className="relative aspect-video w-full overflow-hidden bg-neutral-100">
                 {!imgError && channel.video_thumbnail ? (
@@ -192,6 +212,6 @@ export function ChannelBentoCard({
                     </span>
                 </div>
             </div>
-        </a>
+        </Wrapper>
     );
 }

@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next';
 import { SITE } from '@/lib/site';
 import { getAllNotices } from '@/lib/notices';
+import { getIndexableChannelIds, CHANNEL_LIST_PAGE_SIZE } from '@/lib/channels';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE.url;
 
   // 정적 페이지는 실제 수정 시각을 알 수 없으므로 lastModified 생략
@@ -42,5 +43,33 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.3,
   }));
 
-  return [...staticRoutes, ...noticeRoutes];
+  // 채널 목록 허브 + 상세 페이지 (구독자 1만 이상만 — lib/channels.ts 기준)
+  // CDN 조회가 실패해도 sitemap 자체는 나가야 하므로 빈 배열로 폴백한다.
+  let channelRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const ids = await getIndexableChannelIds();
+
+    // 허브 페이지 (1페이지는 쿼리 없는 정규 URL)
+    const totalPages = Math.max(1, Math.ceil(ids.length / CHANNEL_LIST_PAGE_SIZE));
+    const listRoutes: MetadataRoute.Sitemap = Array.from(
+      { length: totalPages },
+      (_, i) => ({
+        url: i === 0 ? `${baseUrl}/channel` : `${baseUrl}/channel?page=${i + 1}`,
+        changeFrequency: 'daily' as const,
+        priority: i === 0 ? 0.8 : 0.5,
+      }),
+    );
+
+    const detailRoutes: MetadataRoute.Sitemap = ids.map((id) => ({
+      url: `${baseUrl}/channel/${id}`,
+      changeFrequency: 'daily' as const,
+      priority: 0.6,
+    }));
+
+    channelRoutes = [...listRoutes, ...detailRoutes];
+  } catch {
+    // 폴백: 채널 URL 없이 나머지 사이트맵만 제공
+  }
+
+  return [...staticRoutes, ...noticeRoutes, ...channelRoutes];
 }
