@@ -333,7 +333,11 @@ export function BenchmarkingDashboardClient({
 
                 const dates = rawArr.map((c) => c.target_date).filter(Boolean).sort();
                 const latest = dates[dates.length - 1] ?? null;
-                const latestData = latest ? rawArr.filter((c) => c.target_date === latest) : rawArr;
+                const latestAll = latest ? rawArr.filter((c) => c.target_date === latest) : rawArr;
+
+                // 성장이 멈췄거나 역성장한 채널 제외 — 서버(page.tsx)와 동일한 기준이어야
+                // 마운트 후 재요청 시 걸러졌던 채널이 되살아나지 않는다.
+                const latestData = latestAll.filter((c) => (c.avg_daily_view_increase ?? 0) > 0);
                 setAllChannels(latestData);
 
                 const catSet = new Set<string>();

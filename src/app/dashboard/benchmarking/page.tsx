@@ -58,16 +58,23 @@ const getBenchmarkingSnapshot = unstable_cache(
         const dates = allChannels.map((c) => c.target_date).filter(Boolean).sort();
         const targetDate = dates[dates.length - 1] ?? null;
 
-        // 최신 날짜 기준 TOP 60 (damped_score DESC)
-        const latest = targetDate
+        // 최신 날짜 기준
+        const latestAll = targetDate
             ? allChannels.filter((c) => c.target_date === targetDate)
             : allChannels;
+
+        // 성장이 멈췄거나 역성장한 채널은 '급성장 벤치마킹' 목록에서 제외한다.
+        // (2026-07-31 실측: 8,000개 중 909개가 일평균 증가 0 이하, 그중 71개는 음수.
+        //  기본 화면 상위 60개에도 11개가 섞여 있었고, 16개 카테고리 중 15개가 같은 문제였다.)
+        // 주의: 원본 JSON 에서 빼면 안 된다. 채널 상세 페이지(/channel/[id])가 같은 데이터를
+        // 쓰므로, 제거하면 색인된 페이지 57개가 404 가 된다. 목록 표시에서만 걸러낸다.
+        const latest = latestAll.filter((c) => (c.avg_daily_view_increase ?? 0) > 0);
 
         const channels = [...latest]
             .sort((a, b) => (b.damped_score ?? 0) - (a.damped_score ?? 0))
             .slice(0, 60);
 
-        // 카테고리 & origin 동적 추출 (전체 기준)
+        // 카테고리 & origin 동적 추출 — 필터된 목록 기준이어야 빈 결과가 나오지 않는다
         const catSet = new Set<string>();
         const originSet = new Set<string>();
         for (const ch of latest) {
@@ -82,8 +89,9 @@ const getBenchmarkingSnapshot = unstable_cache(
             targetDate,
         };
     },
-    // -v2: 데이터 출처를 jsDelivr → raw 로 되돌리면서 옛 캐시 항목 무효화
-    ["benchmarking-tier-channels-v2"],
+    // -v3: 정체·역성장 채널 제외 필터를 추가하면서 옛 결과 무효화
+    //      (가공 로직이 바뀌면 키도 바꿔야 옛 캐시가 계속 서빙되지 않는다)
+    ["benchmarking-tier-channels-v3"],
     { revalidate: 300 }
 );
 
