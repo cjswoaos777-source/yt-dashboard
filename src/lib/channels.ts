@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { CHANNELS_URL } from "@/lib/cdn";
+import { CHANNELS_URL, getCdnVersion } from "@/lib/cdn";
 import { CHANNEL_PAGE_MIN_SUBSCRIBERS } from "@/lib/channel-constants";
 import type { TierChannel, SparklinePoint } from "@/lib/tier-channel-types";
 
@@ -100,7 +100,7 @@ async function fetchAllChannels(): Promise<TierChannel[]> {
  * 상세 페이지 생성 대상 채널의 id 목록 (구독자 많은 순).
  * 원본 1.4MB 를 매번 파싱하지 않도록 id 만 추려 캐싱한다.
  */
-export const getIndexableChannelIds = unstable_cache(
+const getIndexableChannelIdsCached = (version: string) => unstable_cache(
     async (): Promise<string[]> => {
         const all = await fetchAllChannels();
         // sitemap 용. 상세 페이지 생성 조건(구독자 1만+)과 일치해야 404 가 나지 않는다.
@@ -111,9 +111,14 @@ export const getIndexableChannelIds = unstable_cache(
             .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0))
             .map((c) => c.channel_id);
     },
-    ["indexable-channel-ids-v2"],
+    ["indexable-channel-ids-v3", version],
     { revalidate: 3600 },
-);
+)();
+
+/** sitemap 용 채널 id 목록. 원본이 바뀔 때만 다시 계산한다. */
+export async function getIndexableChannelIds(): Promise<string[]> {
+    return getIndexableChannelIdsCached(await getCdnVersion(CHANNELS_URL));
+}
 
 /** 목록 허브 페이지의 한 페이지 크기 */
 export const CHANNEL_LIST_PAGE_SIZE = 100;
@@ -132,7 +137,7 @@ export interface ChannelListItem {
  * 목록 허브용 요약 데이터 (구독자 많은 순).
  * 상세 필드를 다 담으면 캐시가 커지므로 목록 표시에 필요한 것만 추린다.
  */
-export const getChannelListPage = unstable_cache(
+const getChannelListPageCached = (version: string) => unstable_cache(
     async (
         page: number,
     ): Promise<{ items: ChannelListItem[]; total: number; totalPages: number }> => {
@@ -172,10 +177,16 @@ export const getChannelListPage = unstable_cache(
             totalPages,
         };
     },
-    // -v3: 정렬 기준을 구독자순 → 일평균 조회수순으로 바꾸면서 옛 결과 무효화
-    ["channel-list-page-v3"],
+    // -v4 + version: 가공 로직이 바뀌면 접미사를 올려야 옛 결과가 남지 않는다.
+    ["channel-list-page-v4", version],
     { revalidate: 3600 },
 );
+
+/** 목록 허브 한 페이지. 원본이 바뀔 때만 다시 계산한다. */
+export async function getChannelListPage(page: number) {
+    const version = await getCdnVersion(CHANNELS_URL);
+    return getChannelListPageCached(version)(page);
+}
 
 /**
  * 단일 채널 조회.
@@ -197,7 +208,7 @@ export interface ChannelDetail {
     categoryMedianSubscribers: number;
 }
 
-export function getChannel(channelId: string) {
+function getChannelCached(channelId: string, version: string) {
     return unstable_cache(
         async (): Promise<ChannelDetail | null> => {
             const all = await fetchAllChannels();
@@ -233,7 +244,12 @@ export function getChannel(channelId: string) {
                 categoryMedianSubscribers,
             };
         },
-        ["channel-detail-v2", channelId],
+        ["channel-detail-v3", channelId, version],
         { revalidate: 3600 },
     )();
+}
+
+/** 채널 상세. 원본이 바뀔 때만 다시 계산한다. */
+export async function getChannel(channelId: string): Promise<ChannelDetail | null> {
+    return getChannelCached(channelId, await getCdnVersion(CHANNELS_URL));
 }

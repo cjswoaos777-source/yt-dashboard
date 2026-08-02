@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { TierChannel } from "@/lib/tier-channel-types";
 import { BenchmarkingDashboardClient } from "./BenchmarkingDashboardClient";
-import { CHANNELS_URL } from "@/lib/cdn";
+import { CHANNELS_URL, getCdnVersion } from "@/lib/cdn";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 
@@ -24,9 +24,10 @@ export const metadata: Metadata = {
 };
 
 // 1.4MB gz를 매 요청마다 받아 압축 해제·정렬하는 대신 가공 결과만 캐싱한다.
-// TTL은 5분: 파이프라인 갱신 시각과 캐시 만료 시각이 어긋나면 새 데이터가 최대
-// TTL만큼 늦게 노출되므로 짧게 유지한다.
-const getBenchmarkingSnapshot = unstable_cache(
+// 캐시 키에 version(ETag)을 넣어 원본이 실제로 바뀔 때만 다시 계산한다.
+// 시간 기준 TTL 은 데이터가 그대로여도 주기마다 전부 다시 하면서 그 주기만큼
+// 반영도 늦어지는 구조라 쓰지 않는다.
+const getBenchmarkingSnapshot = (version: string) => unstable_cache(
     async (): Promise<{
         channels: TierChannel[];
         categories: string[];
@@ -89,11 +90,10 @@ const getBenchmarkingSnapshot = unstable_cache(
             targetDate,
         };
     },
-    // -v3: 정체·역성장 채널 제외 필터를 추가하면서 옛 결과 무효화
-    //      (가공 로직이 바뀌면 키도 바꿔야 옛 캐시가 계속 서빙되지 않는다)
-    ["benchmarking-tier-channels-v3"],
-    { revalidate: 300 }
-);
+    // -v4 + version: 가공 로직이 바뀌면 접미사를 올려야 옛 결과가 남지 않는다.
+    ["benchmarking-tier-channels-v4", version],
+    { revalidate: 3600 }
+)();
 
 export default async function BenchmarkingPage() {
     let initialChannels: TierChannel[] = [];
@@ -103,7 +103,8 @@ export default async function BenchmarkingPage() {
     let errorDetail: string | null = null;
 
     try {
-        const snapshot = await getBenchmarkingSnapshot();
+        const version = await getCdnVersion(CHANNELS_URL);
+        const snapshot = await getBenchmarkingSnapshot(version);
         initialChannels = snapshot.channels;
         categories = snapshot.categories;
         originTypes = snapshot.originTypes;

@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { ViralVideo } from "@/lib/viral-types";
 import { DashboardClient } from "./DashboardClient";
-import { RANKING_TIER_URLS } from "@/lib/cdn";
+import { RANKING_TIER_URLS, getCdnVersion } from "@/lib/cdn";
 import { getLatestNotice } from "@/lib/notices";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
@@ -27,9 +27,12 @@ export const metadata: Metadata = {
 
 // 원본 gz는 1.7MB로 Next 데이터 캐시 한도(2MB, base64 인코딩 후 초과)에 걸리므로
 // 응답 자체는 캐싱하지 않고, 가공 결과(TOP 50 + 카테고리)만 캐싱한다.
-// TTL은 5분: 파이프라인은 매시간 갱신하지만 갱신 시각과 캐시 만료 시각이 어긋나면
-// 새 데이터가 최대 TTL만큼 늦게 노출되므로, "실시간" 노출을 위해 짧게 유지한다.
-const getRankingSnapshot = unstable_cache(
+//
+// 캐시 키에 version(ETag)을 넣어, 원본이 실제로 바뀔 때만 다시 계산한다.
+// 시간 기준 TTL 로 잡으면 데이터가 그대로인데도 주기마다 1.7MB를 다시 받아
+// 정렬하면서, 동시에 그 주기만큼 반영이 늦어진다. 버전 기준이면 둘 다 없다.
+// revalidate 는 안 쓰는 항목을 정리하기 위한 상한일 뿐이다.
+const getRankingSnapshot = (version: string) => unstable_cache(
   async (): Promise<{
     videos: ViralVideo[];
     categories: string[];
@@ -74,12 +77,12 @@ const getRankingSnapshot = unstable_cache(
 
     return { videos, categories: Array.from(catSet).sort(), updatedAt };
   },
-  // 키 끝의 -v2: Vercel Data Cache 는 배포 간에도 유지되므로, jsDelivr 를 쓰던
-  // 시절 저장된 항목이 그대로 서빙됐다(4시간 이상 지난 데이터가 노출됨).
-  // 출처를 바꿀 때는 키도 함께 바꿔야 옛 항목이 무효화된다.
-  ["dashboard-ranking-all-v2"],
-  { revalidate: 300 }
-);
+  // -v3 + version: Vercel Data Cache 는 배포 간에도 유지되므로, 가공 로직이나
+  // 데이터 출처를 바꿀 때는 접미사도 올려야 옛 결과가 계속 서빙되지 않는다.
+  // version(ETag)이 키에 있으므로 원본이 바뀌면 자동으로 새 항목이 만들어진다.
+  ["dashboard-ranking-all-v3", version],
+  { revalidate: 3600 }
+)();
 
 export default async function DashboardPage() {
   let initialVideos: ViralVideo[] = [];
@@ -87,7 +90,8 @@ export default async function DashboardPage() {
   let updatedAt = "";
 
   try {
-    const snapshot = await getRankingSnapshot();
+    const version = await getCdnVersion(RANKING_TIER_URLS.all);
+    const snapshot = await getRankingSnapshot(version);
     initialVideos = snapshot.videos;
     categories = snapshot.categories;
     updatedAt = snapshot.updatedAt;
