@@ -109,7 +109,7 @@ export default async function ChannelIndexPage({
                         <strong className="font-semibold text-neutral-700">
                             {total.toLocaleString()}개
                         </strong>
-                        를 일평균 조회수 순으로 정렬했습니다. 데이터는 매시간 갱신됩니다.
+                        를 일평균 조회수 순으로 정렬했습니다. 데이터는 매시 25분경 갱신됩니다.
                     </p>
                     {/* 이 목록이 무엇이고 무엇이 아닌지 명시한다.
                         '순위'로 오해하면 한국 유튜브 전체 TOP 으로 읽히는데, 실제로는
