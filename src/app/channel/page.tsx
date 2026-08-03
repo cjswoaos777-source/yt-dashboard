@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import {
     getChannelListPage,
+    getNewlyTrackedChannels,
     CHANNEL_LIST_PAGE_SIZE,
     CHANNEL_PAGE_MIN_SUBSCRIBERS,
 } from "@/lib/channels";
@@ -67,6 +68,12 @@ export default async function ChannelIndexPage({
     }
 
     const startRank = (page - 1) * CHANNEL_LIST_PAGE_SIZE;
+
+    // 추적 시작 단계 채널은 일평균이 산출되지 않아 순위 목록에서 빠지지만,
+    // 상세 페이지와 sitemap 에는 남아 있다. 사이트 안에 갈 경로가 없으면 크롤러가
+    // 발견하지 못하므로 1페이지 하단에 별도 구역으로 노출한다.
+    // (모든 페이지에 넣으면 같은 링크가 12번 중복되므로 1페이지에만 둔다.)
+    const newlyTracked = page === 1 ? await getNewlyTrackedChannels() : [];
 
     // 목록 자체를 구조화 데이터로 제공 — 크롤러가 항목과 링크를 함께 인식한다.
     const itemListLd = {
@@ -195,6 +202,35 @@ export default async function ChannelIndexPage({
                             </Link>
                         ))}
                     </nav>
+                )}
+
+                {/* 추적 시작 단계 — 순위와 섞지 않고 별도 구역으로 */}
+                {newlyTracked.length > 0 && (
+                    <section className="mt-16 border-t border-neutral-100 pt-10">
+                        <h2 className="mb-2 text-[15px] font-bold text-[#1A1A1A]">
+                            추적 시작 단계 채널 {newlyTracked.length.toLocaleString()}개
+                        </h2>
+                        <p className="mb-5 text-[12px] leading-relaxed text-neutral-500">
+                            추적을 막 시작해 비교할 이전 측정값이 없는 채널입니다. 일평균 증가량을
+                            아직 산출할 수 없어 위 순위에는 포함하지 않았습니다. 하루가 지나 두 번째
+                            측정이 쌓이면 자동으로 순위에 반영됩니다.
+                        </p>
+                        <ul className="flex flex-wrap gap-2">
+                            {newlyTracked.map((c) => (
+                                <li key={c.channel_id}>
+                                    <Link
+                                        href={`/channel/${c.channel_id}`}
+                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[12px] text-neutral-700 transition-colors hover:bg-neutral-50"
+                                    >
+                                        <span className="font-medium">{c.channel_title}</span>
+                                        <span className="text-[11px] text-neutral-400">
+                                            {fmtKr(c.subscriber_count, "명")}
+                                        </span>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
                 )}
             </main>
         </div>

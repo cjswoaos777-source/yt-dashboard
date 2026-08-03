@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, TrendingUp, Users, Eye, Video } from "lucide-react";
 import type { Metadata } from "next";
-import { getChannel } from "@/lib/channels";
+import { getChannel, isAwaitingBaseline } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
 
@@ -83,6 +83,10 @@ export default async function ChannelDetailPage({
         categoryMedianSubscribers,
     } = data;
 
+    // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
+    // 그냥 항목을 숨기면 왜 없는지 알 수 없으므로 이유를 밝힌다.
+    const awaitingBaseline = isAwaitingBaseline(channel);
+
     // 수집 데이터로 만드는 요약 문장 — 페이지마다 내용이 달라지도록 수치 기반으로 구성한다.
     const subMultiple =
         categoryMedianSubscribers > 0
@@ -100,7 +104,10 @@ export default async function ChannelDetailPage({
         channel.avg_daily_view_increase > 0
             ? `최근 일평균 조회수는 ${fmtKr(channel.avg_daily_view_increase, "회")}씩 증가하고 있으며, ` +
               `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`
-            : `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`,
+            : awaitingBaseline
+              ? `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}이며, ` +
+                `추적을 막 시작해 일평균 증가량은 아직 산출되지 않았습니다.`
+              : `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`,
         channel.is_new_channel
             ? `최근 새로 편입된 채널로, 성장 추이를 지켜볼 만합니다.`
             : `전체 분석 대상 ${overallTotal.toLocaleString()}개 채널 중 구독자 ${overallRank.toLocaleString()}위입니다.`,
@@ -121,7 +128,9 @@ export default async function ChannelDetailPage({
             value: fmtKr(channel.total_view_count, "회"),
             sub: channel.avg_daily_view_increase
                 ? `일평균 +${fmtKr(channel.avg_daily_view_increase)}`
-                : null,
+                : awaitingBaseline
+                  ? "일평균 산출 전"
+                  : null,
         },
         {
             icon: Video,
@@ -297,11 +306,23 @@ export default async function ChannelDetailPage({
                         <SparklineChart points={sparkline} />
                     ) : (
                         <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-[13px] text-neutral-400">
-                            측정된 날이 {sparkline.length}일뿐이라 추이를 표시하지 않습니다.
-                            <br />
-                            <span className="text-[12px] text-neutral-400">
-                                데이터가 더 쌓이면 자동으로 그래프가 나타납니다.
-                            </span>
+                            {awaitingBaseline ? (
+                                <>
+                                    이 채널은 추적을 막 시작해 비교할 이전 측정값이 없습니다.
+                                    <br />
+                                    <span className="text-[12px] text-neutral-400">
+                                        하루가 지나 두 번째 측정이 쌓이면 일평균과 추이가 표시됩니다.
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    측정된 날이 {sparkline.length}일뿐이라 추이를 표시하지 않습니다.
+                                    <br />
+                                    <span className="text-[12px] text-neutral-400">
+                                        데이터가 더 쌓이면 자동으로 그래프가 나타납니다.
+                                    </span>
+                                </>
+                            )}
                         </div>
                     )}
                 </section>

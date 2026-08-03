@@ -133,6 +133,33 @@ export interface ChannelListItem {
     tier: number;
 }
 
+function toListItem(c: TierChannel): ChannelListItem {
+    return {
+        channel_id: c.channel_id,
+        channel_title: c.channel_title,
+        main_category: c.main_category,
+        subscriber_count: c.subscriber_count ?? 0,
+        total_view_count: c.total_view_count ?? 0,
+        avg_daily_view_increase: c.avg_daily_view_increase ?? 0,
+        tier: c.tier,
+    };
+}
+
+/**
+ * 추적을 막 시작해 일평균을 아직 계산할 수 없는 채널인지 판정한다.
+ *
+ * 파이프라인은 측정이 1회뿐이면 증가량을 0으로 채우고 is_new_channel 을 세운다.
+ * 이때의 0 은 '성장 없음'이 아니라 '비교할 이전 값이 없어 계산 불가'다.
+ * (실측: 8,000개 중 870개가 이 상태이며, 구독자 156만·누적 30억 회 채널도 포함된다.)
+ * 두 번째 측정이 쌓이면 자동으로 해소되는 일시적 상태다.
+ */
+export function isAwaitingBaseline(c: {
+    is_new_channel?: boolean;
+    avg_daily_view_increase?: number | null;
+}): boolean {
+    return Boolean(c.is_new_channel) && (c.avg_daily_view_increase ?? 0) === 0;
+}
+
 /**
  * 목록 허브용 요약 데이터 (구독자 많은 순).
  * 상세 필드를 다 담으면 캐시가 커지므로 목록 표시에 필요한 것만 추린다.
@@ -164,15 +191,7 @@ const getChannelListPageCached = (version: string) => unstable_cache(
         const start = (safePage - 1) * CHANNEL_LIST_PAGE_SIZE;
 
         return {
-            items: eligible.slice(start, start + CHANNEL_LIST_PAGE_SIZE).map((c) => ({
-                channel_id: c.channel_id,
-                channel_title: c.channel_title,
-                main_category: c.main_category,
-                subscriber_count: c.subscriber_count ?? 0,
-                total_view_count: c.total_view_count ?? 0,
-                avg_daily_view_increase: c.avg_daily_view_increase ?? 0,
-                tier: c.tier,
-            })),
+            items: eligible.slice(start, start + CHANNEL_LIST_PAGE_SIZE).map(toListItem),
             total: eligible.length,
             totalPages,
         };
@@ -186,6 +205,34 @@ const getChannelListPageCached = (version: string) => unstable_cache(
 export async function getChannelListPage(page: number) {
     const version = await getCdnVersion(CHANNELS_URL);
     return getChannelListPageCached(version)(page);
+}
+
+/**
+ * 추적 시작 단계 채널 목록 (구독자 많은 순).
+ *
+ * 일평균이 0 이라 순위 목록에서는 빠지는데, 상세 페이지와 sitemap 에는 남아 있다.
+ * 그대로 두면 사이트 안에서 그 페이지로 갈 경로가 없어 크롤러가 발견하지 못하므로,
+ * 허브 하단에 별도 구역으로 노출한다. 순위와 섞으면 계산 불가 값으로 줄을 세우는
+ * 셈이 되므로 반드시 분리한다.
+ */
+const getNewlyTrackedCached = (version: string) => unstable_cache(
+    async (): Promise<ChannelListItem[]> => {
+        const all = await fetchAllChannels();
+        return all
+            .filter(
+                (c) =>
+                    (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS &&
+                    isAwaitingBaseline(c),
+            )
+            .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0))
+            .map(toListItem);
+    },
+    ["newly-tracked-channels-v1", version],
+    { revalidate: 3600 },
+)();
+
+export async function getNewlyTrackedChannels(): Promise<ChannelListItem[]> {
+    return getNewlyTrackedCached(await getCdnVersion(CHANNELS_URL));
 }
 
 /**
