@@ -45,7 +45,7 @@ export async function generateMetadata({
         `${channel.channel_title}의 구독자 ${fmtKr(channel.subscriber_count, "명")}, ` +
         `누적 조회수 ${fmtKr(channel.total_view_count, "회")}. ` +
         `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). ` +
-        `일평균 조회수 증가와 성장 지수를 매시간 갱신되는 데이터로 확인하세요.`;
+        `일평균 조회수 증가와 성장 지수를 매일 갱신되는 데이터로 확인하세요.`;
 
     return {
         title,

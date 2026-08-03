@@ -9,7 +9,9 @@ import {
 } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 
-// 목록도 매시간 갱신되는 수치를 보여주므로 SSR 유지 (데이터는 내부에서 1시간 캐싱).
+// 채널 집계는 daily_tier_snapshot 의 오늘 파티션을 전제로 하는데, 그 파티션은
+// Flow A(매일 17:01 KST)가 만든다. 그래서 자정~17시 사이에는 갱신이 일어나지 않고
+// 전날 값이 유지된다. 수치는 계속 바뀔 수 있으므로 SSR 은 유지한다.
 export const dynamic = "force-dynamic";
 
 function fmtKr(n: number, unit = ""): string {
@@ -109,7 +111,7 @@ export default async function ChannelIndexPage({
                         <strong className="font-semibold text-neutral-700">
                             {total.toLocaleString()}개
                         </strong>
-                        를 일평균 조회수 순으로 정렬했습니다. 데이터는 매시 25분경 갱신됩니다.
+                        를 일평균 조회수 순으로 정렬했습니다. 채널 데이터는 매일 17시 이후 갱신됩니다.
                     </p>
                     {/* 이 목록이 무엇이고 무엇이 아닌지 명시한다.
                         '순위'로 오해하면 한국 유튜브 전체 TOP 으로 읽히는데, 실제로는

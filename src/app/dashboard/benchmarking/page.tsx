@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: "급성장 채널 벤치마킹 | Viral Hunter",
         description:
-            "최근 7일간 눈에 띄게 성장한 유튜브 채널 분석. 매시간 자동 갱신됩니다.",
+            "최근 7일간 눈에 띄게 성장한 유튜브 채널 분석. 매일 갱신됩니다.",
         url: `${SITE.url}/dashboard/benchmarking`,
         type: "website",
     },
