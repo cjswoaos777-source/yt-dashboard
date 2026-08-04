@@ -1,5 +1,14 @@
+import fs from "node:fs";
+import path from "node:path";
 import Link from "next/link";
-import { ArrowRight, Database, Code2, Mail, BookOpen } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Database, Code2, Mail, BookOpen, Coffee } from "lucide-react";
+
+/** 카카오페이 송금 QR 이미지. 원본이 1080x1306 이라 표시 크기도 같은 비율로 맞춘다. */
+const KAKAOPAY_QR_PATH = "/kakaopay-qr.jpg";
+const KAKAOPAY_QR_FILE = "kakaopay-qr.jpg";
+/** 카카오페이 송금 링크 — 오너가 직접 제공한 주소 */
+const KAKAOPAY_URL = "https://qr.kakaopay.com/FDlI8YvfL";
 
 export const metadata = {
     title: "소개",
@@ -14,6 +23,10 @@ export const metadata = {
 };
 
 export default function AboutPage() {
+    // QR 이미지는 저장소에 없을 수 있다. 없는 상태로 <Image> 를 그리면 깨진 이미지가
+    // 노출되므로, 빌드 시점에 존재 여부를 확인해 있을 때만 렌더한다.
+    const hasQr = fs.existsSync(path.join(process.cwd(), "public", KAKAOPAY_QR_FILE));
+
     return (
         <div className="min-h-screen bg-[#FDFDFC]">
             <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-10">
@@ -174,11 +187,28 @@ export default function AboutPage() {
                     </p>
 
                     <div className="rounded-2xl border border-neutral-100 bg-gradient-to-br from-orange-50/40 to-white p-7 shadow-sm">
-                        <p className="text-base leading-relaxed text-[#1A1A1A]">
-                            <strong>취미로 만든 사이드 프로젝트</strong>예요.
-                            상업적 목적 없이, 유튜브 데이터를 다루는 게 재미있어서 시작했습니다.
-                            사용해보시고 좋았다면 한 번 알려주세요. 더 좋은 도구를 만드는 큰 힘이 됩니다.
-                        </p>
+                        {/* 본문은 기존 카드 설명보다 한 단계 크게(text-[15px]) 두고 문단 간격을 넉넉히 준다. */}
+                        <div className="space-y-5 text-[15px] leading-[1.85] text-[#1A1A1A]">
+                            <p>안녕하세요. 현직 데이터 엔지니어입니다.</p>
+                            <p>
+                                크리에이터들이 &ldquo;지금 뜨는 영상&rdquo;을 매번 손으로 찾는 게
+                                번거로워 보여서 만들기 시작했습니다.
+                            </p>
+                            {/* 아래 문단은 실제 파이프라인 수치(추적 채널 8,000개, 지표 기록 5억 건 이상,
+                                집 노트북에서 매시간 실행)를 근거로 쓴 초안입니다.
+                                본인 경험에 맞게 자유롭게 고쳐 쓰세요. */}
+                            <p>
+                                수집 주기를 매시간으로 잡은 건, 하루 단위로 보면 이미 뜨고 난 뒤에야
+                                알게 되기 때문입니다. 지금은 채널 8,000개를 추적하고 있고 영상 지표
+                                기록은 5억 건을 넘었습니다. 거창한 서버가 아니라 집에 있는 노트북
+                                한 대가 이 일을 계속하고 있습니다.
+                            </p>
+                            <p>
+                                평소 안 다루던 프론트엔드는 AI(Claude, Cursor) 도움을 많이 받았습니다.
+                                현재 <strong>4개월째 매시간 자동</strong>으로 돌아가고 있습니다.
+                            </p>
+                            <p>광고 없이 계속 무료로 운영할 생각입니다.</p>
+                        </div>
 
                         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                             <a
@@ -199,6 +229,58 @@ export default function AboutPage() {
                                 <ArrowRight className="h-3.5 w-3.5" />
                             </a>
                         </div>
+                    </div>
+                </section>
+
+                {/* ── 응원하기 ─────────────────────────────────── */}
+                <section className="mb-12">
+                    <h2 className="mb-2 font-serif text-2xl font-bold text-[#1A1A1A] md:text-3xl">
+                        ☕ 응원하기
+                    </h2>
+                    <p className="mb-8 text-sm text-[#555555]">
+                        서버 비용에 보탬이 됩니다.
+                    </p>
+
+                    <div className="rounded-2xl border border-neutral-100 bg-white p-7 shadow-sm">
+                        <p className="text-[15px] leading-relaxed text-[#1A1A1A]">
+                            매달 서버 비용이 조금씩 나갑니다. 도움이 되셨다면 커피 한 잔으로
+                            응원해주세요.
+                        </p>
+
+                        <div className="mt-6 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+                            <a
+                                href={KAKAOPAY_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#FF6B35] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#E55A28]"
+                            >
+                                <Coffee className="h-4 w-4" />
+                                카카오페이로 응원하기
+                            </a>
+
+                            {/* 데스크톱에서는 링크를 눌러도 앱이 열리지 않으므로 QR 을 함께 둔다. */}
+                            {hasQr && (
+                                <div className="flex items-center gap-3">
+                                    <Image
+                                        src={KAKAOPAY_QR_PATH}
+                                        alt="카카오페이 송금 QR 코드"
+                                        width={132}
+                                        height={160}
+                                        className="rounded-xl border border-neutral-200"
+                                        unoptimized
+                                    />
+                                    <p className="text-[12px] leading-relaxed text-neutral-500">
+                                        PC에서는 휴대폰 카메라로
+                                        <br />
+                                        QR을 찍어주세요.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <p className="mt-6 text-[12px] text-neutral-400">
+                            ※ 후원 여부와 관계없이 모든 기능은 무료입니다.
+                        </p>
                     </div>
                 </section>
 

@@ -220,6 +220,19 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── 운영자 안내 ─────────────────────────────────────── */}
+      <section className="px-4 pb-14 sm:px-6 lg:px-10">
+        <p className="mx-auto max-w-2xl text-center font-sans text-xs leading-relaxed text-neutral-400">
+          이 사이트는 현직 데이터 엔지니어가 취미로 만들어 운영 중입니다.{" "}
+          <Link
+            href="/about"
+            className="whitespace-nowrap text-neutral-500 underline-offset-2 transition-colors hover:text-neutral-800 hover:underline"
+          >
+            자세히 보기 →
+          </Link>
+        </p>
+      </section>
+
     </main>
   );
 }
