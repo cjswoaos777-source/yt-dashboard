@@ -7,8 +7,8 @@ import { getChannel, isAwaitingBaseline } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
 
-// 대상 채널이 1,100개가 넘고 매시간 수치가 바뀌므로 빌드 시 전량 프리렌더하지 않고
-// 요청 시 SSR 한다. 데이터는 getChannel 내부에서 1시간 캐싱된다.
+// 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
+// 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
 export const dynamic = "force-dynamic";
 
 const TIER_LABEL: Record<number, string> = {
@@ -45,7 +45,7 @@ export async function generateMetadata({
         `${channel.channel_title}의 구독자 ${fmtKr(channel.subscriber_count, "명")}, ` +
         `누적 조회수 ${fmtKr(channel.total_view_count, "회")}. ` +
         `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). ` +
-        `일평균 조회수 증가와 성장 지수를 매일 갱신되는 데이터로 확인하세요.`;
+        `일평균 조회수 증가와 성장 지수를 매일 저녁 갱신되는 데이터로 확인하세요.`;
 
     return {
         title,
