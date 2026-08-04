@@ -32,17 +32,21 @@ export const TAG_LIST_PAGE_SIZE = 100;
 /**
  * URL 에 쓰는 slug ↔ 원본 태그 변환.
  *
- * 태그에는 공백·슬래시·물음표가 들어갈 수 있어 그대로 경로에 넣으면 라우팅이 깨진다.
- * 한글은 보존해야 검색어와 맞아떨어지므로 인코딩하지 않고, 경로를 망가뜨리는
- * 문자만 하이픈으로 바꾼다. 되돌릴 수 없는 변환이라 조회는 slug 비교로 한다.
+ * 태그에는 공백·슬래시·앰퍼샌드 등 무엇이든 들어올 수 있다. 문제 문자를 하나씩
+ * 열거하면 반드시 빠뜨리므로(실제로 's&p500' 이 sitemap 의 XML 을 깨뜨렸다),
+ * 허용할 문자만 남기는 방식으로 뒤집는다.
+ *
+ * 남기는 것: 유니코드 문자(한글 포함)·숫자·밑줄·마침표·하이픈.
+ * 한글을 인코딩하지 않는 이유는 그래야 URL 이 검색어와 그대로 맞아떨어지기 때문이다.
+ * 되돌릴 수 없는 변환이므로 조회는 원본이 아니라 slug 끼리 비교한다.
  */
 export function tagToSlug(tag: string): string {
     return tag
         .trim()
         .toLowerCase()
-        .replace(/[/\\?#%\s]+/g, "-")
+        .replace(/[^\p{L}\p{N}_.-]+/gu, "-")
         .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
+        .replace(/^[-.]+|[-.]+$/g, "");
 }
 
 async function fetchTagIndex(): Promise<TagIndex> {
@@ -103,7 +107,7 @@ const getTagListCached = (version: string) => unstable_cache(
             updatedAt: idx.updated_at,
         };
     },
-    ["tag-list-v1", version],
+    ["tag-list-v2", version],
     { revalidate: 3600 },
 );
 
@@ -112,12 +116,14 @@ export async function getTagListPage(page: number) {
 }
 
 /** sitemap 용 slug 목록 */
+// -v2: tagToSlug 규칙이 바뀌면 저장된 slug 도 무효화해야 한다.
+// (Vercel Data Cache 는 배포가 바뀌어도 유지되므로 키를 올리지 않으면 옛 값이 계속 나온다.)
 const getTagSlugsCached = (version: string) => unstable_cache(
     async (): Promise<string[]> => {
         const idx = await fetchTagIndex();
         return idx.tags.map((t) => tagToSlug(t.tag)).filter(Boolean);
     },
-    ["tag-slugs-v1", version],
+    ["tag-slugs-v2", version],
     { revalidate: 3600 },
 )();
 
@@ -149,7 +155,7 @@ const getTagCached = (version: string, slug: string) => unstable_cache(
 
         return { entry, related };
     },
-    ["tag-detail-v1", version, slug],
+    ["tag-detail-v2", version, slug],
     { revalidate: 3600 },
 )();
 
