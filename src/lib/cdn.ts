@@ -10,6 +10,8 @@ const BASE =
 
 export const RANKING_URL = `${BASE}/tier0_realtime_ranking.json`;
 export const CHANNELS_URL = `${BASE}/dashboard_tier_channels.json.gz`;
+/** 태그별 급상승 영상 인덱스 (파이프라인의 sync_tag_index 가 생성) */
+export const TAG_INDEX_URL = `${BASE}/tag_index.json.gz`;
 
 export const RANKING_TIER_URLS = {
     all:   `${BASE}/tier0_realtime_ranking_all.json.gz`,
