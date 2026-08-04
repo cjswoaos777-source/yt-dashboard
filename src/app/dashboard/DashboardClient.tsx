@@ -348,11 +348,15 @@ export function DashboardClient({
         if (v === "Long-form") return false;
         return null;
     }
+    // 기본값은 국내다. "한국 유튜브 트렌드"를 표방하는데 전체 기준으로 세우면
+    // 상위가 해외로만 채워지기 때문이다(2026-08-04 실측: TOP 50 이 50개 모두 해외).
+    // 그래서 파라미터가 없으면 국내로 보고, 전체를 보려면 region=전체 를 명시한다.
+    // 기존에 쓰이던 region=국내 / region=해외 링크는 그대로 동작한다.
     function initOrigin(): OriginState {
         const v = searchParams.get("region");
-        if (v === "국내" || v === "DOMESTIC") return "DOMESTIC";
+        if (v === "전체" || v === "ALL") return null;
         if (v === "해외" || v === "IMPORTED") return "IMPORTED";
-        return null;
+        return "DOMESTIC";
     }
     function initTier(): TierKey {
         const v = searchParams.get("tier");
@@ -378,7 +382,8 @@ export function DashboardClient({
 
     function setSortBy(v: SortKey) { setSortByState(v); syncUrl({ sort: v === "hourly_views" ? null : v }); }
     function setIsShorts(v: ShortsState) { setIsShortsState(v); syncUrl({ format: v === true ? "Shorts" : v === false ? "Long-form" : null }); }
-    function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v === "DOMESTIC" ? "국내" : v === "IMPORTED" ? "해외" : null }); }
+    // 기본값(국내)일 때 파라미터를 지워 URL 을 깨끗하게 유지한다.
+    function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v === "DOMESTIC" ? null : v === "IMPORTED" ? "해외" : "전체" }); }
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
     function setTier(v: TierKey) { setTierState(v); syncUrl({ tier: v === "all" ? null : v }); }
 
@@ -521,9 +526,10 @@ export function DashboardClient({
                         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                             <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">지역</span>
                             <div className="flex flex-wrap gap-[6px]">
-                                <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
+                                {/* 기본값인 국내를 맨 앞에 둔다 */}
                                 <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>🇰🇷 국내</Pill>
                                 <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>🌐 해외</Pill>
+                                <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
                             </div>
                         </div>
 

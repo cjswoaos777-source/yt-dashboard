@@ -14,12 +14,12 @@ const DISPLAY_LIMIT = 50;
 export const metadata: Metadata = {
   title: "실시간 떡상 영상 TOP 50",
   description:
-    "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 50. 숏츠/롱폼, 국내/해외, 구독자 구간별 필터로 진짜 떡상 영상을 찾아보세요.",
+    "지금 이 순간 조회수가 폭발적으로 오르고 있는 국내 유튜브 영상 TOP 50. 숏츠/롱폼, 구독자 구간별 필터로 진짜 떡상 영상을 찾아보세요. 해외 트렌드도 함께 볼 수 있습니다.",
   alternates: { canonical: "/dashboard" },
   openGraph: {
     title: "실시간 떡상 영상 TOP 50 | Viral Hunter",
     description:
-      "지금 이 순간 조회수가 폭발적으로 오르고 있는 유튜브 영상 TOP 50. 매시간 자동 갱신됩니다.",
+      "지금 이 순간 조회수가 폭발적으로 오르고 있는 국내 유튜브 영상 TOP 50. 매시간 자동 갱신됩니다.",
     url: `${SITE.url}/dashboard`,
     type: "website",
   },
@@ -56,10 +56,20 @@ const getRankingSnapshot = (version: string) => unstable_cache(
       allVideos = await res.json();
     }
 
-    const videos = [...allVideos]
+    // 기본 화면은 국내 영상만 보여준다. 클라이언트 기본 필터와 반드시 같아야
+    // SSR HTML 과 첫 렌더가 어긋나지 않는다(다르면 목록이 비어 보인다).
+    //
+    // 전체 기준으로 세우면 상위가 해외로만 채워진다. 2026-08-04 실측으로
+    // 15,710건 중 해외가 72.5%였고 TOP 50 이 50개 모두 해외였다.
+    // "한국 유튜브 트렌드"를 표방하는 화면의 첫인상으로는 맞지 않다.
+    const domestic = allVideos.filter((v) => v.origin_type === "DOMESTIC");
+
+    const videos = [...domestic]
       .sort((a, b) => (b.hourly_view_increase ?? 0) - (a.hourly_view_increase ?? 0))
       .slice(0, DISPLAY_LIMIT);
 
+    // 카테고리 목록은 전체 기준으로 뽑는다. 사용자가 해외/전체로 전환했을 때
+    // 선택지가 사라지면 안 되기 때문이다.
     const catSet = new Set<string>();
     for (const v of allVideos) {
       if (v.category_name) catSet.add(v.category_name);
@@ -80,7 +90,8 @@ const getRankingSnapshot = (version: string) => unstable_cache(
   // -v3 + version: Vercel Data Cache 는 배포 간에도 유지되므로, 가공 로직이나
   // 데이터 출처를 바꿀 때는 접미사도 올려야 옛 결과가 계속 서빙되지 않는다.
   // version(ETag)이 키에 있으므로 원본이 바뀌면 자동으로 새 항목이 만들어진다.
-  ["dashboard-ranking-all-v3", version],
+  // -v4: 기본 화면을 국내 우선으로 바꾸면서 가공 결과가 달라져 옛 항목을 무효화한다.
+  ["dashboard-ranking-all-v4", version],
   { revalidate: 3600 }
 )();
 
@@ -105,7 +116,7 @@ export default async function DashboardPage() {
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "실시간 떡상 영상 TOP 50",
+    name: "실시간 국내 떡상 영상 TOP 50",
     url: `${SITE.url}/dashboard`,
     numberOfItems: initialVideos.length,
     itemListElement: initialVideos.slice(0, 10).map((v, i) => ({
