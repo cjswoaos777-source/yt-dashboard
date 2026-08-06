@@ -80,6 +80,12 @@ export function pagesUrls(): SitemapUrl[] {
         { loc: `${b}/dashboard/benchmarking`, changefreq: "hourly", priority: 0.8 },
         { loc: `${b}/channel`, changefreq: "daily", priority: 0.8 },
         { loc: `${b}/tag`, changefreq: "hourly", priority: 0.8 },
+        { loc: `${b}/tier`, changefreq: "daily", priority: 0.7 },
+        // 구독자 구간은 4개로 고정이라 별도 조각 없이 여기 함께 담는다.
+        { loc: `${b}/tier/tier1`, changefreq: "hourly", priority: 0.7 },
+        { loc: `${b}/tier/tier2`, changefreq: "hourly", priority: 0.7 },
+        { loc: `${b}/tier/tier3`, changefreq: "hourly", priority: 0.7 },
+        { loc: `${b}/tier/micro`, changefreq: "hourly", priority: 0.7 },
         { loc: `${b}/notice`, changefreq: "weekly", priority: 0.5 },
         { loc: `${b}/about`, changefreq: "monthly", priority: 0.4 },
     ];

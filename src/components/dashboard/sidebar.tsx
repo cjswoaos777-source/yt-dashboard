@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Menu, X, Zap, Info, Megaphone, ListOrdered, Hash } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Menu, X, Zap, Info, Megaphone, ListOrdered, Hash, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -13,6 +13,7 @@ const menuItems = [
   { title: "벤치마킹", href: "/dashboard/benchmarking", icon: TrendingUp },
   { title: "급상승 채널", href: "/channel", icon: ListOrdered },
   { title: "태그", href: "/tag", icon: Hash },
+  { title: "구독자 구간", href: "/tier", icon: Users },
   { title: "공지사항", href: "/notice", icon: Megaphone },
   { title: "소개", href: "/about", icon: Info },
 ];
