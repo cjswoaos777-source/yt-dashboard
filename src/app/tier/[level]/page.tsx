@@ -118,7 +118,7 @@ export default async function TierPage({
                         {meta.description}
                     </p>
                     <p className="text-[13px] text-neutral-500">
-                        국내{" "}
+                        국내 영상{" "}
                         <strong className="font-semibold text-neutral-700">
                             {snap.totalDomestic.toLocaleString()}건
                         </strong>{" "}
@@ -170,6 +170,13 @@ export default async function TierPage({
                         </li>
                     ))}
                 </ol>
+
+                {/* 이 목록이 무엇인지 밝힌다. '급상승'의 기준을 모르면 숫자를 해석할 수 없다. */}
+                <p className="mt-6 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[12px] leading-relaxed text-neutral-500">
+                    직전 1시간 동안 조회수가 늘어난 양(시간당 증가) 순으로 정렬했습니다.
+                    국내 영상만 대상으로 하며, 매시간 갱신됩니다. 구독자 구간은 영상이 올라온
+                    채널의 구독자 수를 기준으로 나눕니다.
+                </p>
 
                 {/* 다른 구간 — 내부 링크 */}
                 <section className="mt-12 border-t border-neutral-100 pt-8">

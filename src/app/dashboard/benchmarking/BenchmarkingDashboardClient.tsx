@@ -167,7 +167,7 @@ function BenchmarkingInfoPanel() {
                             🔍 순위에 따른 밀착 감시 주기
                         </h4>
                         <p className="mb-3 text-[12px] leading-relaxed text-violet-700">
-                            매일 새벽 1시, 계산된 바이럴 점수에 따라 채널 그룹이 나뉘며 상위 그룹일수록 데이터를 더 자주 수집합니다.
+                            매일 저녁 발굴 작업 때 계산된 바이럴 점수에 따라 채널 그룹이 나뉘며, 상위 그룹일수록 데이터를 더 자주 수집합니다.
                         </p>
                         <ul className="space-y-2 text-[12px] text-violet-700">
                             <li className="flex items-center gap-2">
@@ -378,7 +378,7 @@ export function BenchmarkingDashboardClient({
                     <div className="flex items-center gap-2 mb-4">
                         <span className="inline-flex h-2 w-2 rounded-full bg-violet-500" />
                         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            매일 새벽 1시 갱신 · {formatTargetDate(targetDate)} 기준
+                            매일 저녁 갱신 · {formatTargetDate(targetDate)} 집계
                         </span>
                     </div>
                     <h1 className="flex flex-col leading-none">

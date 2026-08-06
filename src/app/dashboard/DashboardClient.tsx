@@ -433,8 +433,13 @@ export function DashboardClient({
                         {/* '기준'만 쓰면 그 시각의 실시간 값으로 오해하기 쉽다.
                             수집이 매시 정각에 시작해 20분쯤 걸리므로, N시 데이터는
                             N시 25분경에야 화면에 나타난다. 그 사실을 문구에 드러낸다. */}
+                        {/* 지금 어떤 범위를 보고 있는지 헤더에서 바로 알 수 있게 한다.
+                            기본값이 국내라 필터를 확인하지 않으면 전체로 오해할 수 있다. */}
                         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            Live · {updatedAt ? parseUpdatedHour(updatedAt) : "-"} 집계
+                            Live ·{" "}
+                            {origin === "DOMESTIC" ? "국내" : origin === "IMPORTED" ? "해외" : "국내+해외"}
+                            {" · "}
+                            {updatedAt ? parseUpdatedHour(updatedAt) : "-"} 집계
                             <span className="hidden sm:inline"> · 매시 25분경 갱신</span>
                         </span>
                     </div>

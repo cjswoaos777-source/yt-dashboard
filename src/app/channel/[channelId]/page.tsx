@@ -268,7 +268,7 @@ export default async function ChannelDetailPage({
                 </header>
 
                 {/* 지표 카드 */}
-                <section className="mb-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <section className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {stats.map((s) => (
                         <div
                             key={s.label}
@@ -285,6 +285,43 @@ export default async function ChannelDetailPage({
                         </div>
                     ))}
                 </section>
+
+                {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다. */}
+                <details className="mb-12 rounded-2xl border border-neutral-200 bg-white p-5">
+                    <summary className="cursor-pointer text-[13px] font-semibold text-[#1A1A1A]">
+                        각 지표는 무슨 뜻인가요?
+                    </summary>
+                    <dl className="mt-4 space-y-3 text-[13px] leading-relaxed text-[#555555]">
+                        <div>
+                            <dt className="font-medium text-[#1A1A1A]">일평균 증가</dt>
+                            <dd>
+                                최근 측정된 기간의 증가량을 <strong>실제 경과 일수</strong>로 나눈
+                                값입니다. 최대 7일치를 봅니다.
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="font-medium text-[#1A1A1A]">성장 지수</dt>
+                            <dd>
+                                <strong>최근 7일 평균 조회수 ÷ 구독자 수</strong>로 계산합니다
+                                (숏츠 채널은 분모에 3,000, 롱폼은 1,000을 더해 소형 채널의 거품을
+                                걸러냅니다). 조회수 절대량이 아니라{" "}
+                                <strong>구독자 대비 얼마나 잘 나오는지</strong>를 재는 값이라,
+                                구독자가 많을수록 낮게 나옵니다.
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="font-medium text-[#1A1A1A]">순위</dt>
+                            <dd>
+                                한국 유튜브 전체가 아니라, 이 서비스가 추적 중인 채널
+                                {overallTotal.toLocaleString()}개 안에서의 상대 위치입니다.
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="font-medium text-[#1A1A1A]">갱신 주기</dt>
+                            <dd>채널 지표는 매일 저녁 1회 갱신됩니다.</dd>
+                        </div>
+                    </dl>
+                </details>
 
                 {/* 요약 */}
                 <section className="mb-12">
