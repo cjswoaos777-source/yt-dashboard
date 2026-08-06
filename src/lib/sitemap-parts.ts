@@ -86,6 +86,10 @@ export function pagesUrls(): SitemapUrl[] {
         { loc: `${b}/tier/tier2`, changefreq: "hourly", priority: 0.7 },
         { loc: `${b}/tier/tier3`, changefreq: "hourly", priority: 0.7 },
         { loc: `${b}/tier/micro`, changefreq: "hourly", priority: 0.7 },
+        { loc: `${b}/insights`, changefreq: "weekly", priority: 0.7 },
+        { loc: `${b}/insights/upload-time`, changefreq: "weekly", priority: 0.7 },
+        { loc: `${b}/insights/shorts-vs-longform`, changefreq: "weekly", priority: 0.7 },
+        { loc: `${b}/insights/channel-age`, changefreq: "weekly", priority: 0.7 },
         { loc: `${b}/notice`, changefreq: "weekly", priority: 0.5 },
         { loc: `${b}/about`, changefreq: "monthly", priority: 0.4 },
     ];

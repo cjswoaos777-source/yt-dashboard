@@ -12,6 +12,8 @@ export const RANKING_URL = `${BASE}/tier0_realtime_ranking.json`;
 export const CHANNELS_URL = `${BASE}/dashboard_tier_channels.json.gz`;
 /** 태그별 급상승 영상 인덱스 (파이프라인의 sync_tag_index 가 생성) */
 export const TAG_INDEX_URL = `${BASE}/tag_index.json.gz`;
+/** 인사이트 리포트용 집계 (파이프라인의 sync_insights 가 생성, 하루 1회) */
+export const INSIGHTS_URL = `${BASE}/insights.json.gz`;
 
 export const RANKING_TIER_URLS = {
     all:   `${BASE}/tier0_realtime_ranking_all.json.gz`,
