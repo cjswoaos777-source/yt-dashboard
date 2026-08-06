@@ -328,19 +328,37 @@ export default async function InsightReportPage({
                     <div className="mt-4 space-y-3 text-[13px] leading-relaxed text-[#555555]">
                         <p>
                             <strong className="text-[#1A1A1A]">한국 유튜브 전체가 아닙니다.</strong>{" "}
-                            이 서비스가 카테고리별 트렌드 스캔으로 수집한 영상 중, 국내 영상으로
-                            분류된 최근 {data.window_days}일치{" "}
-                            {data.sample_size.toLocaleString()}건을 집계한 결과입니다.
+                            이 서비스가 매일 수집한 영상 중 국내로 분류된 최근 {data.window_days}일치{" "}
+                            {data.sample_size.toLocaleString()}건(채널 약 33,000개)을 집계했습니다.
                         </p>
+                        <p className="font-medium text-[#1A1A1A]">수집 방식</p>
                         <ul className="list-disc space-y-1 pl-5">
-                            <li>표본에 등장하는 채널: 약 33,000개</li>
                             <li>
-                                국내/해외 구분은 영상의 오디오 언어를 우선으로 판정합니다. 언어
-                                정보가 없으면 제목의 한글 비율로 추정하므로 일부 오차가 있습니다.
+                                매일 전날 하루치를 대상으로, 17개 카테고리 × 영상 길이 × 시간 구간을
+                                나눠 유튜브 검색 API를 호출합니다(지역 한국, 언어 한국어).
                             </li>
                             <li>
-                                조회수 {data.min_views.toLocaleString()}회 미만은 제외했지만, 국내
-                                영상의 99%가 이 기준을 넘어 실제 영향은 크지 않습니다.
+                                각 구간에서 <strong className="text-[#1A1A1A]">조회수가 높은
+                                순</strong>으로 최대 50개씩 가져옵니다.
+                            </li>
+                            <li>
+                                수집 시점에 조회수 하한이 걸립니다 —{" "}
+                                <strong className="text-[#1A1A1A]">숏츠 3만 회, 롱폼 1만 회</strong>.
+                            </li>
+                        </ul>
+                        <p className="font-medium text-[#1A1A1A]">그래서 이렇게 읽어야 합니다</p>
+                        <p>
+                            무작위 표본이 아니라{" "}
+                            <strong className="text-[#1A1A1A]">이미 어느 정도 조회수가 나온
+                            영상들</strong>의 모음입니다. 예를 들어 &ldquo;21시에 올리면 잘
+                            된다&rdquo;가 아니라, &ldquo;성과가 난 영상들 중에서는 21시 업로드의
+                            중위 조회수가 높았다&rdquo;가 정확한 표현입니다. 묻히는 영상은 애초에
+                            표본에 들어오지 않으므로 생존 편향이 있습니다.
+                        </p>
+                        <ul className="list-disc space-y-1 pl-5">
+                            <li>
+                                국내/해외 구분은 오디오 언어를 우선 판정하고, 언어 정보가 없으면
+                                제목의 한글 비율로 추정하므로 일부 오차가 있습니다.
                             </li>
                             <li>
                                 평균 대신 중위값을 씁니다. 평균은 초대박 영상 하나에 크게
@@ -348,8 +366,9 @@ export default async function InsightReportPage({
                             </li>
                         </ul>
                         <p>
-                            따라서 이 수치는 <strong className="text-[#1A1A1A]">경향을 보는 참고
-                            자료</strong>이지, 한국 유튜브의 확정된 통계는 아닙니다.
+                            정리하면 이 수치는{" "}
+                            <strong className="text-[#1A1A1A]">경향을 참고하는 자료</strong>이지
+                            한국 유튜브의 확정된 통계는 아닙니다.
                         </p>
                     </div>
                 </details>
