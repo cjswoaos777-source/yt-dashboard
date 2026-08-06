@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
     title: "유튜브 데이터 인사이트",
     description:
-        "국내 유튜브 영상 수십만 건을 집계해 업로드 시간대, 숏츠와 롱폼의 차이, 채널 나이와 성과의 관계를 살펴봅니다. 감이 아니라 실제 데이터로 확인하세요.",
+        "수집한 국내 유튜브 영상 수십만 건을 집계해 업로드 시간대, 숏츠와 롱폼의 차이, 채널 나이와 성과의 관계를 살펴봅니다. 감이 아니라 실제 데이터로 확인하세요.",
     alternates: { canonical: "/insights" },
     openGraph: {
         title: "유튜브 데이터 인사이트 | Viral Hunter",
-        description: "국내 유튜브 영상 수십만 건을 집계한 리포트.",
+        description: "수집한 국내 유튜브 영상 수십만 건을 집계한 리포트.",
         url: `${SITE.url}/insights`,
         type: "website",
     },
@@ -64,7 +64,7 @@ export default async function InsightsIndexPage() {
                         {data && (
                             <>
                                 {" "}
-                                국내 영상{" "}
+                                이 서비스가 수집한 국내 영상{" "}
                                 <strong className="font-semibold text-neutral-700">
                                     {data.sample_size.toLocaleString()}건
                                 </strong>
@@ -94,9 +94,9 @@ export default async function InsightsIndexPage() {
 
                 {data && (
                     <p className="mt-8 text-[12px] leading-relaxed text-neutral-400">
-                        ※ 조회수 {data.min_views.toLocaleString()}회 이상인 국내 영상만 집계했습니다.
-                        노출이 거의 없던 영상까지 넣으면 중위값이 왜곡되기 때문입니다.
-                        데이터는 매일 갱신됩니다.
+                        ※ 한국 유튜브 전체가 아니라, 이 서비스가 카테고리별 트렌드 스캔으로 수집한
+                        범위(채널 약 33,000개) 안의 표본입니다. 경향을 보는 참고 자료로 봐주세요.
+                        각 리포트에 집계 기준을 자세히 적어두었습니다. 데이터는 매일 1회 갱신됩니다.
                     </p>
                 )}
             </main>

@@ -33,8 +33,9 @@ export async function generateMetadata({
     const meta = INSIGHT_REPORTS.find((r) => r.slug === slug)!;
     const data = await getInsights();
 
+    // "국내 유튜브 영상 N건"만 쓰면 전수 조사로 읽히므로 수집 범위임을 밝힌다.
     const desc = data
-        ? `${meta.summary} 국내 유튜브 영상 ${data.sample_size.toLocaleString()}건(최근 ${data.window_days}일)을 집계한 결과입니다.`
+        ? `${meta.summary} 수집된 국내 영상 ${data.sample_size.toLocaleString()}건(최근 ${data.window_days}일) 기준입니다.`
         : meta.summary;
 
     return {
@@ -313,10 +314,45 @@ export default async function InsightReportPage({
                         {meta.title}
                     </h1>
                     <p className="text-[12px] text-neutral-400">
-                        국내 영상 {data.sample_size.toLocaleString()}건 · 최근 {data.window_days}일 ·
-                        조회수 {data.min_views.toLocaleString()}회 이상 · {data.generated_at} 집계
+                        수집된 국내 영상 {data.sample_size.toLocaleString()}건 · 최근{" "}
+                        {data.window_days}일 · {data.generated_at} 집계 · 매일 1회 갱신
                     </p>
                 </header>
+
+                {/* 집계 기준을 먼저 밝힌다. "국내 영상 N건"만 쓰면 한국 유튜브 전수로
+                    읽히는데, 실제로는 이 서비스가 수집한 범위 안의 표본이다. */}
+                <details className="mb-8 rounded-2xl border border-neutral-200 bg-white p-5">
+                    <summary className="cursor-pointer text-[13px] font-semibold text-[#1A1A1A]">
+                        이 숫자는 무엇을 집계한 것인가요?
+                    </summary>
+                    <div className="mt-4 space-y-3 text-[13px] leading-relaxed text-[#555555]">
+                        <p>
+                            <strong className="text-[#1A1A1A]">한국 유튜브 전체가 아닙니다.</strong>{" "}
+                            이 서비스가 카테고리별 트렌드 스캔으로 수집한 영상 중, 국내 영상으로
+                            분류된 최근 {data.window_days}일치{" "}
+                            {data.sample_size.toLocaleString()}건을 집계한 결과입니다.
+                        </p>
+                        <ul className="list-disc space-y-1 pl-5">
+                            <li>표본에 등장하는 채널: 약 33,000개</li>
+                            <li>
+                                국내/해외 구분은 영상의 오디오 언어를 우선으로 판정합니다. 언어
+                                정보가 없으면 제목의 한글 비율로 추정하므로 일부 오차가 있습니다.
+                            </li>
+                            <li>
+                                조회수 {data.min_views.toLocaleString()}회 미만은 제외했지만, 국내
+                                영상의 99%가 이 기준을 넘어 실제 영향은 크지 않습니다.
+                            </li>
+                            <li>
+                                평균 대신 중위값을 씁니다. 평균은 초대박 영상 하나에 크게
+                                끌려갑니다.
+                            </li>
+                        </ul>
+                        <p>
+                            따라서 이 수치는 <strong className="text-[#1A1A1A]">경향을 보는 참고
+                            자료</strong>이지, 한국 유튜브의 확정된 통계는 아닙니다.
+                        </p>
+                    </div>
+                </details>
 
                 <article className="prose-insight space-y-5 text-[15px] leading-[1.85] text-[#333333] [&_h2]:mb-3 [&_h2]:mt-10 [&_h2]:font-serif [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#1A1A1A] [&_strong]:font-semibold [&_strong]:text-[#1A1A1A]">
                     {renderReport(slug, data)}
