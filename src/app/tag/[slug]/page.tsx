@@ -30,6 +30,8 @@ export async function generateMetadata({
         description:
             `'${entry.tag}' 태그가 달린 국내 유튜브 영상 중 지금 조회수가 오르고 있는 ` +
             `${entry.video_count}개를 모았습니다. 시간당 조회수 증가 순으로 정렬되며 매시간 갱신됩니다.`,
+        // 태그 셋은 하루 ~45%가 물갈이된다. 색인 후 404 가 되는 것을 막기 위해 색인 제외.
+        robots: { index: false, follow: true },
         alternates: { canonical: `/tag/${slug}` },
         openGraph: {
             title: `${entry.tag} 급상승 영상 | Viral Hunter`,

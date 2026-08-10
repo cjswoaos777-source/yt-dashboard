@@ -115,22 +115,6 @@ export async function getTagListPage(page: number) {
     return getTagListCached(await getCdnVersion(TAG_INDEX_URL))(page);
 }
 
-/** sitemap 용 slug 목록 */
-// -v2: tagToSlug 규칙이 바뀌면 저장된 slug 도 무효화해야 한다.
-// (Vercel Data Cache 는 배포가 바뀌어도 유지되므로 키를 올리지 않으면 옛 값이 계속 나온다.)
-const getTagSlugsCached = (version: string) => unstable_cache(
-    async (): Promise<string[]> => {
-        const idx = await fetchTagIndex();
-        return idx.tags.map((t) => tagToSlug(t.tag)).filter(Boolean);
-    },
-    ["tag-slugs-v2", version],
-    { revalidate: 3600 },
-)();
-
-export async function getTagSlugs(): Promise<string[]> {
-    return getTagSlugsCached(await getCdnVersion(TAG_INDEX_URL));
-}
-
 /**
  * 단일 태그 조회. slug 로 찾으므로 대소문자·공백 표기가 달라도 걸린다.
  * 없으면 null 을 반환해 호출부에서 404 처리한다.

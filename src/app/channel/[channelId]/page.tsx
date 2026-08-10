@@ -50,6 +50,9 @@ export async function generateMetadata({
     return {
         title,
         description,
+        // 추적 채널 셋이 하루 ~17%씩 회전해 페이지가 수시로 생기고 사라진다.
+        // 색인시켰다가 404 로 만드는 것보다 처음부터 색인 제외가 낫다 (링크는 따라가게 둔다).
+        robots: { index: false, follow: true },
         alternates: { canonical: `/channel/${channelId}` },
         openGraph: {
             title: `${channel.channel_title} 채널 분석 | Viral Hunter`,

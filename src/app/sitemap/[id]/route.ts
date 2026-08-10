@@ -1,15 +1,9 @@
-import {
-    SITEMAP_CHUNK_SIZE,
-    renderUrlset,
-    xmlResponse,
-    pagesUrls,
-    safeChannelIds,
-    safeTagSlugs,
-    chunk,
-    type SitemapUrl,
-} from "@/lib/sitemap-parts";
-import { SITE } from "@/lib/site";
+import { renderUrlset, xmlResponse, pagesUrls } from "@/lib/sitemap-parts";
 
+// 과거 사이트맵 인덱스가 서치콘솔에 등록해 둔 조각 URL(pages / channels-N / tags-N)이
+// 한동안 계속 요청된다. 채널·태그 조각은 색인 제외 정책에 따라 빈 XML 로 답해
+// 서치콘솔이 해당 URL 들을 자연스럽게 잊도록 한다. (HTML 404 를 주면 사이트맵
+// 전체가 거부되므로 반드시 XML 을 반환한다.)
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -18,38 +12,9 @@ export async function GET(
 ) {
     const { id } = await params;
     const name = decodeURIComponent(id).replace(/\.xml$/, "");
-    const b = SITE.url;
 
     if (name === "pages") {
         return xmlResponse(renderUrlset(pagesUrls()));
     }
-
-    const m = name.match(/^(channels|tags)-(\d+)$/);
-    if (!m) {
-        // 알 수 없는 조각도 HTML 404 대신 빈 XML 로 답한다.
-        // 사이트맵 경로에서 HTML 이 나가면 서치콘솔이 전체를 거부한다.
-        return xmlResponse(renderUrlset([]));
-    }
-
-    const [, kind, idxStr] = m;
-    const idx = Number.parseInt(idxStr, 10);
-
-    let urls: SitemapUrl[] = [];
-    if (kind === "channels") {
-        const parts = chunk(await safeChannelIds(), SITEMAP_CHUNK_SIZE);
-        urls = (parts[idx] ?? []).map((cid) => ({
-            loc: `${b}/channel/${cid}`,
-            changefreq: "daily",
-            priority: 0.6,
-        }));
-    } else {
-        const parts = chunk(await safeTagSlugs(), SITEMAP_CHUNK_SIZE);
-        urls = (parts[idx] ?? []).map((slug) => ({
-            loc: `${b}/tag/${slug}`,
-            changefreq: "hourly",
-            priority: 0.6,
-        }));
-    }
-
-    return xmlResponse(renderUrlset(urls));
+    return xmlResponse(renderUrlset([]));
 }

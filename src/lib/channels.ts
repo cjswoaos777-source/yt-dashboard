@@ -96,30 +96,6 @@ async function fetchAllChannels(): Promise<TierChannel[]> {
     return Array.isArray(raw) ? (raw as TierChannel[]) : [];
 }
 
-/**
- * 상세 페이지 생성 대상 채널의 id 목록 (구독자 많은 순).
- * 원본 1.4MB 를 매번 파싱하지 않도록 id 만 추려 캐싱한다.
- */
-const getIndexableChannelIdsCached = (version: string) => unstable_cache(
-    async (): Promise<string[]> => {
-        const all = await fetchAllChannels();
-        // sitemap 용. 상세 페이지 생성 조건(구독자 1만+)과 일치해야 404 가 나지 않는다.
-        // 목록 표시와 달리 성장 여부로 거르지 않는다 — 성장이 멈췄다고 페이지를 없애면
-        // 이미 색인된 URL 이 404 가 되기 때문이다.
-        return all
-            .filter((c) => (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS)
-            .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0))
-            .map((c) => c.channel_id);
-    },
-    ["indexable-channel-ids-v3", version],
-    { revalidate: 3600 },
-)();
-
-/** sitemap 용 채널 id 목록. 원본이 바뀔 때만 다시 계산한다. */
-export async function getIndexableChannelIds(): Promise<string[]> {
-    return getIndexableChannelIdsCached(await getCdnVersion(CHANNELS_URL));
-}
-
 /** 목록 허브 페이지의 한 페이지 크기 */
 export const CHANNEL_LIST_PAGE_SIZE = 100;
 

@@ -1,28 +1,10 @@
-import {
-    SITEMAP_CHUNK_SIZE,
-    renderSitemapIndex,
-    xmlResponse,
-    safeChannelIds,
-    safeTagSlugs,
-} from "@/lib/sitemap-parts";
-import { SITE } from "@/lib/site";
+import { renderUrlset, xmlResponse, pagesUrls } from "@/lib/sitemap-parts";
 
-// 조각 개수를 알려면 데이터 건수가 필요하다. 조회 함수는 ETag 기준으로 캐싱돼 있어
-// 원본이 바뀔 때만 실제로 내려받는다.
+// 채널·태그 상세는 데이터 셋이 매일 크게 회전해(채널 ~17%/일, 태그 ~45%/일)
+// 색인시켜도 곧 404 가 되므로 사이트맵에서 제외하고 페이지에도 noindex 를 달았다.
+// 남는 것은 URL 이 안정적인 정적 페이지 + 공지뿐이라 인덱스 없이 단일 urlset 으로 충분하다.
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-    const b = SITE.url;
-    const locs = [`${b}/sitemap/pages.xml`];
-
-    // 실패해도 인덱스 자체는 나가야 한다. 최소한 pages.xml 은 항상 유효하다.
-    const [channels, tags] = await Promise.all([safeChannelIds(), safeTagSlugs()]);
-
-    const chCount = Math.ceil(channels.length / SITEMAP_CHUNK_SIZE);
-    for (let i = 0; i < chCount; i++) locs.push(`${b}/sitemap/channels-${i}.xml`);
-
-    const tagCount = Math.ceil(tags.length / SITEMAP_CHUNK_SIZE);
-    for (let i = 0; i < tagCount; i++) locs.push(`${b}/sitemap/tags-${i}.xml`);
-
-    return xmlResponse(renderSitemapIndex(locs));
+    return xmlResponse(renderUrlset(pagesUrls()));
 }
