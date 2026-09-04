@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ViralVideo } from "@/lib/viral-types";
 import { RANKING_TIER_URLS, TierKey } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
 import type { NoticeMeta } from "@/lib/notices";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
@@ -396,7 +397,17 @@ export function DashboardClient({
     const refetch = useCallback(() => {
         setLoading(true);
         setError(null);
-        fetchGzipJson<ViralVideo[]>(RANKING_TIER_URLS[tier])
+        // 데이터 출처 스위치. 기본값은 기존과 같은 GitHub gzip 파일이고,
+        // NEXT_PUBLIC_DATA_SOURCE=supabase 일 때만 API 라우트를 거친다.
+        //
+        // GitHub 파일은 조합별 상위 50위만 담고 있어 전체의 12% 뿐이지만,
+        // Supabase 경로는 컷이 없어 limit 만큼 깊이 가져올 수 있다.
+        // 응답 형태가 같아서 아래 처리는 양쪽 모두 그대로 동작한다.
+        const source = isSupabase
+            ? `/api/ranking?tier=${tier}&limit=1000`
+            : RANKING_TIER_URLS[tier];
+
+        fetchGzipJson<ViralVideo[]>(source)
             .then((data) => {
                 setAllVideos(data);
                 const catSet = new Set<string>();
