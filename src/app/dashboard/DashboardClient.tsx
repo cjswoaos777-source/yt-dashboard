@@ -25,7 +25,18 @@ function parseUpdatedHour(raw: string): string {
 type SortKey = "hourly_views" | "total_views" | "hourly_likes" | "hourly_comments";
 type ShortsState = null | boolean;
 type OriginState = null | "DOMESTIC" | "IMPORTED";
+/**
+ * 처음에 그리는 개수.
+ *
+ * 데이터 출처가 GitHub 파일이던 때는 조합별 상위 50위까지만 담겨 있어서
+ * 이 값이 곧 상한이었다. Supabase 로 옮기면서 컷이 사라져 한 번에 1,000건까지
+ * 받아오지만, 카드 1,000개를 한꺼번에 그리면 브라우저가 버벅인다.
+ * 그래서 처음에는 50개만 그리고 나머지는 '더 보기'로 펼친다.
+ */
 const DISPLAY_LIMIT = 50;
+
+/** '더 보기' 한 번에 추가로 펼치는 개수. */
+const PAGE_STEP = 50;
 
 // ─── Tier Config ──────────────────────────────────────────────────────────────
 
@@ -370,6 +381,8 @@ export function DashboardClient({
     const [origin, setOriginState] = useState<OriginState>(initOrigin);
     const [category, setCategoryState] = useState<string | null>(searchParams.get("category"));
     const [tier, setTierState] = useState<TierKey>(initTier);
+    // 지금 몇 개까지 그릴지. 필터를 바꾸면 다시 처음부터 본다(아래 useEffect).
+    const [visibleCount, setVisibleCount] = useState(DISPLAY_LIMIT);
 
     // ── URL 업데이트 헬퍼 ────────────────────────────────────────────────────
     const syncUrl = useCallback((updates: Record<string, string | null>) => {
@@ -422,16 +435,27 @@ export function DashboardClient({
 
 
     // ── 클라이언트 사이드 필터 + 정렬 (재쿼리 없음) ────────────────────────────
-    const videos = useMemo(() => {
+    // 조건에 맞는 '전체' 목록. 화면에 몇 개를 그릴지는 아래 videos 가 정한다.
+    const matched = useMemo(() => {
         let filtered = allVideos;
         if (isShorts === true) filtered = filtered.filter((v) => v.video_type === "Shorts 📱");
         if (isShorts === false) filtered = filtered.filter((v) => v.video_type === "Long-form 📺");
         if (origin !== null) filtered = filtered.filter((v) => v.origin_type === origin);
         if (category !== null) filtered = filtered.filter((v) => v.category_name === category);
-        return [...filtered]
-            .sort((a, b) => getSortValue(b, sortBy) - getSortValue(a, sortBy))
-            .slice(0, DISPLAY_LIMIT);
+        return [...filtered].sort((a, b) => getSortValue(b, sortBy) - getSortValue(a, sortBy));
     }, [allVideos, isShorts, origin, category, sortBy]);
+
+    // 실제로 그리는 것만 잘라낸다.
+    const videos = useMemo(
+        () => matched.slice(0, visibleCount),
+        [matched, visibleCount],
+    );
+
+    // 필터·정렬을 바꾸면 목록의 성격이 달라지므로 다시 처음부터 보여준다.
+    // (200개를 펼쳐둔 상태에서 카테고리를 바꾸면 엉뚱하게 200개가 그대로 보인다)
+    useEffect(() => {
+        setVisibleCount(DISPLAY_LIMIT);
+    }, [isShorts, origin, category, sortBy, tier]);
 
     return (
         <div className="min-h-screen bg-[#FDFDFC]">
@@ -596,7 +620,13 @@ export function DashboardClient({
                 {/* ── Status ────────────────────────────────────────── */}
                 {!error && !loading && (
                     <div className="mb-5">
-                        <p className="text-xs font-medium text-neutral-400">{videos.length}개 영상 표시 중</p>
+                        {/* 전체가 몇 개인지 함께 보여준다. 예전에는 50위가 상한이라
+                            '50개 표시 중'이 곧 전부였지만, 이제는 더 있다는 걸 알려야 한다. */}
+                        <p className="text-xs font-medium text-neutral-400">
+                            {matched.length > videos.length
+                                ? `${matched.length.toLocaleString()}개 중 ${videos.length}개 표시 중`
+                                : `${videos.length}개 영상 표시 중`}
+                        </p>
                     </div>
                 )}
 
@@ -612,11 +642,29 @@ export function DashboardClient({
                         선택한 필터에 해당하는 영상이 없습니다.
                     </div>
                 ) : !error ? (
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {videos.map((video, i) => (
-                            <VideoCard key={video.video_id} video={video} rank={i + 1} sortBy={sortBy} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {videos.map((video, i) => (
+                                <VideoCard key={video.video_id} video={video} rank={i + 1} sortBy={sortBy} />
+                            ))}
+                        </div>
+
+                        {/* 더 보기 — 데이터는 이미 받아둔 상태라 클릭 즉시 펼쳐진다(추가 요청 없음). */}
+                        {matched.length > videos.length && (
+                            <div className="mt-10 flex flex-col items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setVisibleCount((n) => n + PAGE_STEP)}
+                                    className="rounded-full border border-neutral-200 bg-white px-6 py-2.5 text-[13px] font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-50"
+                                >
+                                    더 보기 (+{Math.min(PAGE_STEP, matched.length - videos.length)})
+                                </button>
+                                <p className="text-[11px] text-neutral-400">
+                                    {(matched.length - videos.length).toLocaleString()}개 더 있습니다
+                                </p>
+                            </div>
+                        )}
+                    </>
                 ) : null}
 
 
