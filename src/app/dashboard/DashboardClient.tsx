@@ -416,20 +416,32 @@ export function DashboardClient({
         // GitHub 파일은 조합별 상위 50위만 담고 있어 전체의 12% 뿐이지만,
         // Supabase 경로는 컷이 없어 limit 만큼 깊이 가져올 수 있다.
         // 응답 형태가 같아서 아래 처리는 양쪽 모두 그대로 동작한다.
+        //
+        // 지역을 서버에 넘기는 이유: 시간당 증가 상위는 해외가 압도한다.
+        // 실측으로 상위 1,000건 중 해외가 943건(94%)이라, 지역 구분 없이 받아
+        // 화면에서 걸러내면 국내는 57건만 남는다. 없앴던 50위 컷이 사실상
+        // 되살아나는 셈이라 서버에서 걸러야 한다. (GitHub 파일은 조합별로
+        // 미리 잘라둔 구조라 이 문제가 없었다)
         const source = isSupabase
-            ? `/api/ranking?tier=${tier}&limit=1000`
+            ? `/api/ranking?tier=${tier}&limit=1000` +
+              (origin ? `&origin=${origin}` : "")
             : RANKING_TIER_URLS[tier];
 
         fetchGzipJson<ViralVideo[]>(source)
             .then((data) => {
                 setAllVideos(data);
-                const catSet = new Set<string>();
-                for (const v of data) { if (v.category_name) catSet.add(v.category_name); }
-                setCategories(Array.from(catSet).sort());
+                // 카테고리 목록은 합집합으로 유지한다. 지역으로 걸러 받으면
+                // 그 지역에 없는 카테고리가 목록에서 사라지는데, 사용자가
+                // 지역을 바꿨을 때 선택지가 없어지면 안 된다.
+                setCategories((prev) => {
+                    const set = new Set(prev);
+                    for (const v of data) if (v.category_name) set.add(v.category_name);
+                    return Array.from(set).sort();
+                });
             })
             .catch((e) => { setError(e.message); })
             .finally(() => { setLoading(false); });
-    }, [tier]);
+    }, [tier, origin]);
 
     useEffect(() => { refetch(); }, [refetch]);
 

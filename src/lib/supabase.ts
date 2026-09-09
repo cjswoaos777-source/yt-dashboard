@@ -64,6 +64,14 @@ export interface RankingRow extends ViralVideo {
  */
 export async function fetchRanking(opts: {
     tier?: TierKey;
+    /**
+     * 지역 필터. 서버에서 걸러야 하는 이유가 있다.
+     *
+     * 시간당 증가 상위는 해외가 압도한다(실측: 상위 1,000건 중 해외 943건 = 94%).
+     * 지역 구분 없이 1,000건을 받아 화면에서 걸러내면 국내는 57건만 남아,
+     * 없앴던 50위 컷이 사실상 되살아난다. 대시보드 기본값이 국내라 더 문제다.
+     */
+    origin?: "DOMESTIC" | "IMPORTED";
     limit?: number;
     offset?: number;
 }): Promise<RankingRow[]> {
@@ -79,6 +87,7 @@ export async function fetchRanking(opts: {
 
     // 'all' 은 구간 구분 없이 전체. 나머지는 sub_tier 로 좁힌다.
     if (tier !== "all") q = q.eq("sub_tier", tier);
+    if (opts.origin) q = q.eq("origin_type", opts.origin);
 
     const { data, error } = await q;
     if (error) throw new Error(`Supabase ranking 조회 실패: ${error.message}`);

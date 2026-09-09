@@ -29,10 +29,12 @@ const VALID_TIERS: TierKey[] = ["all", "tier1", "tier2", "tier3", "micro"];
  */
 const REVALIDATE_SECONDS = 1800;
 
-const cachedRanking = (tier: TierKey, limit: number, offset: number) =>
+type Origin = "DOMESTIC" | "IMPORTED" | undefined;
+
+const cachedRanking = (tier: TierKey, origin: Origin, limit: number, offset: number) =>
     unstable_cache(
-        () => fetchRanking({ tier, limit, offset }),
-        ["api-ranking-v1", tier, String(limit), String(offset)],
+        () => fetchRanking({ tier, origin, limit, offset }),
+        ["api-ranking-v2", tier, origin ?? "all", String(limit), String(offset)],
         { revalidate: REVALIDATE_SECONDS },
     )();
 
@@ -49,12 +51,17 @@ export async function GET(request: Request) {
         ? (rawTier as TierKey)
         : "all";
 
+    // 지역 필터. 값이 없거나 이상하면 전체로 둔다.
+    const rawOrigin = searchParams.get("origin");
+    const origin: Origin =
+        rawOrigin === "DOMESTIC" || rawOrigin === "IMPORTED" ? rawOrigin : undefined;
+
     // 상한을 두지 않으면 한 번에 수만 행을 요청해 응답이 커진다.
     const limit = Math.min(toInt(searchParams.get("limit"), 500), 1000);
     const offset = toInt(searchParams.get("offset"), 0);
 
     try {
-        const rows = await cachedRanking(tier, limit, offset);
+        const rows = await cachedRanking(tier, origin, limit, offset);
         return new Response(JSON.stringify(rows), {
             status: 200,
             headers: {
