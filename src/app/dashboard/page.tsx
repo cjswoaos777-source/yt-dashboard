@@ -2,6 +2,8 @@ import { unstable_cache } from "next/cache";
 import { ViralVideo } from "@/lib/viral-types";
 import { DashboardClient } from "./DashboardClient";
 import { RANKING_TIER_URLS, getCdnVersion } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
+import { fetchRanking, fetchCategories } from "@/lib/supabase";
 import { getLatestNotice } from "@/lib/notices";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
@@ -95,14 +97,56 @@ const getRankingSnapshot = (version: string) => unstable_cache(
   { revalidate: 3600 }
 )();
 
+/** '2026-09-09-15' 또는 '15:00' → '15시' */
+function toHourLabel(raw: string): string {
+  const dashMatch = raw.match(/(\d{4}-\d{2}-\d{2})-(\d{1,2})$/);
+  if (dashMatch) return `${parseInt(dashMatch[2], 10)}시`;
+  const colonMatch = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (colonMatch) return `${parseInt(colonMatch[1], 10)}시`;
+  return raw;
+}
+
+/**
+ * Supabase 판 초기 스냅샷.
+ *
+ * GitHub 경로는 1.5MB gzip 을 받아 풀고 14,000개를 파싱한 뒤 50개만 쓴다.
+ * 여기서는 필요한 50행만 받는다. 클라이언트가 마운트 후 Supabase 로 다시
+ * 받으므로, 이 경로가 없으면 서버는 GitHub, 클라이언트는 Supabase 를 읽어
+ * 같은 화면에 두 출처의 비용을 다 내게 된다.
+ *
+ * 국내로 좁히는 것은 클라이언트 기본 필터와 맞추기 위해서다. 어긋나면
+ * SSR HTML 과 첫 렌더가 달라져 목록이 잠깐 비어 보인다.
+ */
+const getSupabaseSnapshot = unstable_cache(
+  async (): Promise<{
+    videos: ViralVideo[];
+    categories: string[];
+    updatedAt: string;
+  }> => {
+    const [rows, categories] = await Promise.all([
+      fetchRanking({ tier: "all", origin: "DOMESTIC", limit: DISPLAY_LIMIT }),
+      fetchCategories(),
+    ]);
+    const videos = rows as unknown as ViralVideo[];
+    const updatedAt = videos[0]?.updated_at ? toHourLabel(videos[0].updated_at) : "";
+    return { videos, categories, updatedAt };
+  },
+  ["dashboard-ssr-supabase-v1"],
+  // 파이프라인이 매시간 적재하므로 30분이면 늦어도 한 시간 안에 반영된다.
+  // 클라이언트가 마운트 직후 다시 받으므로 사용자가 보는 값은 더 빨리 맞춰진다.
+  { revalidate: 1800 },
+);
+
 export default async function DashboardPage() {
   let initialVideos: ViralVideo[] = [];
   let categories: string[] = [];
   let updatedAt = "";
 
   try {
-    const version = await getCdnVersion(RANKING_TIER_URLS.all);
-    const snapshot = await getRankingSnapshot(version);
+    // 출처 스위치. github 로 되돌리면 아래 GitHub 경로가 그대로 살아난다.
+    const snapshot = isSupabase
+      ? await getSupabaseSnapshot()
+      : await getRankingSnapshot(await getCdnVersion(RANKING_TIER_URLS.all));
     initialVideos = snapshot.videos;
     categories = snapshot.categories;
     updatedAt = snapshot.updatedAt;

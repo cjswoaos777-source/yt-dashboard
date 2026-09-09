@@ -94,6 +94,30 @@ export async function fetchRanking(opts: {
     return (data ?? []) as unknown as RankingRow[];
 }
 
+/**
+ * 카테고리 목록.
+ *
+ * 지역·구간과 무관한 '전체 기준'이어야 한다. 사용자가 필터를 바꿨을 때
+ * 선택지가 사라지면 안 되기 때문이다.
+ *
+ * PostgREST 는 DISTINCT 를 직접 지원하지 않아 한 컬럼만 넉넉히 받아 중복을
+ * 없앤다. 텍스트 한 컬럼 1,000행이라 응답이 수십 KB 수준으로 가볍다.
+ */
+export async function fetchCategories(): Promise<string[]> {
+    const { data, error } = await supabase()
+        .from("video_ranking")
+        .select("category_name")
+        .not("category_name", "is", null)
+        .limit(MAX_ROWS);
+    if (error) throw new Error(`Supabase 카테고리 조회 실패: ${error.message}`);
+
+    const set = new Set<string>();
+    for (const r of (data ?? []) as { category_name: string | null }[]) {
+        if (r.category_name) set.add(r.category_name);
+    }
+    return Array.from(set).sort();
+}
+
 /** 이 스냅샷이 몇 시 기준인지. 화면에 "N시 기준"으로 표시된다. */
 export async function fetchUpdatedAt(): Promise<string | null> {
     const { data, error } = await supabase()
