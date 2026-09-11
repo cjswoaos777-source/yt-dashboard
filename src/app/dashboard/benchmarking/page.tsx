@@ -2,6 +2,8 @@ import { unstable_cache } from "next/cache";
 import { TierChannel } from "@/lib/tier-channel-types";
 import { BenchmarkingDashboardClient } from "./BenchmarkingDashboardClient";
 import { CHANNELS_URL, getCdnVersion } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
+import { fetchBenchmarkChannels } from "@/lib/supabase";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 
@@ -95,6 +97,39 @@ const getBenchmarkingSnapshot = (version: string) => unstable_cache(
     { revalidate: 3600 }
 )();
 
+/**
+ * Supabase 판 스냅샷. 같은 결과를 fetchBenchmarkChannels() 에서 만든다.
+ * (성장 중인 채널 전량, sparkline 제외, damped_score 내림차순)
+ *
+ * 최신 target_date 로 거르는 단계는 필요 없다 — 파이프라인이 Supabase 에는
+ * MAX(target_date) 스냅샷만 넣기 때문이다.
+ */
+const getSupabaseSnapshot = unstable_cache(
+    async (): Promise<{
+        channels: TierChannel[];
+        categories: string[];
+        originTypes: string[];
+        targetDate: string | null;
+    }> => {
+        const latest = (await fetchBenchmarkChannels()) as unknown as TierChannel[];
+        const catSet = new Set<string>();
+        const originSet = new Set<string>();
+        for (const ch of latest) {
+            if (ch.main_category && ch.main_category !== "overall") catSet.add(ch.main_category);
+            if (ch.origin_type) originSet.add(ch.origin_type);
+        }
+        return {
+            // fetchBenchmarkChannels 가 이미 damped_score 내림차순이라 앞 60개가 곧 상위다.
+            channels: latest.slice(0, 60),
+            categories: Array.from(catSet).sort(),
+            originTypes: Array.from(originSet).sort(),
+            targetDate: latest[0]?.target_date ?? null,
+        };
+    },
+    ["benchmarking-ssr-supabase-v1"],
+    { revalidate: 1800 },
+);
+
 export default async function BenchmarkingPage() {
     let initialChannels: TierChannel[] = [];
     let categories: string[] = [];
@@ -103,8 +138,9 @@ export default async function BenchmarkingPage() {
     let errorDetail: string | null = null;
 
     try {
-        const version = await getCdnVersion(CHANNELS_URL);
-        const snapshot = await getBenchmarkingSnapshot(version);
+        const snapshot = isSupabase
+            ? await getSupabaseSnapshot()
+            : await getBenchmarkingSnapshot(await getCdnVersion(CHANNELS_URL));
         initialChannels = snapshot.channels;
         categories = snapshot.categories;
         originTypes = snapshot.originTypes;

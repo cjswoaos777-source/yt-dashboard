@@ -118,6 +118,80 @@ export async function fetchCategories(): Promise<string[]> {
     return Array.from(set).sort();
 }
 
+/**
+ * 벤치마킹 페이지용 채널 전체.
+ *
+ * 이 화면은 필터(리그·지역·구간·카테고리)와 정렬을 브라우저에서 하므로
+ * 성장 중인 채널을 전부 들고 있어야 한다. 6,800개 안팎이라 요청당 1,000행
+ * 상한을 넘어 range 로 나눠 받는다. 캐시(30분)를 끼고 있어 이 비용은
+ * 한 번만 든다.
+ *
+ * sparkline_data 는 뺀다. 목록도 카드도 쓰지 않는데 전체의 대부분(7MB)을
+ * 차지한다. GitHub 파일(1.4MB gzip)이 무거웠던 이유가 이것이다.
+ */
+const BENCH_COLUMNS =
+    "channel_id,channel_title,target_date,tier,league_group,origin_type," +
+    "main_category,is_new_channel,subscriber_count,total_view_count," +
+    "damped_score,avg_daily_view_increase,avg_daily_sub_increase," +
+    "top_video_views,video_thumbnail";
+
+/**
+ * 벤치마킹 채널 한 페이지(최대 1,000행).
+ *
+ * 페이지 단위로 노출하는 이유: 전량(6,800행 ≈ 3.2MB)을 한 캐시 항목에 넣으면
+ * Vercel Data Cache 의 항목당 2MB 제한에 걸려 캐시가 아예 안 된다. 페이지마다
+ * 따로 캐시하면 항목당 470KB 라 안전하고, 호출부가 이어 붙이면 전량이 된다.
+ *
+ * 상위 N개로 잘라서 줄이는 방법은 쓰지 않는다. damped_score 상위 2,000개를
+ * 재보니 국내 tier2·tier3 가 0개였다 — 필터를 걸면 빈 화면이 된다.
+ */
+export async function fetchBenchmarkPage(from: number): Promise<Record<string, unknown>[]> {
+    const { data, error } = await supabase()
+        .from("channel_ranking")
+        .select(BENCH_COLUMNS)
+        .gt("avg_daily_view_increase", 0)
+        // 정렬 키가 있어야 페이지가 겹치거나 빠지지 않는다.
+        .order("damped_score", { ascending: false })
+        .order("channel_id")
+        .range(from, from + MAX_ROWS - 1);
+    if (error) throw new Error(`Supabase 벤치마킹 채널 조회 실패: ${error.message}`);
+    // 스키마 타입을 안 넣은 클라이언트라 select 결과 타입이 어긋난다. unknown 을 거친다.
+    return (data ?? []) as unknown as Record<string, unknown>[];
+}
+
+/** 페이지 크기. 호출부가 이 간격으로 fetchBenchmarkPage 를 돈다. */
+export const BENCH_PAGE_SIZE = MAX_ROWS;
+
+/** 벤치마킹 대상 채널 수. 몇 페이지를 받아야 하는지 정할 때 쓴다. */
+export async function fetchBenchmarkCount(): Promise<number> {
+    const { count, error } = await supabase()
+        .from("channel_ranking")
+        .select("channel_id", { count: "exact", head: true })
+        .gt("avg_daily_view_increase", 0);
+    if (error) throw new Error(`Supabase 벤치마킹 채널 수 조회 실패: ${error.message}`);
+    return count ?? 0;
+}
+
+/**
+ * 벤치마킹 페이지용 채널 전체.
+ *
+ * 개수를 먼저 세고 페이지를 한꺼번에 요청한다. 순차로 받으면 페이지당
+ * 뭄바이 왕복이 쌓여 7페이지에 5초 가까이 걸렸다(실측 4.9s). 병렬이면
+ * 가장 느린 한 페이지 시간으로 끝난다.
+ *
+ * pageLoader 를 넘기면 페이지 단위 캐시를 끼울 수 있다. API 라우트가
+ * unstable_cache 로 감싼 로더를 넘겨 페이지마다 따로 캐시한다.
+ */
+export async function fetchBenchmarkChannels(
+    pageLoader: (from: number) => Promise<Record<string, unknown>[]> = fetchBenchmarkPage,
+): Promise<Record<string, unknown>[]> {
+    const total = await fetchBenchmarkCount();
+    const starts: number[] = [];
+    for (let from = 0; from < total; from += BENCH_PAGE_SIZE) starts.push(from);
+    const pages = await Promise.all(starts.map((from) => pageLoader(from)));
+    return pages.flat();
+}
+
 /** 이 스냅샷이 몇 시 기준인지. 화면에 "N시 기준"으로 표시된다. */
 export async function fetchUpdatedAt(): Promise<string | null> {
     const { data, error } = await supabase()

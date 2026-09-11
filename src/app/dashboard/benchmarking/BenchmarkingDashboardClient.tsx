@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { TierChannel } from "@/lib/tier-channel-types";
 import { ChannelBentoCard } from "@/components/dashboard/ChannelBentoCard";
 import { CHANNELS_URL } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
 
 // ─── targetDate 포맷터: '2026-03-31' → '2026.03.31'
 function formatTargetDate(d: string | null): string {
@@ -315,7 +316,10 @@ export function BenchmarkingDashboardClient({
     const refetch = useCallback(() => {
         setLoading(true);
         setError(null);
-        fetch(CHANNELS_URL)
+        // 출처 스위치. Supabase 경로는 sparkline_data 를 뺀 같은 형태의 배열을
+        // 돌려주므로 아래 처리는 양쪽 모두 그대로 동작한다. (이 화면은 그 필드를
+        // 쓰지 않는데 GitHub 파일에서는 그게 용량의 대부분이었다)
+        fetch(isSupabase ? "/api/channels" : CHANNELS_URL)
             .then(async (r) => {
                 if (!r.ok) throw new Error(`CDN ${r.status}`);
                 // Content-Type이 gzip/octet-stream이면 수동 dicompression
