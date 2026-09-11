@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { RANKING_TIER_URLS, getCdnVersion, type TierKey } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
+import { supabase, fetchRanking } from "@/lib/supabase";
 import type { ViralVideo } from "@/lib/viral-types";
 
 /**
@@ -117,8 +119,55 @@ const getTierSnapshotCached = (version: string, level: TierLevel) => unstable_ca
     { revalidate: 3600 },
 )();
 
+/** '2026-09-11-16' → '16시' */
+function toHourLabel(raw: string): string {
+    const m = raw.match(/(\d{4}-\d{2}-\d{2})-(\d{1,2})$/);
+    return m ? `${parseInt(m[2], 10)}시` : raw;
+}
+
+// ─── Supabase 경로 ───────────────────────────────────────────────────────────
+//
+// 건수·합계·카테고리는 tier_stats 뷰에서 구간당 1행으로 받는다.
+// PostgREST 집계 함수가 이 프로젝트에서 꺼져 있고, micro 구간 국내 영상이
+// 1,525행이라 요청당 1,000행 상한을 넘기 때문에 뷰로 미리 묶어두었다.
+// (utube_rank/sql/steps/06_tier_stats_view.sql)
+
+interface TierStatsRow {
+    total: number;
+    total_hourly_increase: number;
+    categories: string[] | null;
+    updated_at: string | null;
+}
+
+const sbTierSnapshot = (level: TierLevel) => unstable_cache(
+    async (): Promise<TierSnapshot> => {
+        const [videos, stats] = await Promise.all([
+            fetchRanking({ tier: level as TierKey, origin: "DOMESTIC", limit: DISPLAY_LIMIT }),
+            supabase()
+                .from("tier_stats")
+                .select("total,total_hourly_increase,categories,updated_at")
+                .eq("sub_tier", level)
+                .eq("origin_type", "DOMESTIC")
+                .maybeSingle(),
+        ]);
+        if (stats.error) throw new Error(`Supabase 구간 집계 조회 실패: ${stats.error.message}`);
+        const s = (stats.data ?? null) as TierStatsRow | null;
+
+        return {
+            videos: videos as unknown as ViralVideo[],
+            totalDomestic: s?.total ?? 0,
+            totalHourlyIncrease: Number(s?.total_hourly_increase ?? 0),
+            categories: s?.categories ?? [],
+            updatedAt: s?.updated_at ? toHourLabel(s.updated_at) : "",
+        };
+    },
+    ["sb-tier-snapshot-v1", level],
+    { revalidate: 1800 },
+)();
+
 export async function getTierSnapshot(level: TierLevel): Promise<TierSnapshot | null> {
     try {
+        if (isSupabase) return await sbTierSnapshot(level);
         const version = await getCdnVersion(RANKING_TIER_URLS[level as TierKey]);
         return await getTierSnapshotCached(version, level);
     } catch {
