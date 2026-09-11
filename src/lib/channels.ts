@@ -303,7 +303,26 @@ export interface ChannelDetail {
     categoryTotal: number;
     /** 같은 카테고리 채널들의 구독자 중위값 — 비교 문장 생성용 */
     categoryMedianSubscribers: number;
+
+    // ── 아카이브 이력 (Supabase 경로에서만 채워진다) ──
+    /**
+     * 오늘 순위에 있는가. false 면 아래 값들은 '마지막 수집 시점'의 기록이고,
+     * 순위(overallRank 등)는 0 이다. 화면은 이 값으로 현재/기록을 구분해 보여준다.
+     */
+    isCurrent: boolean;
+    /** 처음 순위에 오른 날 (YYYY-MM-DD). GitHub 경로는 null */
+    firstSeen: string | null;
+    /** 마지막으로 순위에 있던 날 */
+    lastSeen: string | null;
+    /**
+     * 총 등장 일수. 색인 정책의 근거다 — 하루만 스쳐간 채널은 데이터가 얇아
+     * 구글이 '내용 없는 페이지'로 볼 수 있으므로 noindex 로 둔다.
+     */
+    daysSeen: number;
 }
+
+/** 이 채널 페이지를 색인시켜도 되는 최소 등장 일수 */
+export const CHANNEL_INDEX_MIN_DAYS = 3;
 
 function getChannelCached(channelId: string, version: string) {
     return unstable_cache(
@@ -339,6 +358,11 @@ function getChannelCached(channelId: string, version: string) {
                 categoryRank: sameCategory.findIndex((c) => c.channel_id === channelId) + 1,
                 categoryTotal: sameCategory.length,
                 categoryMedianSubscribers,
+                // GitHub 파일에는 이력이 없다. 순위 파일에 있으면 곧 '현재'다.
+                isCurrent: true,
+                firstSeen: null,
+                lastSeen: null,
+                daysSeen: 0,
             };
         },
         ["channel-detail-v3", channelId, version],
@@ -389,39 +413,73 @@ const sbRankContext = unstable_cache(
     { revalidate: SB_REVALIDATE },
 );
 
+/**
+ * 채널 상세 — 아카이브 기반.
+ *
+ * 출처가 두 개다.
+ *   channel_archive   한 번 순위에 오른 채널의 영구 기록. 여기 있으면 페이지가 있다.
+ *   channel_ranking   오늘 순위. 여기 있으면 '현재'이고 순위·추이를 붙인다.
+ *
+ * 순위에서 빠진 채널은 아카이브의 마지막 값으로 그리되 isCurrent=false 로 표시해
+ * 화면이 "N일 전 기록"임을 밝힌다. 이렇게 해야 URL 이 사라지지 않아 색인이
+ * 유지되고, 채널 이름으로 검색해 들어온 사람이 404 대신 정보를 본다.
+ */
 function sbChannelCached(channelId: string) {
     return unstable_cache(
         async (): Promise<ChannelDetail | null> => {
-            const { data, error } = await supabase()
+            const sb = supabase();
+
+            // ① 아카이브 — 페이지 존재 여부는 여기서 정한다.
+            const { data: arc, error: aErr } = await sb
+                .from("channel_archive")
+                .select("*")
+                .eq("channel_id", channelId)
+                .maybeSingle();
+            if (aErr) throw new Error(`Supabase 아카이브 조회 실패: ${aErr.message}`);
+            if (!arc) return null;
+
+            // ② 오늘 순위 — 있으면 현재 값과 추이를 쓴다.
+            const { data: cur, error: cErr } = await sb
                 .from("channel_ranking")
                 .select("*")
                 .eq("channel_id", channelId)
                 .maybeSingle();
-            if (error) throw new Error(`Supabase 채널 조회 실패: ${error.message}`);
-            if (!data) return null;
+            if (cErr) throw new Error(`Supabase 채널 조회 실패: ${cErr.message}`);
 
-            const channel = data as unknown as TierChannel;
+            const isCurrent = Boolean(cur);
+            // 현재 값이 있으면 그걸, 없으면 아카이브의 마지막 값을 쓴다.
+            const channel = (cur ?? arc) as unknown as TierChannel;
             if ((channel.subscriber_count ?? 0) < CHANNEL_PAGE_MIN_SUBSCRIBERS) return null;
 
-            // 순위는 공유 캐시에서 계산한다. 이 채널 때문에 새로 받지 않는다.
-            const ctx = await sbRankContext();
-            const sameCategory = ctx.filter((c) => c.main_category === channel.main_category);
-            const catSubs = sameCategory.map((c) => c.subscriber_count).sort((a, b) => a - b);
+            // 순위는 오늘 순위에 있을 때만 의미가 있다.
+            let overallRank = 0, overallTotal = 0, categoryRank = 0, categoryTotal = 0;
+            let categoryMedianSubscribers = 0;
+            if (isCurrent) {
+                const ctx = await sbRankContext();
+                const sameCategory = ctx.filter((c) => c.main_category === channel.main_category);
+                const catSubs = sameCategory.map((c) => c.subscriber_count).sort((a, b) => a - b);
+                overallRank = ctx.findIndex((c) => c.channel_id === channelId) + 1;
+                overallTotal = ctx.length;
+                categoryRank = sameCategory.findIndex((c) => c.channel_id === channelId) + 1;
+                categoryTotal = sameCategory.length;
+                categoryMedianSubscribers = catSubs.length
+                    ? catSubs[Math.floor(catSubs.length / 2)]
+                    : 0;
+            }
 
+            const a = arc as { first_seen: string; last_seen: string; days_seen: number };
             return {
                 channel,
-                // jsonb 라 이미 배열로 온다. parseSparkline 은 배열을 그대로 돌려준다.
-                sparkline: cleanSparkline(parseSparkline(channel.sparkline_data)),
-                overallRank: ctx.findIndex((c) => c.channel_id === channelId) + 1,
-                overallTotal: ctx.length,
-                categoryRank: sameCategory.findIndex((c) => c.channel_id === channelId) + 1,
-                categoryTotal: sameCategory.length,
-                categoryMedianSubscribers: catSubs.length
-                    ? catSubs[Math.floor(catSubs.length / 2)]
-                    : 0,
+                // 추이는 오늘 순위에 있을 때만 있다 (아카이브엔 sparkline 을 넣지 않는다).
+                sparkline: isCurrent ? cleanSparkline(parseSparkline(channel.sparkline_data)) : [],
+                overallRank, overallTotal, categoryRank, categoryTotal, categoryMedianSubscribers,
+                isCurrent,
+                firstSeen: a.first_seen ?? null,
+                lastSeen: a.last_seen ?? null,
+                daysSeen: a.days_seen ?? 0,
             };
         },
-        ["sb-channel-detail-v1", channelId],
+        ["sb-channel-detail-v2", channelId],
         { revalidate: SB_REVALIDATE },
     )();
 }

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, TrendingUp, Users, Eye, Video } from "lucide-react";
 import type { Metadata } from "next";
-import { getChannel, isAwaitingBaseline } from "@/lib/channels";
+import { getChannel, isAwaitingBaseline, CHANNEL_INDEX_MIN_DAYS } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
 
@@ -39,20 +39,35 @@ export async function generateMetadata({
     const data = await getChannel(channelId);
     if (!data) return { title: "채널을 찾을 수 없습니다", robots: { index: false } };
 
-    const { channel, categoryRank, categoryTotal } = data;
+    const { channel, categoryRank, categoryTotal, isCurrent, daysSeen, lastSeen } = data;
     const title = `${channel.channel_title} 채널 분석 — 구독자·조회수 추이`;
+    const rankSentence = isCurrent
+        ? `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). `
+        : `${channel.main_category} 카테고리. ${lastSeen ?? ""}까지 급상승 순위에 올랐던 채널. `;
     const description =
         `${channel.channel_title}의 구독자 ${fmtKr(channel.subscriber_count, "명")}, ` +
         `누적 조회수 ${fmtKr(channel.total_view_count, "회")}. ` +
-        `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). ` +
+        rankSentence +
         `일평균 조회수 증가와 성장 지수를 매일 저녁 갱신되는 데이터로 확인하세요.`;
+
+    // [2026-09-11] 색인 정책을 '등장 일수'로 정한다.
+    //
+    // 전에는 무조건 noindex 였다 — 채널 셋이 하루 ~17%씩 회전해 색인시킨 페이지가
+    // 곧 404 가 됐기 때문이다. 이제 페이지는 channel_archive(영구 기록)에 묶여
+    // 순위에서 빠져도 사라지지 않으므로 그 걱정은 없다.
+    //
+    // 남은 걱정은 '얇은 페이지'다. 하루만 스쳐간 채널은 보여줄 데이터가 거의 없어
+    // 구글이 내용 없는 페이지로 볼 수 있다. 며칠 이상 등장한 채널만 색인시킨다.
+    // (Search Console 에서 채널 이름이 검색 유입 키워드로 잡히는 것을 확인했다 —
+    //  이 페이지들이 실제로 찾아지고 있다)
+    //
+    // GitHub 경로는 daysSeen 이 0 이라 여전히 noindex 다.
+    const indexable = daysSeen >= CHANNEL_INDEX_MIN_DAYS;
 
     return {
         title,
         description,
-        // 추적 채널 셋이 하루 ~17%씩 회전해 페이지가 수시로 생기고 사라진다.
-        // 색인시켰다가 404 로 만드는 것보다 처음부터 색인 제외가 낫다 (링크는 따라가게 둔다).
-        robots: { index: false, follow: true },
+        robots: { index: indexable, follow: true },
         alternates: { canonical: `/channel/${channelId}` },
         openGraph: {
             title: `${channel.channel_title} 채널 분석 | Viral Hunter`,
@@ -84,11 +99,21 @@ export default async function ChannelDetailPage({
         categoryRank,
         categoryTotal,
         categoryMedianSubscribers,
+        isCurrent,
+        firstSeen,
+        lastSeen,
+        daysSeen,
     } = data;
 
     // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
     // 그냥 항목을 숨기면 왜 없는지 알 수 없으므로 이유를 밝힌다.
     const awaitingBaseline = isAwaitingBaseline(channel);
+
+    // 순위에서 빠진 채널: 아카이브의 마지막 값을 보여주되, 그것이 '지금'이 아님을
+    // 문장과 배너로 분명히 한다. 오래된 숫자를 현재처럼 읽히게 두면 안 된다.
+    const daysAgo = lastSeen
+        ? Math.max(0, Math.round((Date.now() - new Date(`${lastSeen}T00:00:00+09:00`).getTime()) / 86_400_000))
+        : null;
 
     // 수집 데이터로 만드는 요약 문장 — 페이지마다 내용이 달라지도록 수치 기반으로 구성한다.
     const subMultiple =
@@ -99,21 +124,29 @@ export default async function ChannelDetailPage({
         `${channel.channel_title}은(는) ${channel.main_category} 카테고리에 속한 ` +
             `${LEAGUE_LABEL[channel.league_group] ?? channel.league_group} 채널로, ` +
             `구독자 ${fmtKr(channel.subscriber_count, "명")}을 보유하고 있습니다.`,
-        subMultiple >= 1.1
-            ? `같은 카테고리 채널의 구독자 중위값(${fmtKr(categoryMedianSubscribers, "명")}) 대비 ` +
-              `약 ${subMultiple.toFixed(1)}배 규모로, 카테고리 ${categoryRank}위에 해당합니다.`
-            : `같은 카테고리 채널의 구독자 중위값은 ${fmtKr(categoryMedianSubscribers, "명")}이며, ` +
-              `이 채널은 카테고리 ${categoryRank}위(총 ${categoryTotal.toLocaleString()}개)입니다.`,
+        // 순위 비교 문장은 오늘 순위에 있을 때만. 기록 모드에서는 이력 문장으로 대체한다.
+        !isCurrent
+            ? `${firstSeen ?? "?"}부터 ${lastSeen ?? "?"}까지 총 ${daysSeen}일 급상승 순위에 올랐으며, ` +
+              `현재는 순위에 없습니다. 아래 수치는 ${lastSeen ?? "마지막 수집일"} 기준입니다.`
+            : subMultiple >= 1.1
+              ? `같은 카테고리 채널의 구독자 중위값(${fmtKr(categoryMedianSubscribers, "명")}) 대비 ` +
+                `약 ${subMultiple.toFixed(1)}배 규모로, 카테고리 ${categoryRank}위에 해당합니다.`
+              : `같은 카테고리 채널의 구독자 중위값은 ${fmtKr(categoryMedianSubscribers, "명")}이며, ` +
+                `이 채널은 카테고리 ${categoryRank}위(총 ${categoryTotal.toLocaleString()}개)입니다.`,
         channel.avg_daily_view_increase > 0
-            ? `최근 일평균 조회수는 ${fmtKr(channel.avg_daily_view_increase, "회")}씩 증가하고 있으며, ` +
+            ? `${isCurrent ? "최근" : "마지막 수집 시점"} 일평균 조회수는 ${fmtKr(channel.avg_daily_view_increase, "회")}씩 증가${isCurrent ? "하고 있으며" : "했으며"}, ` +
               `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`
             : awaitingBaseline
               ? `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}이며, ` +
                 `추적을 막 시작해 일평균 증가량은 아직 산출되지 않았습니다.`
               : `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`,
-        channel.is_new_channel
-            ? `최근 새로 편입된 채널로, 성장 추이를 지켜볼 만합니다.`
-            : `전체 분석 대상 ${overallTotal.toLocaleString()}개 채널 중 구독자 ${overallRank.toLocaleString()}위입니다.`,
+        !isCurrent
+            ? (daysSeen >= 7
+                ? `${daysSeen}일간 순위를 유지했던 채널이라 당시 흐름을 참고할 만합니다.`
+                : `짧게 순위에 올랐던 채널이라 참고 데이터가 제한적입니다.`)
+            : channel.is_new_channel
+              ? `최근 새로 편입된 채널로, 성장 추이를 지켜볼 만합니다.`
+              : `전체 분석 대상 ${overallTotal.toLocaleString()}개 채널 중 구독자 ${overallRank.toLocaleString()}위입니다.`,
     ];
 
     const stats = [
@@ -214,8 +247,28 @@ export default async function ChannelDetailPage({
                 </Link>
 
                 {/* 헤더 */}
+                {/* 순위에서 빠진 채널 — 이 페이지가 '기록'임을 가장 먼저 알린다.
+                    숫자를 먼저 보고 현재로 오해하는 일이 없도록 헤더 위에 둔다. */}
+                {!isCurrent && (
+                    <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-[13px] leading-relaxed text-amber-900">
+                        <strong className="font-semibold">지금은 급상승 순위에 없는 채널입니다.</strong>{" "}
+                        {firstSeen && lastSeen && (
+                            <>
+                                {firstSeen} ~ {lastSeen} 사이 {daysSeen}일 순위에 올랐고,
+                                {daysAgo !== null && ` 마지막 수집은 ${daysAgo}일 전입니다.`}
+                            </>
+                        )}{" "}
+                        아래 수치는 <strong className="font-semibold">마지막 수집 시점</strong> 기준이며 현재 값과 다를 수 있습니다.
+                    </div>
+                )}
+
                 <header className="mb-10">
                     <div className="mb-5 flex flex-wrap items-center gap-2">
+                        {!isCurrent && (
+                            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+                                기록
+                            </span>
+                        )}
                         <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600">
                             {TIER_LABEL[channel.tier] ?? `Tier ${channel.tier}`}
                         </span>
@@ -346,7 +399,15 @@ export default async function ChannelDetailPage({
                         <SparklineChart points={sparkline} />
                     ) : (
                         <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-[13px] text-neutral-400">
-                            {awaitingBaseline ? (
+                            {!isCurrent ? (
+                                <>
+                                    순위에서 빠진 채널은 일별 추이를 보관하지 않습니다.
+                                    <br />
+                                    <span className="text-[12px] text-neutral-400">
+                                        다시 급상승 순위에 오르면 추이가 표시됩니다.
+                                    </span>
+                                </>
+                            ) : awaitingBaseline ? (
                                 <>
                                     이 채널은 추적을 막 시작해 비교할 이전 측정값이 없습니다.
                                     <br />
