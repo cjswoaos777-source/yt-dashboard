@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { INSIGHTS_URL, getCdnVersion } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
+import { supabase } from "@/lib/supabase";
 
 /**
  * 인사이트 리포트 데이터.
@@ -79,9 +81,30 @@ const getInsightsCached = (version: string) => unstable_cache(
     { revalidate: 3600 },
 )();
 
+/**
+ * Supabase 경로. insights 테이블의 'latest' 1행에서 payload 를 그대로 읽는다.
+ * 파일과 같은 모양이라 아래 화면 코드가 바뀌지 않는다.
+ * 하루 1회 갱신되는 값이라 캐시를 길게 잡아도 된다.
+ */
+const getInsightsFromSupabase = unstable_cache(
+    async (): Promise<Insights> => {
+        const { data, error } = await supabase()
+            .from("insights")
+            .select("payload")
+            .eq("id", "latest")
+            .maybeSingle();
+        if (error) throw new Error(`Supabase 인사이트 조회 실패: ${error.message}`);
+        if (!data?.payload) throw new Error("인사이트 데이터가 아직 없습니다");
+        return data.payload as Insights;
+    },
+    ["sb-insights-v1"],
+    { revalidate: 3600 },
+);
+
 /** 실패하면 null. 호출부에서 404 로 처리해 빈 페이지가 색인되지 않게 한다. */
 export async function getInsights(): Promise<Insights | null> {
     try {
+        if (isSupabase) return await getInsightsFromSupabase();
         return await getInsightsCached(await getCdnVersion(INSIGHTS_URL));
     } catch {
         return null;
