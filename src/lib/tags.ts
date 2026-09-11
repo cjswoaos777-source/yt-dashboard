@@ -1,5 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { TAG_INDEX_URL, getCdnVersion } from "@/lib/cdn";
+import { isSupabase } from "@/lib/datasource";
+import { supabase } from "@/lib/supabase";
 
 export interface TagVideo {
     video_id: string;
@@ -111,7 +113,62 @@ const getTagListCached = (version: string) => unstable_cache(
     { revalidate: 3600 },
 );
 
+// ─── Supabase 경로 ───────────────────────────────────────────────────────────
+//
+// GitHub 경로는 태그 1개를 보려고 1MB 인덱스(태그 2,600개 + 영상 배열)를
+// 통째로 받아 파싱했고, 캐시 키에 slug 가 들어 있어 태그마다 그 일을 따로 했다.
+// 여기서는 tag / tag_video / video_ranking 세 테이블에서 필요한 행만 받는다.
+
+const SB_REVALIDATE = 1800;
+
+const sbTagList = unstable_cache(
+    async (
+        page: number,
+    ): Promise<{
+        items: Omit<TagEntry, "videos">[];
+        total: number;
+        totalPages: number;
+        updatedAt: string;
+    }> => {
+        const sb = supabase();
+
+        const { count, error: cErr } = await sb
+            .from("tag")
+            .select("slug", { count: "exact", head: true });
+        if (cErr) throw new Error(`Supabase 태그 수 조회 실패: ${cErr.message}`);
+        const total = count ?? 0;
+
+        const totalPages = Math.max(1, Math.ceil(total / TAG_LIST_PAGE_SIZE));
+        const safePage = Math.min(Math.max(1, page), totalPages);
+        const start = (safePage - 1) * TAG_LIST_PAGE_SIZE;
+
+        const { data, error } = await sb
+            .from("tag")
+            .select("tag,video_count,total_hourly_increase")
+            .order("total_hourly_increase", { ascending: false })
+            .range(start, start + TAG_LIST_PAGE_SIZE - 1);
+        if (error) throw new Error(`Supabase 태그 목록 조회 실패: ${error.message}`);
+
+        // 인덱스 파일에 있던 updated_at 은 테이블에 없다. 영상 스냅샷 시각을 쓴다.
+        const { data: up } = await sb
+            .from("video_ranking")
+            .select("updated_at")
+            .order("updated_at", { ascending: false })
+            .limit(1);
+
+        return {
+            items: (data ?? []) as Omit<TagEntry, "videos">[],
+            total,
+            totalPages,
+            updatedAt: up?.[0]?.updated_at ?? "",
+        };
+    },
+    ["sb-tag-list-v1"],
+    { revalidate: SB_REVALIDATE },
+);
+
 export async function getTagListPage(page: number) {
+    if (isSupabase) return sbTagList(page);
     return getTagListCached(await getCdnVersion(TAG_INDEX_URL))(page);
 }
 
@@ -143,6 +200,94 @@ const getTagCached = (version: string, slug: string) => unstable_cache(
     { revalidate: 3600 },
 )();
 
+/** TagVideo 로 그대로 매핑되는 컬럼 */
+const TAG_VIDEO_COLUMNS =
+    "video_id,title,channel_title,category_name,sub_tier,video_type," +
+    "total_views,hourly_view_increase,updated_at";
+
+function sbTagCached(slug: string) {
+    return unstable_cache(
+        async (): Promise<{ entry: TagEntry; related: string[] } | null> => {
+            const sb = supabase();
+
+            // ① 태그 본체. slug 가 기본키라 바로 찾는다.
+            const { data: t, error: tErr } = await sb
+                .from("tag")
+                .select("slug,tag,video_count,total_hourly_increase")
+                .eq("slug", slug)
+                .maybeSingle();
+            if (tErr) throw new Error(`Supabase 태그 조회 실패: ${tErr.message}`);
+            if (!t) return null;
+
+            // ② 이 태그의 영상 id 들 (순위대로). 태그당 최대 30개다.
+            const { data: links, error: lErr } = await sb
+                .from("tag_video")
+                .select("video_id,rank")
+                .eq("tag_slug", slug)
+                .order("rank");
+            if (lErr) throw new Error(`Supabase 태그-영상 조회 실패: ${lErr.message}`);
+            const ids = (links ?? []).map((l) => l.video_id as string);
+
+            // ③ 영상 상세. tag_video 는 video_ranking 과 외래키가 없어 PostgREST 가
+            //    자동으로 묶어주지 못하므로 id 로 따로 받아 순위대로 다시 세운다.
+            //    (파이프라인이 두 테이블을 같은 스냅샷에서 TRUNCATE+COPY 하지만
+            //     별개 트랜잭션은 아니라서, 외래키를 걸면 적재 순서 제약이 생긴다)
+            let videos: TagVideo[] = [];
+            if (ids.length > 0) {
+                const { data: vs, error: vErr } = await sb
+                    .from("video_ranking")
+                    .select(TAG_VIDEO_COLUMNS)
+                    .in("video_id", ids);
+                if (vErr) throw new Error(`Supabase 태그 영상 조회 실패: ${vErr.message}`);
+                const byId = new Map(
+                    ((vs ?? []) as unknown as TagVideo[]).map((v) => [v.video_id, v]),
+                );
+                videos = ids.map((id) => byId.get(id)).filter((v): v is TagVideo => Boolean(v));
+            }
+
+            // ④ 관련 태그 — 이 태그의 영상들에 함께 달린 다른 태그.
+            //
+            //    GitHub 경로는 '같은 카테고리에 속한 태그'를 골랐는데, 그러려면
+            //    태그 2,600개의 영상 배열을 전부 훑어야 했다. 여기서는 영상을
+            //    실제로 공유하는 태그를 고른다. 한 번의 조회로 끝나고, 같은 영상에
+            //    함께 달린 태그라 '관련' 이라는 뜻에도 더 가깝다.
+            let related: string[] = [];
+            if (ids.length > 0) {
+                const { data: co, error: cErr } = await sb
+                    .from("tag_video")
+                    .select("tag_slug, tag!inner(tag)")
+                    .in("video_id", ids)
+                    .neq("tag_slug", slug)
+                    .limit(200);
+                if (cErr) throw new Error(`Supabase 관련 태그 조회 실패: ${cErr.message}`);
+
+                // 같은 태그가 여러 영상에 걸리면 여러 번 나온다. 많이 겹칠수록
+                // 관련이 깊다고 보고, 겹친 횟수순으로 12개를 고른다.
+                const freq = new Map<string, number>();
+                for (const row of (co ?? []) as unknown as { tag: { tag: string } | null }[]) {
+                    const name = row.tag?.tag;
+                    if (name) freq.set(name, (freq.get(name) ?? 0) + 1);
+                }
+                related = Array.from(freq.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 12)
+                    .map(([name]) => name);
+            }
+
+            const entry: TagEntry = {
+                tag: t.tag,
+                video_count: t.video_count,
+                total_hourly_increase: t.total_hourly_increase,
+                videos,
+            };
+            return { entry, related };
+        },
+        ["sb-tag-detail-v1", slug],
+        { revalidate: SB_REVALIDATE },
+    )();
+}
+
 export async function getTag(slug: string) {
+    if (isSupabase) return sbTagCached(slug);
     return getTagCached(await getCdnVersion(TAG_INDEX_URL), slug);
 }
