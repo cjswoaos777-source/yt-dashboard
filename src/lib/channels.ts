@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { CHANNELS_URL, getCdnVersion } from "@/lib/cdn";
 import { CHANNEL_PAGE_MIN_SUBSCRIBERS } from "@/lib/channel-constants";
+import { isSupabase } from "@/lib/datasource";
+import { supabase } from "@/lib/supabase";
 import type { TierChannel, SparklinePoint } from "@/lib/tier-channel-types";
 
 export { CHANNEL_PAGE_MIN_SUBSCRIBERS };
@@ -177,8 +179,61 @@ const getChannelListPageCached = (version: string) => unstable_cache(
     { revalidate: 3600 },
 );
 
-/** 목록 허브 한 페이지. 원본이 바뀔 때만 다시 계산한다. */
+// ─── Supabase 경로 ───────────────────────────────────────────────────────────
+//
+// GitHub 경로는 함수마다 1.3MB gzip 을 받아 풀고 8,000개를 파싱한 뒤 걸러낸다.
+// 여기서는 조건을 쿼리로 넘겨 필요한 행만 받는다. 파이프라인이 매시간
+// TRUNCATE + COPY 로 통째로 갈아끼우므로 30분 캐시면 늦어도 한 시간 안에 반영된다.
+
+const SB_REVALIDATE = 1800;
+
+/** 목록 표시에 필요한 컬럼만. sparkline 같은 큰 필드는 받지 않는다. */
+const LIST_COLUMNS =
+    "channel_id,channel_title,main_category,subscriber_count," +
+    "total_view_count,avg_daily_view_increase,tier";
+
+const sbListPage = unstable_cache(
+    async (
+        page: number,
+    ): Promise<{ items: ChannelListItem[]; total: number; totalPages: number }> => {
+        const sb = supabase();
+
+        // 기준: 구독자 1만 이상 + 성장이 멈추지 않은 채널. GitHub 경로와 같다.
+        // 전체 건수는 head:true 로 행 없이 개수만 받는다.
+        const { count, error: cErr } = await sb
+            .from("channel_ranking")
+            .select("channel_id", { count: "exact", head: true })
+            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
+            .gt("avg_daily_view_increase", 0);
+        if (cErr) throw new Error(`Supabase 채널 수 조회 실패: ${cErr.message}`);
+        const total = count ?? 0;
+
+        const totalPages = Math.max(1, Math.ceil(total / CHANNEL_LIST_PAGE_SIZE));
+        const safePage = Math.min(Math.max(1, page), totalPages);
+        const start = (safePage - 1) * CHANNEL_LIST_PAGE_SIZE;
+
+        const { data, error } = await sb
+            .from("channel_ranking")
+            .select(LIST_COLUMNS)
+            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
+            .gt("avg_daily_view_increase", 0)
+            .order("avg_daily_view_increase", { ascending: false })
+            .range(start, start + CHANNEL_LIST_PAGE_SIZE - 1);
+        if (error) throw new Error(`Supabase 채널 목록 조회 실패: ${error.message}`);
+
+        return {
+            items: ((data ?? []) as unknown as TierChannel[]).map(toListItem),
+            total,
+            totalPages,
+        };
+    },
+    ["sb-channel-list-v1"],
+    { revalidate: SB_REVALIDATE },
+);
+
+/** 목록 허브 한 페이지. 출처 스위치에 따라 GitHub 파일 또는 Supabase 를 읽는다. */
 export async function getChannelListPage(page: number) {
+    if (isSupabase) return sbListPage(page);
     const version = await getCdnVersion(CHANNELS_URL);
     return getChannelListPageCached(version)(page);
 }
@@ -207,7 +262,26 @@ const getNewlyTrackedCached = (version: string) => unstable_cache(
     { revalidate: 3600 },
 )();
 
+const sbNewlyTracked = unstable_cache(
+    async (): Promise<ChannelListItem[]> => {
+        // isAwaitingBaseline() 과 같은 조건을 쿼리로 옮긴 것:
+        // is_new_channel 이고 일평균이 0 (= 두 번째 측정 전이라 계산 불가)
+        const { data, error } = await supabase()
+            .from("channel_ranking")
+            .select(LIST_COLUMNS)
+            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
+            .eq("is_new_channel", true)
+            .eq("avg_daily_view_increase", 0)
+            .order("subscriber_count", { ascending: false });
+        if (error) throw new Error(`Supabase 신규 채널 조회 실패: ${error.message}`);
+        return ((data ?? []) as unknown as TierChannel[]).map(toListItem);
+    },
+    ["sb-newly-tracked-v1"],
+    { revalidate: SB_REVALIDATE },
+);
+
 export async function getNewlyTrackedChannels(): Promise<ChannelListItem[]> {
+    if (isSupabase) return sbNewlyTracked();
     return getNewlyTrackedCached(await getCdnVersion(CHANNELS_URL));
 }
 
@@ -272,7 +346,88 @@ function getChannelCached(channelId: string, version: string) {
     )();
 }
 
-/** 채널 상세. 원본이 바뀔 때만 다시 계산한다. */
+/**
+ * 순위 계산에 필요한 최소 정보.
+ *
+ * GitHub 경로의 진짜 비용은 여기 있었다 — 채널 1건의 순위를 내려고 8,000개를
+ * 통째로 파싱했고, 캐시 키에 channel_id 가 들어 있어 채널마다 그 일을 따로 했다.
+ * (실측 124ms/건. 크롤러가 훑을 때 이 비용이 Vercel CPU 를 잠식했다)
+ *
+ * 순위의 기준이 되는 집합(구독자 1만 이상, 구독자순)은 모든 채널이 같다.
+ * 그러니 한 번만 받아 캐시하고 채널마다 공유한다. 세 컬럼뿐이라 868행이어도
+ * 수십 KB 다.
+ *
+ * PostgREST 는 요청당 1,000행이 상한인데 대상이 868개라 한 번에 들어온다.
+ * 1,000을 넘기면 range 로 나눠 받아야 한다 — 그때를 대비해 개수를 확인한다.
+ */
+interface RankRow {
+    channel_id: string;
+    subscriber_count: number;
+    main_category: string;
+}
+
+const sbRankContext = unstable_cache(
+    async (): Promise<RankRow[]> => {
+        const { data, error, count } = await supabase()
+            .from("channel_ranking")
+            .select("channel_id,subscriber_count,main_category", { count: "exact" })
+            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
+            .order("subscriber_count", { ascending: false })
+            .range(0, 999);
+        if (error) throw new Error(`Supabase 순위 기준 조회 실패: ${error.message}`);
+        const rows = (data ?? []) as RankRow[];
+        if ((count ?? 0) > rows.length) {
+            // 상한에 걸려 잘렸다. 순위가 틀리는 것보다 알아채는 게 낫다.
+            console.warn(
+                `[channels] 순위 기준 집합이 ${count}개인데 ${rows.length}개만 받았습니다. ` +
+                `range 분할이 필요합니다.`,
+            );
+        }
+        return rows;
+    },
+    ["sb-channel-rank-context-v1"],
+    { revalidate: SB_REVALIDATE },
+);
+
+function sbChannelCached(channelId: string) {
+    return unstable_cache(
+        async (): Promise<ChannelDetail | null> => {
+            const { data, error } = await supabase()
+                .from("channel_ranking")
+                .select("*")
+                .eq("channel_id", channelId)
+                .maybeSingle();
+            if (error) throw new Error(`Supabase 채널 조회 실패: ${error.message}`);
+            if (!data) return null;
+
+            const channel = data as unknown as TierChannel;
+            if ((channel.subscriber_count ?? 0) < CHANNEL_PAGE_MIN_SUBSCRIBERS) return null;
+
+            // 순위는 공유 캐시에서 계산한다. 이 채널 때문에 새로 받지 않는다.
+            const ctx = await sbRankContext();
+            const sameCategory = ctx.filter((c) => c.main_category === channel.main_category);
+            const catSubs = sameCategory.map((c) => c.subscriber_count).sort((a, b) => a - b);
+
+            return {
+                channel,
+                // jsonb 라 이미 배열로 온다. parseSparkline 은 배열을 그대로 돌려준다.
+                sparkline: cleanSparkline(parseSparkline(channel.sparkline_data)),
+                overallRank: ctx.findIndex((c) => c.channel_id === channelId) + 1,
+                overallTotal: ctx.length,
+                categoryRank: sameCategory.findIndex((c) => c.channel_id === channelId) + 1,
+                categoryTotal: sameCategory.length,
+                categoryMedianSubscribers: catSubs.length
+                    ? catSubs[Math.floor(catSubs.length / 2)]
+                    : 0,
+            };
+        },
+        ["sb-channel-detail-v1", channelId],
+        { revalidate: SB_REVALIDATE },
+    )();
+}
+
+/** 채널 상세. 출처 스위치에 따라 GitHub 파일 또는 Supabase 를 읽는다. */
 export async function getChannel(channelId: string): Promise<ChannelDetail | null> {
+    if (isSupabase) return sbChannelCached(channelId);
     return getChannelCached(channelId, await getCdnVersion(CHANNELS_URL));
 }
