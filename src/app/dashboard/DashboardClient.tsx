@@ -445,6 +445,11 @@ export function DashboardClient({
 
     useEffect(() => { refetch(); }, [refetch]);
 
+    // 집계 시각은 SSR 이 넘겨준 값이 아니라 지금 들고 있는 데이터에서 읽는다.
+    // SSR 값만 쓰면 탭을 열어 둔 채 필터를 바꿔 새 데이터를 받아도 라벨은
+    // 처음 시각에 머물러, 10시 데이터 위에 "7시 집계"가 떠 있게 된다.
+    const liveUpdatedAt = allVideos[0]?.updated_at || updatedAt;
+
 
     // ── 클라이언트 사이드 필터 + 정렬 (재쿼리 없음) ────────────────────────────
     // 조건에 맞는 '전체' 목록. 화면에 몇 개를 그릴지는 아래 videos 가 정한다.
@@ -483,7 +488,7 @@ export function DashboardClient({
                         {/* 지역 범위는 아래 필터 pill 이 활성 상태로 이미 보여주므로
                             여기 중복 표기하지 않는다. */}
                         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            Live · {updatedAt ? parseUpdatedHour(updatedAt) : "-"} 집계
+                            Live · {liveUpdatedAt ? parseUpdatedHour(liveUpdatedAt) : "-"} 집계
                             <span className="hidden sm:inline"> · 매시 25분경 갱신</span>
                         </span>
                     </div>
