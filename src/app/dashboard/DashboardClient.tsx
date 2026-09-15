@@ -25,6 +25,32 @@ function parseUpdatedHour(raw: string): string {
 type SortKey = "hourly_views" | "total_views" | "hourly_likes" | "hourly_comments";
 type ShortsState = null | boolean;
 type OriginState = null | "DOMESTIC" | "IMPORTED";
+
+/**
+ * 해외 탭의 언어 칩.
+ *
+ * 나라가 아니라 오디오 언어다. 유튜브가 주는 나라 정보는 채널 주인이 스스로
+ * 적는 선택 항목이라 절반 가까이 비어 있지만, 오디오 언어는 영상의 99.8% 에
+ * 있다. 사용자에게는 사실상 나라 필터처럼 읽히도록 대표 지역을 함께 적는다.
+ *
+ * 순서는 해외 영상 비중순 (2026-09-15 실측: 영어 39%, 힌디 15%, 스페인어 4%,
+ * 일본어 3.6%, 인도네시아어 3.4%, 아랍어 2.8%, 포르투갈어 2%, 러시아어 1.7%).
+ * 코드는 지역 접미사를 뗀 기본 코드다 (en-US 도 en 으로 들어온다).
+ */
+const LANG_CHIPS: { code: string; label: string }[] = [
+    { code: "en", label: "🇺🇸 영어" },
+    { code: "hi", label: "🇮🇳 힌디어" },
+    { code: "es", label: "🇪🇸 스페인어" },
+    { code: "ja", label: "🇯🇵 일본어" },
+    { code: "id", label: "🇮🇩 인도네시아어" },
+    { code: "ar", label: "🇸🇦 아랍어" },
+    { code: "pt", label: "🇧🇷 포르투갈어" },
+    { code: "ru", label: "🇷🇺 러시아어" },
+    { code: "vi", label: "🇻🇳 베트남어" },
+    { code: "th", label: "🇹🇭 태국어" },
+    { code: "zh", label: "🇨🇳 중국어" },
+];
+const LANG_CODES = new Set(LANG_CHIPS.map((c) => c.code));
 /**
  * 처음에 그리는 개수.
  *
@@ -376,9 +402,16 @@ export function DashboardClient({
         return "all";
     }
 
+    // 언어는 해외일 때만 의미가 있다. 국내 링크에 lang 이 붙어 있으면 무시한다.
+    function initLang(): string | null {
+        const v = searchParams.get("lang");
+        return v && LANG_CODES.has(v) && initOrigin() === "IMPORTED" ? v : null;
+    }
+
     const [sortBy, setSortByState] = useState<SortKey>(initSortBy);
     const [isShorts, setIsShortsState] = useState<ShortsState>(initIsShorts);
     const [origin, setOriginState] = useState<OriginState>(initOrigin);
+    const [lang, setLangState] = useState<string | null>(initLang);
     const [category, setCategoryState] = useState<string | null>(searchParams.get("category"));
     const [tier, setTierState] = useState<TierKey>(initTier);
     // 지금 몇 개까지 그릴지. 필터를 바꾸면 다시 처음부터 본다(아래 useEffect).
@@ -397,7 +430,18 @@ export function DashboardClient({
     function setSortBy(v: SortKey) { setSortByState(v); syncUrl({ sort: v === "hourly_views" ? null : v }); }
     function setIsShorts(v: ShortsState) { setIsShortsState(v); syncUrl({ format: v === true ? "Shorts" : v === false ? "Long-form" : null }); }
     // 기본값(국내)일 때 파라미터를 지워 URL 을 깨끗하게 유지한다.
-    function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v === "DOMESTIC" ? null : v === "IMPORTED" ? "해외" : "전체" }); }
+    // 해외를 벗어나면 언어 선택도 함께 지운다. 국내 탭에 "일본어" 가 남아
+    // 있으면 결과가 비는데 이유가 화면에 안 보인다.
+    function setOrigin(v: OriginState) {
+        setOriginState(v);
+        const leavingImported = v !== "IMPORTED";
+        if (leavingImported) setLangState(null);
+        syncUrl({
+            region: v === "DOMESTIC" ? null : v === "IMPORTED" ? "해외" : "전체",
+            ...(leavingImported && { lang: null }),
+        });
+    }
+    function setLang(v: string | null) { setLangState(v); syncUrl({ lang: v }); }
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
     function setTier(v: TierKey) { setTierState(v); syncUrl({ tier: v === "all" ? null : v }); }
 
@@ -422,9 +466,12 @@ export function DashboardClient({
         // 화면에서 걸러내면 국내는 57건만 남는다. 없앴던 50위 컷이 사실상
         // 되살아나는 셈이라 서버에서 걸러야 한다. (GitHub 파일은 조합별로
         // 미리 잘라둔 구조라 이 문제가 없었다)
+        // 언어도 같은 이유로 서버에서 거른다. 해외 상위 1,000건은 영어·힌디가
+        // 절반이라 화면에서 걸러내면 일본어 같은 언어는 몇 건 안 남는다.
         const source = isSupabase
             ? `/api/ranking?tier=${tier}&limit=1000` +
-              (origin ? `&origin=${origin}` : "")
+              (origin ? `&origin=${origin}` : "") +
+              (origin === "IMPORTED" && lang ? `&lang=${lang}` : "")
             : RANKING_TIER_URLS[tier];
 
         fetchGzipJson<ViralVideo[]>(source)
@@ -441,7 +488,7 @@ export function DashboardClient({
             })
             .catch((e) => { setError(e.message); })
             .finally(() => { setLoading(false); });
-    }, [tier, origin]);
+    }, [tier, origin, lang]);
 
     useEffect(() => { refetch(); }, [refetch]);
 
@@ -472,7 +519,7 @@ export function DashboardClient({
     // (200개를 펼쳐둔 상태에서 카테고리를 바꾸면 엉뚱하게 200개가 그대로 보인다)
     useEffect(() => {
         setVisibleCount(DISPLAY_LIMIT);
-    }, [isShorts, origin, category, sortBy, tier]);
+    }, [isShorts, origin, lang, category, sortBy, tier]);
 
     return (
         <div className="min-h-screen bg-[#FDFDFC]">
@@ -586,6 +633,19 @@ export function DashboardClient({
                                 <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
                             </div>
                         </div>
+
+                        {/* Language — 해외를 골랐을 때만. 국내는 한국어 하나라 칩이 의미 없다. */}
+                        {origin === "IMPORTED" && isSupabase && (
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                                <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">언어</span>
+                                <div className="flex flex-wrap gap-[6px] flex-1">
+                                    <Pill active={lang === null} onClick={() => setLang(null)}>전체</Pill>
+                                    {LANG_CHIPS.map(({ code, label }) => (
+                                        <Pill key={code} active={lang === code} onClick={() => setLang(code)}>{label}</Pill>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Tier (구독자 구간) */}
                         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">

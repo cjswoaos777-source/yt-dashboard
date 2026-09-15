@@ -31,12 +31,16 @@ const REVALIDATE_SECONDS = 1800;
 
 type Origin = "DOMESTIC" | "IMPORTED" | undefined;
 
-const cachedRanking = (tier: TierKey, origin: Origin, limit: number, offset: number) =>
+const cachedRanking = (tier: TierKey, origin: Origin, lang: string | undefined, limit: number, offset: number) =>
     unstable_cache(
-        () => fetchRanking({ tier, origin, limit, offset }),
-        ["api-ranking-v2", tier, origin ?? "all", String(limit), String(offset)],
+        () => fetchRanking({ tier, origin, lang, limit, offset }),
+        ["api-ranking-v3", tier, origin ?? "all", lang ?? "any", String(limit), String(offset)],
         { revalidate: REVALIDATE_SECONDS },
     )();
+
+// 언어 코드는 'en', 'hi', 'zh' 처럼 소문자 2~3자다. 그 밖의 값은 캐시 키만
+// 늘리고 결과는 빈 배열이라 받지 않는다.
+const LANG_RE = /^[a-z]{2,3}$/;
 
 function toInt(v: string | null, fallback: number): number {
     const n = Number(v);
@@ -56,12 +60,16 @@ export async function GET(request: Request) {
     const origin: Origin =
         rawOrigin === "DOMESTIC" || rawOrigin === "IMPORTED" ? rawOrigin : undefined;
 
+    // 언어 필터. 해외 탭에서만 의미가 있지만 서버는 조합을 제한하지 않는다.
+    const rawLang = searchParams.get("lang");
+    const lang = rawLang && LANG_RE.test(rawLang) ? rawLang : undefined;
+
     // 상한을 두지 않으면 한 번에 수만 행을 요청해 응답이 커진다.
     const limit = Math.min(toInt(searchParams.get("limit"), 500), 1000);
     const offset = toInt(searchParams.get("offset"), 0);
 
     try {
-        const rows = await cachedRanking(tier, origin, limit, offset);
+        const rows = await cachedRanking(tier, origin, lang, limit, offset);
         return new Response(JSON.stringify(rows), {
             status: 200,
             headers: {

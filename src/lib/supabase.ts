@@ -48,12 +48,15 @@ const MAX_ROWS = 1000;
 const VIDEO_COLUMNS =
     "video_id,title,channel_title,channel_id,video_type,origin_type," +
     "category_name,sub_tier,total_views,total_likes,total_comments," +
-    "hourly_view_increase,hourly_like_increase,hourly_comment_increase,updated_at";
+    "hourly_view_increase,hourly_like_increase,hourly_comment_increase,updated_at," +
+    "audio_lang";
 
 export interface RankingRow extends ViralVideo {
     /** GitHub JSON 에는 없던 값. 영상 카드에서 채널 페이지로 이동할 때 쓴다. */
     channel_id: string | null;
     sub_tier: string;
+    /** 오디오 언어 기본 코드. 파이프라인이 채우기 전 행은 null. */
+    audio_lang: string | null;
 }
 
 /**
@@ -72,6 +75,13 @@ export async function fetchRanking(opts: {
      * 없앴던 50위 컷이 사실상 되살아난다. 대시보드 기본값이 국내라 더 문제다.
      */
     origin?: "DOMESTIC" | "IMPORTED";
+    /**
+     * 오디오 언어 기본 코드 (en, hi, ja ...). 해외 탭의 언어 칩.
+     *
+     * 지역과 같은 이유로 서버에서 거른다 — 해외 상위 1,000건은 영어·힌디가
+     * 절반이라, 화면에서 걸러내면 일본어 같은 언어는 몇 건 안 남는다.
+     */
+    lang?: string;
     limit?: number;
     offset?: number;
 }): Promise<RankingRow[]> {
@@ -88,6 +98,7 @@ export async function fetchRanking(opts: {
     // 'all' 은 구간 구분 없이 전체. 나머지는 sub_tier 로 좁힌다.
     if (tier !== "all") q = q.eq("sub_tier", tier);
     if (opts.origin) q = q.eq("origin_type", opts.origin);
+    if (opts.lang) q = q.eq("audio_lang", opts.lang);
 
     const { data, error } = await q;
     if (error) throw new Error(`Supabase ranking 조회 실패: ${error.message}`);
