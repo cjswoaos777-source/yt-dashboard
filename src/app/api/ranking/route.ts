@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { fetchRanking, type TierKey } from "@/lib/supabase";
+import { fetchRanking, fetchRankingVersion, rankingCacheSeconds, type TierKey } from "@/lib/supabase";
 
 /**
  * 대시보드 랭킹 API.
@@ -19,22 +19,21 @@ export const dynamic = "force-dynamic";
 const VALID_TIERS: TierKey[] = ["all", "tier1", "tier2", "tier3", "micro"];
 
 /**
- * 캐시는 tier·limit·offset 조합마다 따로 잡는다.
+ * 캐시는 tier·origin·lang·limit·offset 조합 + 데이터 버전마다 따로 잡는다.
  *
- * 파이프라인이 매시간 갱신하므로 30분이면 늦어도 한 시간 안에는 새 데이터가
- * 반영된다. 정각 직후 요청이 옛 데이터를 받는 구간이 최대 30분 생기지만,
- * 급상승 지표라 그 정도 지연은 화면에서 문제가 되지 않는다.
- * (더 정확히 맞추려면 updated_at 을 캐시 키에 넣어야 하는데, 그러면 확인용
- *  조회가 매번 발생해 캐시의 이점이 줄어든다)
+ * [2026-09-18] 버전(updated_at)을 키에 넣었다. 전에는 30분 고정이라 매시
+ * 25분에 바뀌는 데이터와 어긋나 한 시간 넘게 옛 스냅샷이 나가곤 했다.
+ * 버전 조회는 1행짜리라 수 ms 이고, 그마저도 앞단 CDN 캐시가 대부분 막는다.
+ * revalidate 는 옛 버전 항목을 치우기 위한 상한일 뿐이다.
  */
-const REVALIDATE_SECONDS = 1800;
+const REVALIDATE_SECONDS = 3600;
 
 type Origin = "DOMESTIC" | "IMPORTED" | undefined;
 
-const cachedRanking = (tier: TierKey, origin: Origin, lang: string | undefined, limit: number, offset: number) =>
+const cachedRanking = (version: string, tier: TierKey, origin: Origin, lang: string | undefined, limit: number, offset: number) =>
     unstable_cache(
         () => fetchRanking({ tier, origin, lang, limit, offset }),
-        ["api-ranking-v3", tier, origin ?? "all", lang ?? "any", String(limit), String(offset)],
+        ["api-ranking-v4", version, tier, origin ?? "all", lang ?? "any", String(limit), String(offset)],
         { revalidate: REVALIDATE_SECONDS },
     )();
 
@@ -69,13 +68,18 @@ export async function GET(request: Request) {
     const offset = toInt(searchParams.get("offset"), 0);
 
     try {
-        const rows = await cachedRanking(tier, origin, lang, limit, offset);
+        const { version, syncedAt } = await fetchRankingVersion();
+        const rows = await cachedRanking(version, tier, origin, lang, limit, offset);
+        // CDN 캐시는 다음 스냅샷이 올 때까지만. 그 뒤엔 짧게 잡아 자주 확인한다.
+        // stale-while-revalidate 를 두지 않는 이유: 만료 뒤 옛 응답을 내보내며
+        // 뒤에서 갱신하면, 그 옛 응답이 또 한 시간 캐시되는 일이 있었다.
+        const sMaxAge = rankingCacheSeconds(syncedAt);
         return new Response(JSON.stringify(rows), {
             status: 200,
             headers: {
                 "Content-Type": "application/json; charset=utf-8",
-                // 브라우저는 짧게, Vercel 엣지는 길게 잡는다.
-                "Cache-Control": "public, max-age=60, s-maxage=1800, stale-while-revalidate=3600",
+                "Cache-Control": `public, max-age=60, s-maxage=${sMaxAge}`,
+                "X-Data-Version": version,
             },
         });
     } catch (e) {

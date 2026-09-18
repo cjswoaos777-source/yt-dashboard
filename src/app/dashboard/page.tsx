@@ -3,7 +3,7 @@ import { ViralVideo } from "@/lib/viral-types";
 import { DashboardClient } from "./DashboardClient";
 import { RANKING_TIER_URLS, getCdnVersion } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
-import { fetchRanking, fetchCategories } from "@/lib/supabase";
+import { fetchRanking, fetchCategories, fetchRankingVersion } from "@/lib/supabase";
 import { getLatestNotice } from "@/lib/notices";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
@@ -117,7 +117,7 @@ function toHourLabel(raw: string): string {
  * 국내로 좁히는 것은 클라이언트 기본 필터와 맞추기 위해서다. 어긋나면
  * SSR HTML 과 첫 렌더가 달라져 목록이 잠깐 비어 보인다.
  */
-const getSupabaseSnapshot = unstable_cache(
+const getSupabaseSnapshot = (version: string) => unstable_cache(
   async (): Promise<{
     videos: ViralVideo[];
     categories: string[];
@@ -131,11 +131,11 @@ const getSupabaseSnapshot = unstable_cache(
     const updatedAt = videos[0]?.updated_at ? toHourLabel(videos[0].updated_at) : "";
     return { videos, categories, updatedAt };
   },
-  ["dashboard-ssr-supabase-v1"],
-  // 파이프라인이 매시간 적재하므로 30분이면 늦어도 한 시간 안에 반영된다.
-  // 클라이언트가 마운트 직후 다시 받으므로 사용자가 보는 값은 더 빨리 맞춰진다.
-  { revalidate: 1800 },
-);
+  // [2026-09-18] 데이터 버전을 키에 넣는다. 30분 고정이면 매시 25분에 바뀌는
+  // 데이터와 어긋나 "N시 집계" 라벨이 한 시간 넘게 옛 값으로 남았다.
+  ["dashboard-ssr-supabase-v2", version],
+  { revalidate: 3600 },
+)();
 
 export default async function DashboardPage() {
   let initialVideos: ViralVideo[] = [];
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
   try {
     // 출처 스위치. github 로 되돌리면 아래 GitHub 경로가 그대로 살아난다.
     const snapshot = isSupabase
-      ? await getSupabaseSnapshot()
+      ? await getSupabaseSnapshot((await fetchRankingVersion()).version)
       : await getRankingSnapshot(await getCdnVersion(RANKING_TIER_URLS.all));
     initialVideos = snapshot.videos;
     categories = snapshot.categories;

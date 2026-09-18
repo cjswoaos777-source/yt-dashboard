@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { RANKING_TIER_URLS, getCdnVersion, type TierKey } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
-import { supabase, fetchRanking } from "@/lib/supabase";
+import { supabase, fetchRanking, fetchRankingVersion } from "@/lib/supabase";
 import type { ViralVideo } from "@/lib/viral-types";
 
 /**
@@ -139,7 +139,7 @@ interface TierStatsRow {
     updated_at: string | null;
 }
 
-const sbTierSnapshot = (level: TierLevel) => unstable_cache(
+const sbTierSnapshot = (version: string, level: TierLevel) => unstable_cache(
     async (): Promise<TierSnapshot> => {
         const [videos, stats] = await Promise.all([
             fetchRanking({ tier: level as TierKey, origin: "DOMESTIC", limit: DISPLAY_LIMIT }),
@@ -161,13 +161,14 @@ const sbTierSnapshot = (level: TierLevel) => unstable_cache(
             updatedAt: s?.updated_at ? toHourLabel(s.updated_at) : "",
         };
     },
-    ["sb-tier-snapshot-v1", level],
-    { revalidate: 1800 },
+    // [2026-09-18] 데이터 버전을 키에 넣는다 (api/ranking 과 같은 이유).
+    ["sb-tier-snapshot-v2", version, level],
+    { revalidate: 3600 },
 )();
 
 export async function getTierSnapshot(level: TierLevel): Promise<TierSnapshot | null> {
     try {
-        if (isSupabase) return await sbTierSnapshot(level);
+        if (isSupabase) return await sbTierSnapshot((await fetchRankingVersion()).version, level);
         const version = await getCdnVersion(RANKING_TIER_URLS[level as TierKey]);
         return await getTierSnapshotCached(version, level);
     } catch {

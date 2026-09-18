@@ -106,6 +106,52 @@ export async function fetchRanking(opts: {
 }
 
 /**
+ * 랭킹 데이터의 현재 버전.
+ *
+ * video_ranking 은 매시간 TRUNCATE + COPY 로 통째로 바뀌므로 모든 행의
+ * updated_at 이 같다. 아무 행 하나만 읽으면 지금 어느 시각 스냅샷인지 안다
+ * (정렬·집계 없이 1행이라 수 ms).
+ *
+ * [2026-09-18] 캐시를 이 버전으로 잠근다.
+ *   전에는 "30분마다 갱신"이었는데 데이터는 매시 25분에 바뀌니 서로 어긋나,
+ *   운 나쁘면 한 시간 넘게 옛 스냅샷이 나갔다. 버전을 캐시 키에 넣으면
+ *   데이터가 바뀐 직후 첫 요청부터 새 스냅샷이고, 안 바뀌면 캐시가 그대로
+ *   쓰인다. 파이프라인이 늦어도(18시는 18:47 에 들어온다) 잘못된 걸 오래
+ *   보여주는 일이 없다.
+ *
+ * 실패하면 빈 문자열 — 호출부는 그냥 시간 기준 캐시로 동작한다.
+ */
+export async function fetchRankingVersion(): Promise<{ version: string; syncedAt: string }> {
+    const { data, error } = await supabase()
+        .from("video_ranking")
+        .select("updated_at,synced_at")
+        .limit(1)
+        .maybeSingle();
+    if (error || !data) return { version: "", syncedAt: "" };
+    const row = data as unknown as { updated_at: string | null; synced_at: string | null };
+    return { version: row.updated_at ?? "", syncedAt: row.synced_at ?? "" };
+}
+
+/**
+ * 랭킹 응답의 CDN 캐시 시간(초).
+ *
+ * 다음 스냅샷은 마지막 적재 + 1시간 무렵에 들어온다. 그때까지는 캐시해도
+ * 손해가 없고, 그 뒤로는 새 버전이 언제 올지 모르니 짧게 잡아 자주 확인한다.
+ * 확인 한 번은 버전 조회(수 ms) + 캐시 히트라 비용이 거의 없다.
+ *
+ *   막 적재됨(0분 경과)  → ~62분 캐시
+ *   50분 경과            → ~12분
+ *   1시간 넘게 안 옴     → 2분마다 재확인 (파이프라인이 늦는 중)
+ */
+export function rankingCacheSeconds(syncedAt: string, now: Date = new Date()): number {
+    const t = Date.parse(syncedAt);
+    if (!Number.isFinite(t)) return 300;
+    const nextExpected = t + 62 * 60 * 1000;
+    const remain = Math.floor((nextExpected - now.getTime()) / 1000);
+    return Math.max(120, Math.min(remain, 3600));
+}
+
+/**
  * 카테고리 목록.
  *
  * 지역·구간과 무관한 '전체 기준'이어야 한다. 사용자가 필터를 바꿨을 때
