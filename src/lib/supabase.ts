@@ -139,16 +139,28 @@ export async function fetchRankingVersion(): Promise<{ version: string; syncedAt
  * 손해가 없고, 그 뒤로는 새 버전이 언제 올지 모르니 짧게 잡아 자주 확인한다.
  * 확인 한 번은 버전 조회(수 ms) + 캐시 히트라 비용이 거의 없다.
  *
- *   막 적재됨(0분 경과)  → ~62분 캐시
+ *   막 적재됨(0분 경과)  → 다음 정각 27분까지 (최대 ~62분)
  *   50분 경과            → ~12분
  *   1시간 넘게 안 옴     → 2분마다 재확인 (파이프라인이 늦는 중)
+ *
+ * [2026-09-19] "직전 적재 + 62분"만 보면 직전 적재가 늦었던 시간(예: 12시가
+ * 12:46 에 끝남)에 다음 스냅샷(13:24)이 제때 와도 13:48 까지 옛 캐시를 문다.
+ * 파이프라인은 매시 25분경에 적재하므로 다음 정각 27분도 함께 상한으로 둔다.
  */
 export function rankingCacheSeconds(syncedAt: string, now: Date = new Date()): number {
     const t = Date.parse(syncedAt);
     if (!Number.isFinite(t)) return 300;
-    const nextExpected = t + 62 * 60 * 1000;
-    const remain = Math.floor((nextExpected - now.getTime()) / 1000);
-    return Math.max(120, Math.min(remain, 3600));
+    const nowMs = now.getTime();
+
+    // 다음 스냅샷 예상 시각 = 이번 적재가 속한 정각 + 1시간 27분.
+    // (13:24 적재 → 14:27, 12:46 처럼 늦게 끝난 적재도 → 13:27)
+    // 분 단위 경계는 UTC 로 계산해도 KST 와 같다.
+    const h = new Date(t);
+    h.setUTCMinutes(0, 0, 0);
+    const nextExpected = h.getTime() + (60 + 27) * 60 * 1000;
+
+    if (nowMs >= nextExpected) return 120;          // 늦는 중 — 자주 확인
+    return Math.min(Math.floor((nextExpected - nowMs) / 1000), 3600);
 }
 
 /**
