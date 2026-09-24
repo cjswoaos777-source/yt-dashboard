@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getInsights, INSIGHT_REPORTS } from "@/lib/insights";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,8 @@ export default async function InsightsIndexPage() {
                             </>
                         )}
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 <ul className="space-y-3">

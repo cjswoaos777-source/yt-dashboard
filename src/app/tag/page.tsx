@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { getTagListPage, tagToSlug, TAG_LIST_PAGE_SIZE } from "@/lib/tags";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,8 @@ export default async function TagIndexPage({
                         </strong>
                         를 지금 뜨는 규모 순으로 정렬했습니다. 매시간 갱신됩니다.
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 <ul className="flex flex-wrap gap-2">

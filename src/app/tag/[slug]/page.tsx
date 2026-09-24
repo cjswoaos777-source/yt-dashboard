@@ -4,6 +4,7 @@ import { ArrowLeft, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import { getTag, tagToSlug } from "@/lib/tags";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 // 태그가 2,600개가 넘고 수치가 매시간 바뀌므로 빌드 시 전량 프리렌더하지 않는다.
 export const dynamic = "force-dynamic";
@@ -117,6 +118,8 @@ export default async function TagDetailPage({
                         </strong>
                         . 매시간 갱신됩니다.
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 {/* 영상 목록 */}

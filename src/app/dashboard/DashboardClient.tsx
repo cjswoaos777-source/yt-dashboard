@@ -8,6 +8,7 @@ import { ViralVideo } from "@/lib/viral-types";
 import { RANKING_TIER_URLS, TierKey } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
 import type { NoticeMeta } from "@/lib/notices";
+import { MetricsDisclosure } from "@/components/legal";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
 function parseUpdatedHour(raw: string): string {
@@ -570,6 +571,8 @@ export function DashboardClient({
                         <HomeInfoPanel />
                         <ShareButton />
                     </div>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-2" />
                 </div>
 
                 {/* ── Latest Notice Banner ─────────────────────────── */}

@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { getChannel, isAwaitingBaseline, CHANNEL_INDEX_MIN_DAYS } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
+import { MetricsDisclosure } from "@/components/legal";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
@@ -122,7 +123,7 @@ export default async function ChannelDetailPage({
             : 0;
     const summarySentences = [
         `${channel.channel_title}은(는) ${channel.main_category} 카테고리에 속한 ` +
-            `${LEAGUE_LABEL[channel.league_group] ?? channel.league_group} 채널로, ` +
+            (channel.league_group ? `${LEAGUE_LABEL[channel.league_group] ?? channel.league_group} 채널로, ` : "채널로, ") +
             `구독자 ${fmtKr(channel.subscriber_count, "명")}을 보유하고 있습니다.`,
         // 순위 비교 문장은 오늘 순위에 있을 때만. 기록 모드에서는 이력 문장으로 대체한다.
         !isCurrent
@@ -321,6 +322,8 @@ export default async function ChannelDetailPage({
                             </p>
                         </div>
                     </div>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 {/* 지표 카드 */}

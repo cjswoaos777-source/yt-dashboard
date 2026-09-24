@@ -7,6 +7,7 @@ import { TierChannel } from "@/lib/tier-channel-types";
 import { ChannelBentoCard } from "@/components/dashboard/ChannelBentoCard";
 import { CHANNELS_URL } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
+import { MetricsDisclosure } from "@/components/legal";
 
 // ─── targetDate 포맷터: '2026-03-31' → '2026.03.31'
 function formatTargetDate(d: string | null): string {
@@ -418,6 +419,8 @@ export function BenchmarkingDashboardClient({
                         <BenchmarkingInfoPanel />
                         <ShareButton />
                     </div>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-2" />
                 </div>
 
                 {/* ── Filter Bar ──────────────────────────────────────────── */}

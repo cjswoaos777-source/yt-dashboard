@@ -10,6 +10,7 @@ import {
     type TierLevel,
 } from "@/lib/tiers";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +129,8 @@ export default async function TierPage({
                         </strong>
                         {snap.updatedAt && ` · ${snap.updatedAt} 집계`}
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 <ol className="space-y-2">

@@ -13,6 +13,7 @@ import {
 } from "@/lib/insights";
 import { BarChart, type BarRow } from "../BarChart";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 export const dynamic = "force-dynamic";
 
@@ -317,6 +318,8 @@ export default async function InsightReportPage({
                         수집된 국내 영상 {data.sample_size.toLocaleString()}건 · 최근{" "}
                         {data.window_days}일 · {data.generated_at} 집계 · 매일 1회 갱신
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 {/* 집계 기준을 먼저 밝힌다. "국내 영상 N건"만 쓰면 한국 유튜브 전수로

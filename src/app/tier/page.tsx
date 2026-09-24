@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getTierSnapshot, TIER_LEVELS, TIER_META } from "@/lib/tiers";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,8 @@ export default async function TierIndexPage() {
                         같은 조회수라도 구독자 1만 채널과 100만 채널의 의미는 다릅니다.
                         채널 규모별로 나눠서 지금 뜨는 국내 영상을 봅니다.
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 <ul className="space-y-3">

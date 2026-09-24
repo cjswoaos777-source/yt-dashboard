@@ -5,6 +5,7 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import { ArrowRight, TrendingUp, Target, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/legal";
 
 export default function LandingPage() {
   const badgeRef = useRef<HTMLDivElement>(null);
@@ -233,6 +234,7 @@ export default function LandingPage() {
         </p>
       </section>
 
+      <SiteFooter />
     </main>
   );
 }

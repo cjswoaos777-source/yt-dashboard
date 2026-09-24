@@ -9,6 +9,7 @@ import {
     CHANNEL_PAGE_MIN_SUBSCRIBERS,
 } from "@/lib/channels";
 import { SITE } from "@/lib/site";
+import { MetricsDisclosure } from "@/components/legal";
 
 // 채널 집계는 daily_tier_snapshot 의 오늘 파티션을 전제로 하는데, 그 파티션은
 // Flow A(매일 17:01 KST 시작)가 만든다. 발굴이 무거워 실제 완료는 더 늦다.
@@ -131,6 +132,8 @@ export default async function ChannelIndexPage({
                         한국 유튜브 전체 구독자 순위와는 다릅니다.
                         수록 기준은 구독자 {fmtKr(CHANNEL_PAGE_MIN_SUBSCRIBERS, "명")} 이상입니다.
                     </p>
+                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                    <MetricsDisclosure className="mt-3" />
                 </header>
 
                 {/* 목록 */}
