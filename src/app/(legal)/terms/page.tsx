@@ -5,7 +5,7 @@ import { CONTACT_EMAIL, GOOGLE_PRIVACY_URL, YOUTUBE_TOS_URL } from "@/components
 export const metadata: Metadata = {
     title: "이용약관",
     description: "Viral Hunter 이용약관 — YouTube API 서비스 이용, 자체 계산 지표, 책임의 한계",
-    alternates: { canonical: "/terms" },
+    alternates: { canonical: "/terms", languages: { ko: "/terms", en: "/terms/en" } },
 };
 
 const EFFECTIVE_DATE = "2026년 9월 25일";
@@ -13,6 +13,7 @@ const EFFECTIVE_DATE = "2026년 9월 25일";
 export default function TermsPage() {
     return (
         <>
+            <p className="text-[12px]">한국어 · <Link href="/terms/en">English</Link></p>
             <h1>이용약관</h1>
             <p className="text-neutral-500">시행일: {EFFECTIVE_DATE}</p>
 

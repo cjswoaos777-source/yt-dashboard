@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CONTACT_EMAIL, GOOGLE_PRIVACY_URL, YOUTUBE_TOS_URL } from "@/components/legal";
 
 export const metadata: Metadata = {
     title: "개인정보처리방침",
     description: "Viral Hunter 개인정보처리방침 — 수집하는 정보, 쿠키, YouTube API 서비스 이용에 관한 안내",
-    alternates: { canonical: "/privacy" },
+    alternates: { canonical: "/privacy", languages: { ko: "/privacy", en: "/privacy/en" } },
 };
 
 // 시행일을 바꿀 때는 아래 '변경 이력'에도 한 줄 남긴다.
@@ -13,6 +14,7 @@ const EFFECTIVE_DATE = "2026년 9월 25일";
 export default function PrivacyPage() {
     return (
         <>
+            <p className="text-[12px]">한국어 · <Link href="/privacy/en">English</Link></p>
             <h1>개인정보처리방침</h1>
             <p className="text-neutral-500">시행일: {EFFECTIVE_DATE}</p>
 
