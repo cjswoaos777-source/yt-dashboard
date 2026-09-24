@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Menu, X, Zap, Info, Megaphone, ListOrdered, Hash, Users, Lightbulb } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Menu, X, Info, Megaphone, ListOrdered, Hash, Users, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-
-const RAPIDAPI_URL = "https://rapidapi.com/cjswoaos777/api/youtube-viral-tracker";
 
 const menuItems = [
   { title: "홈", href: "/dashboard", icon: LayoutDashboard },
@@ -60,19 +58,12 @@ function DesktopSidebar() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* API Link */}
-        <a
-          href={RAPIDAPI_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-all duration-200 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-900"
-        >
-          <Zap className="h-4 w-4 text-yellow-500" />
-          API
-          <span className="ml-auto rounded-full bg-black px-2 py-0.5 text-[10px] font-semibold text-white">
-            RapidAPI
-          </span>
-        </a>
+        {/* 약관·개인정보 (YouTube API 정책 III.A). 예전 RapidAPI 링크 자리 —
+            YouTube 데이터를 API 로 되파는 것은 정책상 금지(III.G.1, III.I.15)라 뺐다. */}
+        <div className="flex gap-3 px-3 py-2 text-[11px] text-neutral-400">
+          <Link href="/terms" className="hover:text-neutral-700">이용약관</Link>
+          <Link href="/privacy" className="font-semibold text-neutral-500 hover:text-neutral-800">개인정보처리방침</Link>
+        </div>
       </div>
     </aside>
   );
@@ -102,16 +93,6 @@ function MobileNav() {
           <span className="font-serif text-base font-bold tracking-tight text-heading">Viral Hunter</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* API 링크 - 모바일 상단바 우측 */}
-          <a
-            href={RAPIDAPI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[12px] font-semibold text-neutral-600 transition-colors hover:bg-neutral-100"
-          >
-            <Zap className="h-3 w-3 text-yellow-500" />
-            API
-          </a>
           <button
             onClick={() => setOpen(true)}
             aria-label="메뉴 열기"
@@ -181,19 +162,11 @@ function MobileNav() {
 
           <div className="flex-1" />
 
-          {/* API Link in Drawer */}
-          <a
-            href={RAPIDAPI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-neutral-100"
-          >
-            <Zap className="h-4 w-4 text-yellow-500" />
-            API
-            <span className="ml-auto rounded-full bg-black px-2 py-0.5 text-[10px] font-semibold text-white">
-              RapidAPI
-            </span>
-          </a>
+          {/* 약관·개인정보 (YouTube API 정책 III.A). 예전 RapidAPI 링크 자리. */}
+          <div className="flex gap-3 px-3 py-2 text-[11px] text-neutral-400">
+            <Link href="/terms" className="hover:text-neutral-700">이용약관</Link>
+            <Link href="/privacy" className="font-semibold text-neutral-500 hover:text-neutral-800">개인정보처리방침</Link>
+          </div>
         </div>
       </div>
     </>
