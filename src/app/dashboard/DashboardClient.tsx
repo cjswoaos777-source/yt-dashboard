@@ -669,11 +669,21 @@ export function DashboardClient({
                         {categories.length > 0 && (
                             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                                 <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">카테고리</span>
-                                <div className="flex flex-wrap gap-[6px] flex-1">
-                                    <Pill active={category === null} onClick={() => setCategory(null)}>전체</Pill>
-                                    {categories.map((c) => (
-                                        <Pill key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Pill>
-                                    ))}
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <div className="flex flex-wrap gap-[6px]">
+                                        <Pill active={category === null} onClick={() => setCategory(null)}>전체</Pill>
+                                        {categories.map((c) => (
+                                            <Pill key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Pill>
+                                        ))}
+                                    </div>
+                                    {/* [2026-10-01] 카테고리는 유튜브가 내용을 보고 정한 값이 아니라 업로더가
+                                        고른 값이다. 채널 기본값을 'Music' 으로 둔 쇼츠 채널이 많아 야구·콩트
+                                        영상이 Music 에 섞여 보인다는 문의가 있었다. 우리가 재분류하지 않고
+                                        출처를 밝힌다. */}
+                                    <p className="text-[11px] text-neutral-400">
+                                        카테고리는 영상을 올린 사람이 직접 지정한 유튜브 카테고리 기준입니다.
+                                        그래서 내용과 다른 카테고리에 들어간 영상이 있을 수 있어요.
+                                    </p>
                                 </div>
                             </div>
                         )}
