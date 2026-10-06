@@ -104,6 +104,7 @@ export default async function ChannelDetailPage({
         firstSeen,
         lastSeen,
         daysSeen,
+        related = [],
     } = data;
 
     // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
@@ -430,6 +431,32 @@ export default async function ChannelDetailPage({
                         </div>
                     )}
                 </section>
+
+                {/* 비슷한 채널 — 같은 카테고리·비슷한 구독자 규모. 채널 페이지끼리의 내부 링크다
+                    (구글이 링크를 타고 아직 방문하지 않은 채널 페이지로 넘어가도록). */}
+                {related.length > 0 && (
+                    <section className="mb-10">
+                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">
+                            비슷한 규모의 {channel.main_category} 채널
+                        </h2>
+                        <p className="mb-4 text-[12px] text-neutral-400">
+                            같은 카테고리에서 구독자 수가 가장 가까운 채널입니다.
+                        </p>
+                        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {related.map((r) => (
+                                <li key={r.channel_id}>
+                                    <Link
+                                        href={`/channel/${r.channel_id}`}
+                                        className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 bg-white px-4 py-3 text-[13px] transition-colors hover:border-neutral-300"
+                                    >
+                                        <span className="truncate font-medium text-[#1A1A1A]">{r.channel_title}</span>
+                                        <span className="shrink-0 text-neutral-400">구독자 {fmtKr(r.subscriber_count, "명")}</span>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 {/* 외부 링크 */}
                 <section className="border-t border-neutral-100 pt-8">

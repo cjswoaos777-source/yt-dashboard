@@ -319,6 +319,8 @@ export interface ChannelDetail {
      * 구글이 '내용 없는 페이지'로 볼 수 있으므로 noindex 로 둔다.
      */
     daysSeen: number;
+    /** 같은 카테고리·비슷한 규모의 채널 (내부 링크용). GitHub 경로는 없음 */
+    related?: RelatedChannel[];
 }
 
 /** 이 채널 페이지를 색인시켜도 되는 최소 등장 일수 */
@@ -388,13 +390,43 @@ interface RankRow {
     channel_id: string;
     subscriber_count: number;
     main_category: string;
+    channel_title: string;
+}
+
+/** 채널 페이지 하단 '비슷한 채널' 한 줄 */
+export interface RelatedChannel {
+    channel_id: string;
+    channel_title: string;
+    subscriber_count: number;
+}
+
+/** 비슷한 채널 몇 개를 보여 줄지 */
+const RELATED_LIMIT = 6;
+
+/**
+ * 같은 카테고리에서 구독자 규모가 가장 가까운 채널들.
+ *
+ * [2026-10-06] 채널 상세끼리 서로 링크가 하나도 없어 구글이 사이트맵으로만
+ * 발견했다. 서치콘솔에서 3,215개가 '발견됨 - 현재 색인이 생성되지 않음'(방문
+ * 대기)이라, 이미 방문한 페이지에서 링크를 타고 넘어가도록 내부 링크를 단다.
+ * 이미 캐시해 둔 순위 기준 집합(sbRankContext)에서 고르므로 DB 조회가 늘지 않는다.
+ * '규모가 가깝다'는 구독자 수의 로그 거리로 본다 (1만↔2만이 100만↔101만보다 멀다).
+ */
+function pickRelated(ctx: RankRow[], selfId: string, category: string, subs: number): RelatedChannel[] {
+    const base = Math.log10(Math.max(subs, 1));
+    return ctx
+        .filter((c) => c.channel_id !== selfId && c.main_category === category && c.channel_title)
+        .map((c) => ({ c, d: Math.abs(Math.log10(Math.max(c.subscriber_count, 1)) - base) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, RELATED_LIMIT)
+        .map(({ c }) => ({ channel_id: c.channel_id, channel_title: c.channel_title, subscriber_count: c.subscriber_count }));
 }
 
 const sbRankContext = unstable_cache(
     async (): Promise<RankRow[]> => {
         const { data, error, count } = await supabase()
             .from("channel_ranking")
-            .select("channel_id,subscriber_count,main_category", { count: "exact" })
+            .select("channel_id,subscriber_count,main_category,channel_title", { count: "exact" })
             .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
             .order("subscriber_count", { ascending: false })
             .range(0, 999);
@@ -409,7 +441,7 @@ const sbRankContext = unstable_cache(
         }
         return rows;
     },
-    ["sb-channel-rank-context-v1"],
+    ["sb-channel-rank-context-v2"],
     { revalidate: SB_REVALIDATE },
 );
 
@@ -454,8 +486,10 @@ function sbChannelCached(channelId: string) {
             // 순위는 오늘 순위에 있을 때만 의미가 있다.
             let overallRank = 0, overallTotal = 0, categoryRank = 0, categoryTotal = 0;
             let categoryMedianSubscribers = 0;
+            // 순위 기준 집합은 '비슷한 채널' 링크에도 쓰므로 기록 모드에서도 읽는다 (캐시라 비용 없음).
+            const ctx = await sbRankContext();
+            const related = pickRelated(ctx, channelId, channel.main_category, channel.subscriber_count ?? 0);
             if (isCurrent) {
-                const ctx = await sbRankContext();
                 const sameCategory = ctx.filter((c) => c.main_category === channel.main_category);
                 const catSubs = sameCategory.map((c) => c.subscriber_count).sort((a, b) => a - b);
                 overallRank = ctx.findIndex((c) => c.channel_id === channelId) + 1;
@@ -477,9 +511,10 @@ function sbChannelCached(channelId: string) {
                 firstSeen: a.first_seen ?? null,
                 lastSeen: a.last_seen ?? null,
                 daysSeen: a.days_seen ?? 0,
+                related,
             };
         },
-        ["sb-channel-detail-v2", channelId],
+        ["sb-channel-detail-v3", channelId],
         { revalidate: SB_REVALIDATE },
     )();
 }
