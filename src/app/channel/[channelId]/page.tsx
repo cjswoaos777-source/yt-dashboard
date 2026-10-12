@@ -45,11 +45,15 @@ export async function generateMetadata({
     const rankSentence = isCurrent
         ? `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). `
         : `${channel.main_category} 카테고리. ${lastSeen ?? ""}까지 급상승 순위에 올랐던 채널. `;
+    // 검색 결과 설명문도 채널마다 달라지도록, 최근 포착 영상이 있으면 그 제목을 넣는다.
+    const topVideo = data.recent?.videos?.[0];
     const description =
         `${channel.channel_title}의 구독자 ${fmtKr(channel.subscriber_count, "명")}, ` +
         `누적 조회수 ${fmtKr(channel.total_view_count, "회")}. ` +
         rankSentence +
-        `일평균 조회수 증가와 성장 지수를 매일 저녁 갱신되는 데이터로 확인하세요.`;
+        (topVideo
+            ? `최근 30일 포착 영상 ${data.recent!.videos_30d}개, 가장 많이 본 영상 「${topVideo.t}」.`
+            : `일평균 조회수 증가와 성장 지수를 매일 저녁 갱신되는 데이터로 확인하세요.`);
 
     // [2026-09-11] 색인 정책을 '등장 일수'로 정한다.
     //
@@ -106,7 +110,9 @@ export default async function ChannelDetailPage({
         lastSeen,
         daysSeen,
         related = [],
+        recent = null,
     } = data;
+    const recentVideos = recent?.videos ?? [];
 
     // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
     // 그냥 항목을 숨기면 왜 없는지 알 수 없으므로 이유를 밝힌다.
@@ -148,7 +154,22 @@ export default async function ChannelDetailPage({
             : channel.is_new_channel
               ? `최근 새로 편입된 채널로, 성장 추이를 지켜볼 만합니다.`
               : `전체 분석 대상 ${overallTotal.toLocaleString()}개 채널 중 구독자 ${overallRank.toLocaleString()}위입니다.`,
-    ];
+        // 최근 30일 기록 — 이 채널에만 있는 내용(영상 제목, 실제 구독자 변화)이다.
+        recentVideos.length > 0
+            ? `최근 30일 동안 영상 ${recent!.videos_30d}개가 급상승 후보로 포착됐고` +
+              (recent!.shorts_30d > 0 && recent!.shorts_30d < recent!.videos_30d
+                  ? `(숏츠 ${recent!.shorts_30d}개, 롱폼 ${recent!.videos_30d - recent!.shorts_30d}개)`
+                  : recent!.shorts_30d === recent!.videos_30d ? "(모두 숏츠)" : "(모두 롱폼)") +
+              `, 그중 가장 많이 본 영상은 「${recentVideos[0].t}」(조회수 ${fmtKr(recentVideos[0].v, "회")})입니다.`
+            : "",
+        recent?.subs_from != null && recent.subs_to != null
+            ? recent.subs_to === recent.subs_from
+                ? `${recent.subs_from_date}부터 ${recent.subs_to_date}까지 구독자 수는 ${fmtKr(recent.subs_to, "명")}으로 변화가 없었습니다.`
+                : `${recent.subs_from_date} ${fmtKr(recent.subs_from, "명")}이던 구독자는 ` +
+                  `${recent.subs_to_date} ${fmtKr(recent.subs_to, "명")}으로 ` +
+                  `${recent.subs_to > recent.subs_from ? "+" : "-"}${fmtKr(Math.abs(recent.subs_to - recent.subs_from), "명")} 변했습니다.`
+            : "",
+    ].filter(Boolean);
 
     const stats = [
         {
@@ -440,6 +461,41 @@ export default async function ChannelDetailPage({
                         </div>
                     )}
                 </section>
+
+                {/* 최근 30일 포착 영상 — 채널마다 다른 제목 목록이라 페이지 고유 내용의 중심이다. */}
+                {recentVideos.length > 0 && (
+                    <section className="mb-12">
+                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">
+                            최근 30일 포착 영상
+                        </h2>
+                        <p className="mb-4 text-[12px] text-neutral-400">
+                            Viral Hunter가 급상승 후보로 수집한 이 채널의 영상 {recent!.videos_30d}개 중 조회수 상위입니다.
+                            조회수는 수집 시점(업로드 후 약 2일 이내) 기준입니다.
+                        </p>
+                        <ol className="divide-y divide-neutral-100 rounded-2xl border border-neutral-200 bg-white">
+                            {recentVideos.map((v, i) => (
+                                <li key={v.id} className="flex items-start gap-3 px-4 py-3">
+                                    <span className="w-5 shrink-0 pt-0.5 text-right text-[12px] font-semibold text-neutral-400">
+                                        {i + 1}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <a
+                                            href={`https://www.youtube.com/watch?v=${v.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer nofollow"
+                                            className="block text-[13.5px] font-medium leading-snug text-[#1A1A1A] hover:underline"
+                                        >
+                                            {v.t}
+                                        </a>
+                                        <div className="mt-1 text-[11.5px] text-neutral-400">
+                                            {v.d} 업로드 · {v.s ? "숏츠" : "롱폼"} · 조회수 {fmtKr(v.v, "회")}
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+                )}
 
                 {/* 비슷한 채널 — 같은 카테고리·비슷한 구독자 규모. 채널 페이지끼리의 내부 링크다
                     (구글이 링크를 타고 아직 방문하지 않은 채널 페이지로 넘어가도록). */}

@@ -321,6 +321,37 @@ export interface ChannelDetail {
     daysSeen: number;
     /** 같은 카테고리·비슷한 규모의 채널 (내부 링크용). GitHub 경로는 없음 */
     related?: RelatedChannel[];
+    /** 최근 30일 포착 영상·구독자 변화 (channel_recent). 없으면 null */
+    recent?: ChannelRecent | null;
+}
+
+/** 최근 30일 포착 영상 한 줄 (channel_recent.videos 원소) */
+export interface RecentVideo {
+    id: string;
+    /** 제목 */
+    t: string;
+    /** 게시일 YYYY-MM-DD */
+    d: string;
+    /** 숏츠 여부 */
+    s: boolean;
+    /** 수집 시점 조회수 */
+    v: number;
+}
+
+/**
+ * 채널별 최근 30일 기록. 파이프라인이 매일 통째로 다시 만든다 (sync_supabase.refresh_channel_recent).
+ *
+ * [2026-10-12] 채널 페이지가 같은 틀에 숫자만 달라 '크롤링됨 - 색인 안 함'이 768개로 뛰었다.
+ * 영상 제목은 그 채널에만 있는 문장이라 페이지마다 내용이 달라진다.
+ */
+export interface ChannelRecent {
+    videos: RecentVideo[];
+    videos_30d: number;
+    shorts_30d: number;
+    subs_from: number | null;
+    subs_from_date: string | null;
+    subs_to: number | null;
+    subs_to_date: string | null;
 }
 
 /** 이 채널 페이지를 색인시켜도 되는 최소 등장 일수 */
@@ -348,8 +379,17 @@ export function kstDateDaysAgo(days: number): string {
     return new Date(Date.now() + 9 * 3_600_000 - days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** 채널 상세를 색인시킬지. 얇은 페이지(짧게 스쳐간 채널, 오래된 기록)는 뺀다. */
-export function isIndexableChannel(d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen">): boolean {
+/**
+ * 채널 상세를 색인시킬지. 얇은 페이지(짧게 스쳐간 채널, 오래된 기록)는 뺀다.
+ *
+ * [2026-10-12] 해외 채널(IMPORTED)도 뺀다. 한국어 사이트에 외국 소형 채널 페이지가
+ * 섞여 있으면 사이트 평가를 끌어내린다. '색인 안 함' 목록에서 해외 채널 비중(23%)이
+ * 사이트맵 안 비중(16%)보다 높았다. 페이지는 그대로 열리고 검색에만 안 나온다.
+ */
+export function isIndexableChannel(
+    d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen"> & { channel: Pick<TierChannel, "origin_type"> },
+): boolean {
+    if (d.channel.origin_type !== "DOMESTIC") return false;
     if (d.daysSeen < CHANNEL_INDEX_MIN_DAYS) return false;
     if (d.isCurrent) return true;
     const ago = daysSinceKst(d.lastSeen);
@@ -531,6 +571,13 @@ function sbChannelCached(channelId: string) {
                     : 0;
             }
 
+            // ③ 최근 30일 기록 — 없어도 페이지는 그린다 (실패해도 본문만 빠진다).
+            const { data: rec } = await sb
+                .from("channel_recent")
+                .select("videos,videos_30d,shorts_30d,subs_from,subs_from_date,subs_to,subs_to_date")
+                .eq("channel_id", channelId)
+                .maybeSingle();
+
             const a = arc as { first_seen: string; last_seen: string; days_seen: number };
             return {
                 channel,
@@ -542,9 +589,10 @@ function sbChannelCached(channelId: string) {
                 lastSeen: a.last_seen ?? null,
                 daysSeen: a.days_seen ?? 0,
                 related,
+                recent: (rec as ChannelRecent | null) ?? null,
             };
         },
-        ["sb-channel-detail-v3", channelId],
+        ["sb-channel-detail-v4", channelId],
         { revalidate: SB_REVALIDATE },
     )();
 }

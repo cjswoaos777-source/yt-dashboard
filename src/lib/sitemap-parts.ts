@@ -139,6 +139,8 @@ export const SITEMAP_CHANNEL_MIN_DAYS = 7;
  * [2026-10-12] 순위에서 빠진 지 30일이 넘은 채널(CHANNEL_INDEX_MAX_STALE_DAYS)은 싣지 않는다.
  * 페이지가 noindex 라 사이트맵에 있으면 서치콘솔이 '제출됐는데 noindex' 오류로 본다.
  * 4,406 → 약 2,500개.
+ *
+ * 해외 채널(IMPORTED)도 noindex 라 같은 이유로 뺀다 (isIndexableChannel). 약 2,140개.
  */
 
 /**
@@ -161,6 +163,7 @@ const channelUrlsCached = unstable_cache(
                 .select("channel_id,last_seen")
                 .gte("days_seen", SITEMAP_CHANNEL_MIN_DAYS)
                 .gte("last_seen", cutoff)
+                .eq("origin_type", "DOMESTIC")
                 .order("last_seen", { ascending: false })
                 .order("channel_id")
                 .range(from, from + PAGE - 1);
@@ -180,7 +183,7 @@ const channelUrlsCached = unstable_cache(
         }
         return out;
     },
-    ["sitemap-channels-v2", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
+    ["sitemap-channels-v3",String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
     { revalidate: 3600 },
 );
 
