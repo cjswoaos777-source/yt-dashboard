@@ -3,6 +3,7 @@ import { SITE } from "@/lib/site";
 import { getAllNotices } from "@/lib/notices";
 import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
+import { CHANNEL_INDEX_MAX_STALE_DAYS, kstDateDaysAgo } from "@/lib/channels";
 
 /**
  * sitemap 구성.
@@ -134,6 +135,12 @@ export function pagesUrls(): SitemapUrl[] {
  */
 export const SITEMAP_CHANNEL_MIN_DAYS = 7;
 
+/*
+ * [2026-10-12] 순위에서 빠진 지 30일이 넘은 채널(CHANNEL_INDEX_MAX_STALE_DAYS)은 싣지 않는다.
+ * 페이지가 noindex 라 사이트맵에 있으면 서치콘솔이 '제출됐는데 noindex' 오류로 본다.
+ * 4,406 → 약 2,500개.
+ */
+
 /**
  * 채널 상세 URL 목록 (아카이브 기준, 1시간 캐시).
  *
@@ -147,11 +154,13 @@ const channelUrlsCached = unstable_cache(
         const sb = supabase();
         const out: SitemapUrl[] = [];
         const PAGE = 1000;
+        const cutoff = kstDateDaysAgo(CHANNEL_INDEX_MAX_STALE_DAYS);
         for (let from = 0; from < 50_000; from += PAGE) {
             const { data, error } = await sb
                 .from("channel_archive")
                 .select("channel_id,last_seen")
                 .gte("days_seen", SITEMAP_CHANNEL_MIN_DAYS)
+                .gte("last_seen", cutoff)
                 .order("last_seen", { ascending: false })
                 .order("channel_id")
                 .range(from, from + PAGE - 1);
@@ -171,7 +180,7 @@ const channelUrlsCached = unstable_cache(
         }
         return out;
     },
-    ["sitemap-channels-v1", String(SITEMAP_CHANNEL_MIN_DAYS)],
+    ["sitemap-channels-v2", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
     { revalidate: 3600 },
 );
 

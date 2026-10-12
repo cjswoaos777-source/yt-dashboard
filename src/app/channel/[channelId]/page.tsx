@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, TrendingUp, Users, Eye, Video } from "lucide-react";
 import type { Metadata } from "next";
-import { getChannel, isAwaitingBaseline, CHANNEL_INDEX_MIN_DAYS } from "@/lib/channels";
+import { getChannel, isAwaitingBaseline, isIndexableChannel, daysSinceKst } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
 import { MetricsDisclosure } from "@/components/legal";
@@ -40,7 +40,7 @@ export async function generateMetadata({
     const data = await getChannel(channelId);
     if (!data) return { title: "채널을 찾을 수 없습니다", robots: { index: false } };
 
-    const { channel, categoryRank, categoryTotal, isCurrent, daysSeen, lastSeen } = data;
+    const { channel, categoryRank, categoryTotal, isCurrent, lastSeen } = data;
     const title = `${channel.channel_title} 채널 분석 — 구독자·조회수 추이`;
     const rankSentence = isCurrent
         ? `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). `
@@ -63,7 +63,8 @@ export async function generateMetadata({
     //  이 페이지들이 실제로 찾아지고 있다)
     //
     // GitHub 경로는 daysSeen 이 0 이라 여전히 noindex 다.
-    const indexable = daysSeen >= CHANNEL_INDEX_MIN_DAYS;
+    // [2026-10-12] 순위에서 빠진 지 30일이 넘은 기록 페이지도 뺀다 (isIndexableChannel 주석).
+    const indexable = isIndexableChannel(data);
 
     return {
         title,
@@ -113,9 +114,7 @@ export default async function ChannelDetailPage({
 
     // 순위에서 빠진 채널: 아카이브의 마지막 값을 보여주되, 그것이 '지금'이 아님을
     // 문장과 배너로 분명히 한다. 오래된 숫자를 현재처럼 읽히게 두면 안 된다.
-    const daysAgo = lastSeen
-        ? Math.max(0, Math.round((Date.now() - new Date(`${lastSeen}T00:00:00+09:00`).getTime()) / 86_400_000))
-        : null;
+    const daysAgo = daysSinceKst(lastSeen);
 
     // 수집 데이터로 만드는 요약 문장 — 페이지마다 내용이 달라지도록 수치 기반으로 구성한다.
     const subMultiple =
@@ -180,7 +179,8 @@ export default async function ChannelDetailPage({
             icon: TrendingUp,
             label: "성장 지수",
             value: channel.damped_score ? channel.damped_score.toFixed(1) : "—",
-            sub: `전체 ${overallRank.toLocaleString()}위 / ${overallTotal.toLocaleString()}개`,
+            // 기록 모드에선 순위가 0 이라 "전체 0위 / 0개"가 찍혔다. 현재일 때만 보인다.
+            sub: isCurrent ? `전체 ${overallRank.toLocaleString()}위 / ${overallTotal.toLocaleString()}개` : null,
         },
     ];
 
@@ -314,13 +314,22 @@ export default async function ChannelDetailPage({
                             </h1>
                             {/* '순위'가 한국 유튜브 전체 순위로 오해되지 않도록,
                                 추적 대상 안에서의 상대 위치임을 문장에 드러낸다. */}
-                            <p className="text-[13px] leading-relaxed text-neutral-500">
-                                추적 중인 {channel.main_category} 채널{" "}
-                                {categoryTotal.toLocaleString()}개 중 구독자{" "}
-                                <strong className="font-semibold text-neutral-700">
-                                    {categoryRank.toLocaleString()}번째
-                                </strong>
-                            </p>
+                            {/* 기록 모드에선 순위가 0 이라 "0개 중 0번째"가 찍혔다. 대신 등장 이력을 쓴다. */}
+                            {isCurrent ? (
+                                <p className="text-[13px] leading-relaxed text-neutral-500">
+                                    추적 중인 {channel.main_category} 채널{" "}
+                                    {categoryTotal.toLocaleString()}개 중 구독자{" "}
+                                    <strong className="font-semibold text-neutral-700">
+                                        {categoryRank.toLocaleString()}번째
+                                    </strong>
+                                </p>
+                            ) : (
+                                <p className="text-[13px] leading-relaxed text-neutral-500">
+                                    {channel.main_category} 카테고리 · 급상승 순위{" "}
+                                    <strong className="font-semibold text-neutral-700">{daysSeen}일</strong> 등장
+                                    {lastSeen && ` (마지막 ${lastSeen})`}
+                                </p>
+                            )}
                         </div>
                     </div>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
@@ -373,7 +382,7 @@ export default async function ChannelDetailPage({
                             <dt className="font-medium text-[#1A1A1A]">순위</dt>
                             <dd>
                                 한국 유튜브 전체가 아니라, 이 서비스가 추적 중인 채널
-                                {overallTotal.toLocaleString()}개 안에서의 상대 위치입니다.
+                                {isCurrent ? ` ${overallTotal.toLocaleString()}개` : ""} 안에서의 상대 위치입니다.
                             </dd>
                         </div>
                         <div>

@@ -326,6 +326,36 @@ export interface ChannelDetail {
 /** 이 채널 페이지를 색인시켜도 되는 최소 등장 일수 */
 export const CHANNEL_INDEX_MIN_DAYS = 3;
 
+/**
+ * 순위에서 빠진 뒤 이 일수가 지나면 noindex.
+ *
+ * [2026-10-12] 정책상(III.E.4.d) 30일 지난 채널은 refresh_archive 가 일평균·성장 지수를
+ * 지운다(ARCHIVE_STALE_DAYS). 그러면 페이지에 구독자·누적 조회수만 남아 같은 틀의
+ * 얇은 페이지가 된다. 10월 초 이런 페이지가 쌓이자 서치콘솔 '크롤링됨 - 현재 색인이
+ * 생성되지 않음'이 ~200 → 768 로 뛰고 색인 수가 줄었다. 사이트 전체 품질 평가를
+ * 끌어내리지 않도록 색인 대상에서 뺀다. 다시 순위에 오르면 자동으로 색인 대상이 된다.
+ */
+export const CHANNEL_INDEX_MAX_STALE_DAYS = 30;
+
+/** 한국 날짜(YYYY-MM-DD) 기준 오늘부터 며칠 전인가 */
+export function daysSinceKst(date: string | null): number | null {
+    if (!date) return null;
+    return Math.max(0, Math.round((Date.now() - new Date(`${date}T00:00:00+09:00`).getTime()) / 86_400_000));
+}
+
+/** 오늘 기준 N일 전의 한국 날짜 (YYYY-MM-DD) */
+export function kstDateDaysAgo(days: number): string {
+    return new Date(Date.now() + 9 * 3_600_000 - days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/** 채널 상세를 색인시킬지. 얇은 페이지(짧게 스쳐간 채널, 오래된 기록)는 뺀다. */
+export function isIndexableChannel(d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen">): boolean {
+    if (d.daysSeen < CHANNEL_INDEX_MIN_DAYS) return false;
+    if (d.isCurrent) return true;
+    const ago = daysSinceKst(d.lastSeen);
+    return ago !== null && ago <= CHANNEL_INDEX_MAX_STALE_DAYS;
+}
+
 function getChannelCached(channelId: string, version: string) {
     return unstable_cache(
         async (): Promise<ChannelDetail | null> => {
