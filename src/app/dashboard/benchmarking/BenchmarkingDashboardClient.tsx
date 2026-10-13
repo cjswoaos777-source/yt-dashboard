@@ -8,6 +8,7 @@ import { ChannelBentoCard } from "@/components/dashboard/ChannelBentoCard";
 import { CHANNELS_URL } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
 import { MetricsDisclosure } from "@/components/legal";
+import { track, currentPageType } from "@/lib/analytics";
 
 // ─── targetDate 포맷터: '2026-03-31' → '2026.03.31'
 function formatTargetDate(d: string | null): string {
@@ -228,6 +229,7 @@ function ChannelCardSkeleton() {
 function ShareButton() {
     const [copied, setCopied] = useState(false);
     function handleCopy() {
+        track("share", { page_type: currentPageType() });
         navigator.clipboard.writeText(window.location.href).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
@@ -298,6 +300,9 @@ export function BenchmarkingDashboardClient({
         });
         const qs = params.toString();
         router.push(qs ? `?${qs}` : "?", { scroll: false });
+        // 필터 버튼은 모두 이 함수를 거친다. null 은 기본값으로 돌아간 것.
+        const [name, value] = Object.entries(updates)[0] ?? [];
+        if (name) track("filter_change", { board: "benchmarking", filter_name: name, filter_value: value ?? "default" });
     }, [router, searchParams]);
 
     function setSortBy(v: SortKey) { setSortByState(v); syncUrl({ sort: v === "damped_score" ? null : v }); }

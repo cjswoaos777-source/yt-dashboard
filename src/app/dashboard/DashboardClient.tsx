@@ -9,6 +9,7 @@ import { RANKING_TIER_URLS, TierKey } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
 import type { NoticeMeta } from "@/lib/notices";
 import { MetricsDisclosure } from "@/components/legal";
+import { track, currentPageType } from "@/lib/analytics";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
 function parseUpdatedHour(raw: string): string {
@@ -332,6 +333,7 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
 function ShareButton() {
     const [copied, setCopied] = useState(false);
     function handleCopy() {
+        track("share", { page_type: currentPageType() });
         navigator.clipboard.writeText(window.location.href).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
@@ -426,6 +428,10 @@ export function DashboardClient({
         });
         const qs = params.toString();
         router.push(qs ? `?${qs}` : "?", { scroll: false });
+        // 필터 버튼은 모두 이 함수를 거친다. 첫 키가 누른 필터다
+        // (지역을 바꿀 때 같이 지워지는 lang 은 세지 않는다). null 은 기본값으로 돌아간 것.
+        const [name, value] = Object.entries(updates)[0] ?? [];
+        if (name) track("filter_change", { board: "ranking", filter_name: name, filter_value: value ?? "default" });
     }, [router, searchParams]);
 
     function setSortBy(v: SortKey) { setSortByState(v); syncUrl({ sort: v === "hourly_views" ? null : v }); }

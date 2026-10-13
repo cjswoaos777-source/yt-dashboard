@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SmoothScroll } from "@/components/smooth-scroll";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { SITE } from "@/lib/site";
 
 // Primary sans — replaces Inter; PJS 700/800 visually matches Korean glyph weight much better
@@ -118,9 +119,11 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_ID}');
+            gtag('config', '${GA_ID}', { send_page_view: false });
           `}
         </Script>
+        {/* page_view(page_type 포함)와 유튜브·채널 클릭은 이 추적기가 보낸다 */}
+        <AnalyticsTracker />
 
 
         <SmoothScroll>{children}</SmoothScroll>
