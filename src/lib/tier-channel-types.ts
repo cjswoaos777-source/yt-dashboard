@@ -36,4 +36,16 @@ export interface TierChannel {
      * 저장돼 있어 JSON.parse 가 실패한다. parseSparkline() 로 정규화해서 쓴다.
      */
     sparkline_data?: SparklinePoint[] | string | null;
+    /** 채널 개설일 (ISO). 벤치마킹 '채널 나이' 필터·'개설 N일' 배지. 2026-10-14 부터 */
+    channel_created_at?: string | null;
+}
+
+/** 이 일수 이내에 개설된 채널을 '신규 채널'로 본다 */
+export const NEW_CHANNEL_DAYS = 90;
+
+/** 채널 개설 후 지난 일수. 개설일이 없으면 null */
+export function channelAgeDays(c: Pick<TierChannel, "channel_created_at">): number | null {
+    if (!c.channel_created_at) return null;
+    const t = new Date(c.channel_created_at).getTime();
+    return Number.isNaN(t) ? null : Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
 }

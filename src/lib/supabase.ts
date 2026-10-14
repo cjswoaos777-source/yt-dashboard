@@ -202,7 +202,7 @@ const BENCH_COLUMNS =
     "channel_id,channel_title,target_date,tier,league_group,origin_type," +
     "main_category,is_new_channel,subscriber_count,total_view_count," +
     "damped_score,avg_daily_view_increase,avg_daily_sub_increase," +
-    "top_video_views,video_thumbnail";
+    "top_video_views,video_thumbnail,channel_created_at";
 
 /**
  * 벤치마킹 채널 한 페이지(최대 1,000행).

@@ -23,7 +23,7 @@ const REVALIDATE_SECONDS = 1800;
 const cachedPage = (from: number) =>
     unstable_cache(
         () => fetchBenchmarkPage(from),
-        ["api-channels-page-v1", String(from)],
+        ["api-channels-page-v2", String(from)],
         { revalidate: REVALIDATE_SECONDS },
     )();
 

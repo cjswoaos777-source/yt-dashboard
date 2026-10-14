@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { TierChannel } from "@/lib/tier-channel-types";
+import { TierChannel, NEW_CHANNEL_DAYS, channelAgeDays } from "@/lib/tier-channel-types";
 import { ChannelBentoCard } from "@/components/dashboard/ChannelBentoCard";
 import { CHANNELS_URL } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
@@ -39,6 +39,16 @@ const SIZE_BANDS = [
     { key: "100k", label: "10만 이상", min: 100_000, max: Infinity },
 ] as const;
 type SizeKey = (typeof SIZE_BANDS)[number]["key"];
+
+/**
+ * 채널 나이 필터. [2026-10-14] 신규 채널 = 개설 90일 이내 (NEW_CHANNEL_DAYS).
+ * 10-13 기준 국내 4,000개 중 90일 이내 1,028개(성장 중 892개), 1년 이내 2,268개.
+ */
+const AGE_BANDS = [
+    { key: "90d", label: `✨ 3개월 이내 (신규)`, maxDays: NEW_CHANNEL_DAYS },
+    { key: "1y", label: "1년 이내", maxDays: 365 },
+] as const;
+type AgeKey = (typeof AGE_BANDS)[number]["key"];
 
 /** 처음에 그리는 카드 수, '더 보기' 한 번에 늘리는 수 */
 const PAGE_SIZE = 60;
@@ -274,6 +284,10 @@ export function BenchmarkingDashboardClient({
     const [origin, setOriginState] = useState<OriginState>(initOrigin);
     const [category, setCategoryState] = useState<string | null>(searchParams.get("category"));
     const [size, setSizeState] = useState<SizeKey | null>(initSize);
+    const [age, setAgeState] = useState<AgeKey | null>(() => {
+        const v = searchParams.get("age");
+        return AGE_BANDS.some((b) => b.key === v) ? (v as AgeKey) : null;
+    });
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     // ── URL 동기화 헬퍼 ─────────────────────────────────────────────────────
@@ -297,6 +311,7 @@ export function BenchmarkingDashboardClient({
     function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v === "DOMESTIC" ? null : v ?? "ALL" }); }
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
     function setSize(v: SizeKey | null) { setSizeState(v); syncUrl({ size: v }); }
+    function setAge(v: AgeKey | null) { setAgeState(v); syncUrl({ age: v }); }
 
     // ── CDN에서 전체 JSON 최초 1회 로드 ────────────────────────────────────────
     const [allChannels, setAllChannels] = useState<TierChannel[]>(initialChannels);
@@ -364,8 +379,15 @@ export function BenchmarkingDashboardClient({
             const band = SIZE_BANDS.find((b) => b.key === size)!;
             filtered = filtered.filter((c) => (c.subscriber_count ?? 0) >= band.min && (c.subscriber_count ?? 0) < band.max);
         }
+        if (age !== null) {
+            const maxDays = AGE_BANDS.find((b) => b.key === age)!.maxDays;
+            filtered = filtered.filter((c) => {
+                const d = channelAgeDays(c);
+                return d !== null && d <= maxDays;
+            });
+        }
         return [...filtered].sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0));
-    }, [allChannels, league, origin, category, size, sortBy]);
+    }, [allChannels, league, origin, category, size, age, sortBy]);
 
     const channels = useMemo(() => matched.slice(0, visibleCount), [matched, visibleCount]);
 
@@ -434,7 +456,7 @@ export function BenchmarkingDashboardClient({
                             {
                                 step: "3",
                                 title: "성장 중인 채널만 표시",
-                                body: "조회수가 늘지 않는 채널은 뺍니다. 형식·지역·카테고리·구독자 규모로 나와 비슷한 채널을 골라 보세요.",
+                                body: "조회수가 늘지 않는 채널은 뺍니다. 형식·지역·카테고리·구독자 규모·채널 나이로 나와 비슷한 채널을 골라 보세요.",
                             },
                         ].map((s) => (
                             <li key={s.step} className="flex gap-3 rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-3">
@@ -519,6 +541,18 @@ export function BenchmarkingDashboardClient({
                                 {SIZE_BANDS.map((b) => (
                                     <Pill key={b.key} active={size === b.key} onClick={() => setSize(b.key)}>{b.label}</Pill>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Channel age */}
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">채널 나이</span>
+                            <div className="flex flex-wrap items-center gap-[6px]">
+                                <Pill active={age === null} onClick={() => setAge(null)}>전체</Pill>
+                                {AGE_BANDS.map((b) => (
+                                    <Pill key={b.key} active={age === b.key} onClick={() => setAge(b.key)}>{b.label}</Pill>
+                                ))}
+                                <span className="ml-1 text-[11px] text-neutral-400">유튜브에 표시된 채널 개설일 기준</span>
                             </div>
                         </div>
                     </div>

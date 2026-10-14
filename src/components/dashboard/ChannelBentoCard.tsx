@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { hasChannelPage } from "@/lib/channel-constants";
-import { TierChannel } from "@/lib/tier-channel-types";
+import { TierChannel, NEW_CHANNEL_DAYS, channelAgeDays } from "@/lib/tier-channel-types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +50,7 @@ export function ChannelBentoCard({
 }) {
     const [imgError, setImgError] = useState(false);
     const badge = sizeBadge(channel.subscriber_count ?? 0);
+    const ageDays = channelAgeDays(channel);
 
     // 구독자 1만 이상은 사이트 내 분석 페이지가 있으므로 내부 링크로 보낸다.
     // (내부 링크가 있어야 크롤러가 채널 페이지를 발견한다.)
@@ -102,15 +103,24 @@ export function ChannelBentoCard({
                     {rank}
                 </div>
 
-                {/* NEW badge — top right */}
-                {channel.is_new_channel && (
-                    <div
-                        className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
-                        style={{ background: "linear-gradient(135deg, #8B5CF6, #EC4899)" }}
-                    >
-                        ✨ NEW
-                    </div>
-                )}
+                {/* 오른쪽 위 배지 — 신규 채널(개설 90일 이내)과 첫 진입.
+                    [2026-10-14] 'NEW'는 '오늘 처음 순위에 들어온 채널'이라는 뜻이라
+                    개설일 기준 신규와 헷갈리지 않게 '첫 진입'으로 이름을 바꿨다. */}
+                <div className="absolute right-2.5 top-2.5 z-20 flex flex-col items-end gap-1">
+                    {ageDays !== null && ageDays <= NEW_CHANNEL_DAYS && (
+                        <div
+                            className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                            style={{ background: "linear-gradient(135deg, #8B5CF6, #EC4899)" }}
+                        >
+                            ✨ 개설 {ageDays}일
+                        </div>
+                    )}
+                    {channel.is_new_channel && (
+                        <div className="rounded-full bg-black/70 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm">
+                            첫 진입
+                        </div>
+                    )}
+                </div>
 
                 {/* Subscriber size badge — bottom left, on photo */}
                 <div

@@ -129,7 +129,7 @@ const getSupabaseSnapshot = unstable_cache(
             targetDate: latest[0]?.target_date ?? null,
         };
     },
-    ["benchmarking-ssr-supabase-v2"],
+    ["benchmarking-ssr-supabase-v3"],
     { revalidate: 1800 },
 );
 
