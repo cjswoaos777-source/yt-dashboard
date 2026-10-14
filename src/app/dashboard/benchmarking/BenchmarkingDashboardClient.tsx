@@ -21,7 +21,27 @@ function formatTargetDate(d: string | null): string {
 type SortKey = "avg_daily_view_increase" | "avg_daily_sub_increase" | "damped_score";
 type LeagueState = null | string;
 type OriginState = null | string;
-type TierState = null | number;
+
+/**
+ * 구독자 규모 필터.
+ *
+ * [2026-10-14] 전에는 여기에 'Tier 1/2/3' 필터가 있었다. 그 티어는 바이럴 점수 순위
+ * (리그별 상위 375 / 1,000 / 2,000위)로 정한 '재수집 주기' 등급인데, 랭킹 페이지의
+ * Tier(구독자 100만+ 등)와 이름이 같아 구독자 763명 채널에 'Tier 1'이 붙는 등 혼란을
+ * 줬다. 벤치마킹하는 사람에게 필요한 건 '나와 비슷한 체급'이라 구독자 구간으로 바꾼다.
+ * 구간은 실제 분포에 맞췄다 (10-14 기준 성장 중 6,872개: 1천 미만 30%, 1천~1만 58%,
+ * 1만~10만 11%, 10만 이상 14개).
+ */
+const SIZE_BANDS = [
+    { key: "lt1k", label: "1천 미만", min: 0, max: 1_000 },
+    { key: "1k", label: "1천~1만", min: 1_000, max: 10_000 },
+    { key: "10k", label: "1만~10만", min: 10_000, max: 100_000 },
+    { key: "100k", label: "10만 이상", min: 100_000, max: Infinity },
+] as const;
+type SizeKey = (typeof SIZE_BANDS)[number]["key"];
+
+/** 처음에 그리는 카드 수, '더 보기' 한 번에 늘리는 수 */
+const PAGE_SIZE = 60;
 
 // ─── Pill Button ──────────────────────────────────────────────────────────────
 
@@ -56,49 +76,6 @@ function Pill({
                 </svg>
             )}
             {children}
-        </button>
-    );
-}
-
-// ─── Toggle Switch ────────────────────────────────────────────────────────────
-
-function ToggleSwitch({
-    checked,
-    onChange,
-    label,
-}: {
-    checked: boolean;
-    onChange: (v: boolean) => void;
-    label: string;
-}) {
-    return (
-        <button
-            role="switch"
-            aria-checked={checked}
-            onClick={() => onChange(!checked)}
-            className="inline-flex items-center gap-2.5 select-none group"
-        >
-            <span
-                className={cn(
-                    "relative inline-flex h-[22px] w-[40px] shrink-0 rounded-full border-2 transition-colors duration-200",
-                    checked ? "bg-violet-600 border-violet-600" : "bg-neutral-200 border-neutral-200"
-                )}
-            >
-                <span
-                    className={cn(
-                        "pointer-events-none inline-block h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform duration-200 mt-[2px]",
-                        checked ? "translate-x-[20px]" : "translate-x-[2px]"
-                    )}
-                />
-            </span>
-            <span
-                className={cn(
-                    "text-[13px] font-medium transition-colors",
-                    checked ? "text-violet-700" : "text-neutral-500 group-hover:text-neutral-800"
-                )}
-            >
-                {label}
-            </span>
         </button>
     );
 }
@@ -167,23 +144,24 @@ function BenchmarkingInfoPanel() {
                     {/* 소제목 2 */}
                     <div className="rounded-xl bg-violet-50 p-4">
                         <h4 className="mb-2 text-[13px] font-bold text-violet-800">
-                            🔍 순위에 따른 밀착 감시 주기
+                            🔍 점수가 높을수록 더 자주 다시 확인해요
                         </h4>
                         <p className="mb-3 text-[12px] leading-relaxed text-violet-700">
-                            매일 저녁 발굴 작업 때 계산된 바이럴 점수에 따라 채널 그룹이 나뉘며, 상위 그룹일수록 데이터를 더 자주 수집합니다.
+                            국내 숏츠·국내 롱폼·해외 숏츠·해외 롱폼 네 리그에서 각각 상위 2,000개(총 8,000개)를 고르고,
+                            순위가 높을수록 조회수·구독자를 자주 다시 수집합니다.
                         </p>
                         <ul className="space-y-2 text-[12px] text-violet-700">
                             <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">1티어</span>
-                                <span><strong>상위 1,500개</strong> — 매 1시간마다 데이터 갱신</span>
+                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">1~375위</span>
+                                <span>1시간마다 갱신</span>
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">2티어</span>
-                                <span><strong>상위 2,500개</strong> — 매 6시간마다 데이터 갱신</span>
+                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">376~1,000위</span>
+                                <span>6시간마다 갱신</span>
                             </li>
                             <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">3티어</span>
-                                <span><strong>상위 4,000개</strong> — 하루 1번(24시간) 갱신</span>
+                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">1,001~2,000위</span>
+                                <span>하루 1번 갱신</span>
                             </li>
                         </ul>
                     </div>
@@ -278,19 +256,25 @@ export function BenchmarkingDashboardClient({
         if (v === "avg_daily_view_increase" || v === "avg_daily_sub_increase" || v === "damped_score") return v;
         return "damped_score";
     }
-    function initTier(): TierState {
-        const v = searchParams.get("tier");
-        const n = Number(v);
-        if (n === 1 || n === 2 || n === 3) return n;
-        return null;
+    function initSize(): SizeKey | null {
+        const v = searchParams.get("size");
+        return SIZE_BANDS.some((b) => b.key === v) ? (v as SizeKey) : null;
+    }
+    // [2026-10-14] 기본값을 국내로. '전체'로 두면 첫 화면 60개가 전부 해외 소형 채널
+    // (57개가 구독자 1만 미만)이었다. 랭킹 페이지와 같은 규칙이다 — 전체는 region=ALL.
+    function initOrigin(): OriginState {
+        const v = searchParams.get("region");
+        if (v === "ALL") return null;
+        if (v === "IMPORTED") return "IMPORTED";
+        return "DOMESTIC";
     }
 
     const [sortBy, setSortByState] = useState<SortKey>(initSortBy);
     const [league, setLeagueState] = useState<LeagueState>(searchParams.get("league") ?? null);
-    const [origin, setOriginState] = useState<OriginState>(searchParams.get("region") ?? null);
+    const [origin, setOriginState] = useState<OriginState>(initOrigin);
     const [category, setCategoryState] = useState<string | null>(searchParams.get("category"));
-    const [tier, setTierState] = useState<TierState>(initTier);
-    const [isNewOnly, setIsNewOnlyState] = useState(searchParams.get("new") === "1");
+    const [size, setSizeState] = useState<SizeKey | null>(initSize);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     // ── URL 동기화 헬퍼 ─────────────────────────────────────────────────────
     const syncUrl = useCallback((updates: Record<string, string | null>) => {
@@ -300,6 +284,8 @@ export function BenchmarkingDashboardClient({
         });
         const qs = params.toString();
         router.push(qs ? `?${qs}` : "?", { scroll: false });
+        // 필터·정렬을 바꾸면 다시 처음 60개부터 보여준다 (랭킹 페이지와 같은 동작).
+        setVisibleCount(PAGE_SIZE);
         // 필터 버튼은 모두 이 함수를 거친다. null 은 기본값으로 돌아간 것.
         const [name, value] = Object.entries(updates)[0] ?? [];
         if (name) track("filter_change", { board: "benchmarking", filter_name: name, filter_value: value ?? "default" });
@@ -307,10 +293,10 @@ export function BenchmarkingDashboardClient({
 
     function setSortBy(v: SortKey) { setSortByState(v); syncUrl({ sort: v === "damped_score" ? null : v }); }
     function setLeague(v: LeagueState) { setLeagueState(v); syncUrl({ league: v }); }
-    function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v }); }
+    // 기본값(국내)일 때 파라미터를 지워 URL 을 깨끗하게 유지한다.
+    function setOrigin(v: OriginState) { setOriginState(v); syncUrl({ region: v === "DOMESTIC" ? null : v ?? "ALL" }); }
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
-    function setTier(v: TierState) { setTierState(v); syncUrl({ tier: v !== null ? String(v) : null }); }
-    function setIsNewOnly(v: boolean) { setIsNewOnlyState(v); syncUrl({ new: v ? "1" : null }); }
+    function setSize(v: SizeKey | null) { setSizeState(v); syncUrl({ size: v }); }
 
     // ── CDN에서 전체 JSON 최초 1회 로드 ────────────────────────────────────────
     const [allChannels, setAllChannels] = useState<TierChannel[]>(initialChannels);
@@ -367,17 +353,21 @@ export function BenchmarkingDashboardClient({
 
 
     // ── 클라이언트 사이드 필터 + 정렬 (재쿼리 없음) ────────────────────────────
-    const channels = useMemo(() => {
+    // [2026-10-14] '신규 진입 채널만 보기'를 뺐다. 신규 채널은 측정이 한 번뿐이라 일평균이
+    // 0 인데, 위에서 일평균 0 이하를 걸러내므로 켜면 항상 0개였다.
+    const matched = useMemo(() => {
         let filtered = allChannels;
         if (league !== null) filtered = filtered.filter((c) => c.league_group === league);
         if (origin !== null) filtered = filtered.filter((c) => c.origin_type === origin);
         if (category !== null) filtered = filtered.filter((c) => c.main_category === category);
-        if (tier !== null) filtered = filtered.filter((c) => c.tier === tier);
-        if (isNewOnly) filtered = filtered.filter((c) => c.is_new_channel);
-        return [...filtered]
-            .sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0))
-            .slice(0, 60);
-    }, [allChannels, league, origin, category, tier, isNewOnly, sortBy]);
+        if (size !== null) {
+            const band = SIZE_BANDS.find((b) => b.key === size)!;
+            filtered = filtered.filter((c) => (c.subscriber_count ?? 0) >= band.min && (c.subscriber_count ?? 0) < band.max);
+        }
+        return [...filtered].sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0));
+    }, [allChannels, league, origin, category, size, sortBy]);
+
+    const channels = useMemo(() => matched.slice(0, visibleCount), [matched, visibleCount]);
 
     return (
         <div className="min-h-screen bg-[#FDFDFC]">
@@ -388,7 +378,7 @@ export function BenchmarkingDashboardClient({
                     <div className="flex items-center gap-2 mb-4">
                         <span className="inline-flex h-2 w-2 rounded-full bg-violet-500" />
                         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            매일 저녁 갱신 · {formatTargetDate(targetDate)} 집계
+                            매일 오후 5시 수집분 기준 · {formatTargetDate(targetDate)} 집계
                         </span>
                     </div>
                     <h1 className="flex flex-col leading-none">
@@ -426,6 +416,38 @@ export function BenchmarkingDashboardClient({
                     </div>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
                     <MetricsDisclosure className="mt-2" />
+
+                    {/* [2026-10-14] 이 목록이 '무엇의 순위인지'를 펼치지 않아도 보이게 한다.
+                        방문이 많은 페이지인데 기준이 팝오버 안에만 있어 오해가 생겼다. */}
+                    <ol className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        {[
+                            {
+                                step: "1",
+                                title: "매일 오후 5시에 수집",
+                                body: "최근 2일 안에 올라온 영상 중 조회수가 높은 영상을 모으고, 그 영상을 올린 채널을 후보로 삼습니다.",
+                            },
+                            {
+                                step: "2",
+                                title: "바이럴 화력으로 줄 세우기",
+                                body: "최근 7일 영상의 평균 조회수를 구독자 수로 나눈 값입니다. 구독자가 적은데 조회수가 잘 나올수록 높습니다.",
+                            },
+                            {
+                                step: "3",
+                                title: "성장 중인 채널만 표시",
+                                body: "조회수가 늘지 않는 채널은 뺍니다. 형식·지역·카테고리·구독자 규모로 나와 비슷한 채널을 골라 보세요.",
+                            },
+                        ].map((s) => (
+                            <li key={s.step} className="flex gap-3 rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-3">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[12px] font-bold text-white">
+                                    {s.step}
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="text-[13px] font-bold text-neutral-800">{s.title}</p>
+                                    <p className="mt-0.5 text-[12px] leading-relaxed text-neutral-500">{s.body}</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ol>
                 </div>
 
                 {/* ── Filter Bar ──────────────────────────────────────────── */}
@@ -467,12 +489,12 @@ export function BenchmarkingDashboardClient({
                         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                             <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">지역</span>
                             <div className="flex flex-wrap gap-[6px]">
-                                <Pill active={origin === null} onClick={() => setOrigin(null)}>전체</Pill>
                                 {originTypes.map((o) => (
                                     <Pill key={o} active={origin === o} onClick={() => setOrigin(o)}>
                                         {o === "DOMESTIC" ? "🇰🇷 국내" : o === "IMPORTED" ? "🌐 해외" : `🌍 ${o}`}
                                     </Pill>
                                 ))}
+                                <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
                             </div>
                         </div>
 
@@ -489,30 +511,16 @@ export function BenchmarkingDashboardClient({
                             </div>
                         )}
 
-                        {/* Tier */}
+                        {/* Subscriber size */}
                         <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">티어</span>
+                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">구독자</span>
                             <div className="flex flex-wrap gap-[6px]">
-                                <Pill active={tier === null} onClick={() => setTier(null)}>전체</Pill>
-                                <Pill active={tier === 1} onClick={() => setTier(1)}>🥇 Tier 1</Pill>
-                                <Pill active={tier === 2} onClick={() => setTier(2)}>🥈 Tier 2</Pill>
-                                <Pill active={tier === 3} onClick={() => setTier(3)}>🥉 Tier 3</Pill>
+                                <Pill active={size === null} onClick={() => setSize(null)}>전체</Pill>
+                                {SIZE_BANDS.map((b) => (
+                                    <Pill key={b.key} active={size === b.key} onClick={() => setSize(b.key)}>{b.label}</Pill>
+                                ))}
                             </div>
                         </div>
-                    </div>
-
-                    <div className="h-px bg-neutral-100" />
-
-                    {/* Quick filter: New only toggle */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        <ToggleSwitch
-                            checked={isNewOnly}
-                            onChange={setIsNewOnly}
-                            label="✨ 신규 진입 채널만 보기"
-                        />
-                        <span className="text-[11px] text-neutral-400">
-                            티어에 새롭게 진입한 채널만 표시합니다
-                        </span>
                     </div>
                 </div>
 
@@ -536,7 +544,9 @@ export function BenchmarkingDashboardClient({
                 {/* ── Status ──────────────────────────────────────────────── */}
                 {!error && !loading && (
                     <div className="mb-5">
-                        <p className="text-xs font-medium text-neutral-400">{channels.length}개 채널 표시 중</p>
+                        <p className="text-xs font-medium text-neutral-400">
+                            조건에 맞는 채널 {matched.length.toLocaleString()}개 중 {channels.length.toLocaleString()}개 표시 중
+                        </p>
                     </div>
                 )}
 
@@ -552,16 +562,34 @@ export function BenchmarkingDashboardClient({
                         선택한 필터에 해당하는 채널이 없습니다.
                     </div>
                 ) : !error ? (
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {channels.map((ch, i) => (
-                            <ChannelBentoCard
-                                key={ch.channel_id}
-                                channel={ch}
-                                rank={i + 1}
-                                sortBy={sortBy}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {channels.map((ch, i) => (
+                                <ChannelBentoCard
+                                    key={ch.channel_id}
+                                    channel={ch}
+                                    rank={i + 1}
+                                    sortBy={sortBy}
+                                />
+                            ))}
+                        </div>
+
+                        {/* 더 보기 — 데이터는 이미 받아둔 상태라 클릭 즉시 펼쳐진다(추가 요청 없음). */}
+                        {matched.length > channels.length && (
+                            <div className="mt-10 flex flex-col items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                                    className="rounded-full border border-neutral-200 bg-white px-6 py-2.5 text-[13px] font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-50"
+                                >
+                                    더 보기 (+{Math.min(PAGE_SIZE, matched.length - channels.length)})
+                                </button>
+                                <p className="text-[11px] text-neutral-400">
+                                    {(matched.length - channels.length).toLocaleString()}개 더 있습니다
+                                </p>
+                            </div>
+                        )}
+                    </>
                 ) : null}
 
 

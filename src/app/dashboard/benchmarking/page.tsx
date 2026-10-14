@@ -73,7 +73,9 @@ const getBenchmarkingSnapshot = (version: string) => unstable_cache(
         // 쓰므로, 제거하면 색인된 페이지 57개가 404 가 된다. 목록 표시에서만 걸러낸다.
         const latest = latestAll.filter((c) => (c.avg_daily_view_increase ?? 0) > 0);
 
-        const channels = [...latest]
+        // 첫 화면(SSR)은 화면의 기본값(국내)과 같아야 한다. 전량은 마운트 후 받는다.
+        const channels = latest
+            .filter((c) => c.origin_type === "DOMESTIC")
             .sort((a, b) => (b.damped_score ?? 0) - (a.damped_score ?? 0))
             .slice(0, 60);
 
@@ -93,7 +95,7 @@ const getBenchmarkingSnapshot = (version: string) => unstable_cache(
         };
     },
     // -v4 + version: 가공 로직이 바뀌면 접미사를 올려야 옛 결과가 남지 않는다.
-    ["benchmarking-tier-channels-v4", version],
+    ["benchmarking-tier-channels-v5", version],
     { revalidate: 3600 }
 )();
 
@@ -120,13 +122,14 @@ const getSupabaseSnapshot = unstable_cache(
         }
         return {
             // fetchBenchmarkChannels 가 이미 damped_score 내림차순이라 앞 60개가 곧 상위다.
-            channels: latest.slice(0, 60),
+            // 첫 화면(SSR)은 화면의 기본값(국내)과 같아야 한다. 전량은 마운트 후 받는다.
+            channels: latest.filter((c) => c.origin_type === "DOMESTIC").slice(0, 60),
             categories: Array.from(catSet).sort(),
             originTypes: Array.from(originSet).sort(),
             targetDate: latest[0]?.target_date ?? null,
         };
     },
-    ["benchmarking-ssr-supabase-v1"],
+    ["benchmarking-ssr-supabase-v2"],
     { revalidate: 1800 },
 );
 

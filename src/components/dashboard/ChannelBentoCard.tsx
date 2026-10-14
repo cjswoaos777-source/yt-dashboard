@@ -18,11 +18,19 @@ export function fmtCompact(n: number): string {
     return n.toLocaleString();
 }
 
-const TIER_LABELS: Record<number, { label: string; color: string }> = {
-    1: { label: "Tier 1", color: "#F59E0B" }, // amber
-    2: { label: "Tier 2", color: "#94A3B8" }, // slate
-    3: { label: "Tier 3", color: "#CD7C54" }, // bronze
-};
+/**
+ * 사진 위 배지 — 구독자 규모.
+ *
+ * [2026-10-14] 전에는 'Tier 1/2/3'(바이럴 점수 순위로 정한 재수집 주기 등급)을 붙였는데,
+ * 랭킹 페이지의 Tier(구독자 100만+ 등)와 이름이 같아 구독자 763명 채널에 'Tier 1'이
+ * 보이는 혼란이 있었다. 벤치마킹 화면의 구독자 필터와 같은 구간으로 보여준다.
+ */
+function sizeBadge(subs: number): { label: string; color: string } {
+    if (subs >= 100_000) return { label: "구독자 10만+", color: "#F59E0B" };
+    if (subs >= 10_000) return { label: "구독자 1만~10만", color: "#8B5CF6" };
+    if (subs >= 1_000) return { label: "구독자 1천~1만", color: "#64748B" };
+    return { label: "구독자 1천 미만", color: "#94A3B8" };
+}
 
 
 // ─── Sort label helper ─────────────────────────────────────────────────────────
@@ -41,7 +49,7 @@ export function ChannelBentoCard({
     sortBy: SortKey;
 }) {
     const [imgError, setImgError] = useState(false);
-    const tierMeta = TIER_LABELS[channel.tier] ?? { label: `Tier ${channel.tier}`, color: "#888" };
+    const badge = sizeBadge(channel.subscriber_count ?? 0);
 
     // 구독자 1만 이상은 사이트 내 분석 페이지가 있으므로 내부 링크로 보낸다.
     // (내부 링크가 있어야 크롤러가 채널 페이지를 발견한다.)
@@ -104,12 +112,12 @@ export function ChannelBentoCard({
                     </div>
                 )}
 
-                {/* Tier badge — bottom left, on photo */}
+                {/* Subscriber size badge — bottom left, on photo */}
                 <div
                     className="absolute left-2.5 bottom-2.5 z-20 rounded-full px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm"
-                    style={{ background: tierMeta.color + "CC" }}
+                    style={{ background: badge.color + "CC" }}
                 >
-                    {tierMeta.label}
+                    {badge.label}
                 </div>
 
                 {/* Top video views — bottom right, on photo */}
