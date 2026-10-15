@@ -11,15 +11,17 @@ import type { Metadata } from "next";
 // 발생해 채널 데이터가 HTML에서 빠진다. 크롤러 노출을 위해 SSR을 유지한다.
 export const dynamic = "force-dynamic";
 
+// [2026-10-16] 제목 앞쪽에 실제 검색 표현('유튜브 급성장 채널 순위')을 두고,
+// 화면에 생긴 기능(신규 채널·구독자 규모 필터)을 설명문에 담는다.
 export const metadata: Metadata = {
-    title: "급성장 채널 벤치마킹",
+    title: "유튜브 급성장 채널 순위 · 벤치마킹",
     description:
-        "최근 7일간 눈에 띄게 성장한 유튜브 채널을 분석합니다. 구독자 증가, 조회수 효율, 참여도 지표로 벤치마킹할 채널을 찾아보세요.",
+        "최근 7일 동안 구독자 대비 조회수가 가장 잘 나온 유튜브 채널 순위. 개설 3개월 이내 신규 채널, 구독자 1천 미만부터 10만 이상까지 규모별로 나와 비슷한 급성장 채널을 찾아 벤치마킹하세요. 매일 갱신됩니다.",
     alternates: { canonical: "/dashboard/benchmarking" },
     openGraph: {
-        title: "급성장 채널 벤치마킹 | Viral Hunter",
+        title: "유튜브 급성장 채널 순위 · 벤치마킹 | Viral Hunter",
         description:
-            "최근 7일간 눈에 띄게 성장한 유튜브 채널 분석. 매일 저녁 갱신됩니다.",
+            "구독자 대비 조회수가 잘 나오는 유튜브 채널 순위. 신규 채널·구독자 규모별로 찾아보세요. 매일 갱신됩니다.",
         url: `${SITE.url}/dashboard/benchmarking`,
         type: "website",
     },

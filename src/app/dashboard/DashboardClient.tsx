@@ -560,7 +560,11 @@ export function DashboardClient({
                             <span className="hidden sm:inline"> · 매시 25분경 갱신</span>
                         </span>
                     </div>
-                    <div className="flex flex-col leading-none">
+                    {/* [2026-10-16] 이 페이지에 h1 이 하나도 없었다(div+span). 검색엔진이
+                        페이지 주제를 읽는 1순위 요소라 h1 으로 바꾸고, 사람들이 실제로
+                        검색하는 표현('유튜브 실시간 급상승 순위')을 담는다.
+                        'TOP 50'은 50개만 보이던 시절 이름이라 최대치인 1000으로. */}
+                    <h1 className="flex flex-col leading-none">
                         <span
                             className="text-[clamp(4rem,12vw,9rem)] leading-[0.9] tracking-tight"
                             style={{
@@ -571,7 +575,7 @@ export function DashboardClient({
                                 backgroundClip: "text",
                             }}
                         >
-                            TOP 50
+                            TOP 1000
                         </span>
                         <span
                             className="text-[clamp(1.5rem,5vw,3.5rem)] font-black tracking-tight leading-snug -mt-1"
@@ -583,11 +587,13 @@ export function DashboardClient({
                                 backgroundClip: "text",
                             }}
                         >
-                            실시간 랭킹
+                            유튜브 실시간 급상승 순위
                         </span>
-                    </div>
+                    </h1>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <p className="text-base text-[#555555]">지금 이 순간, 조회수가 폭발적으로 오르고 있는 영상들</p>
+                        <p className="text-base text-[#555555]">
+                            지금 조회수가 가장 빠르게 오르는 유튜브 동영상을 최대 1,000위까지 · 쇼츠·롱폼, 카테고리, 구독자 구간별로 골라 보세요
+                        </p>
                         <HomeInfoPanel />
                         <ShareButton />
                     </div>

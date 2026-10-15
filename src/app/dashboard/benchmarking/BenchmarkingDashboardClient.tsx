@@ -426,13 +426,14 @@ export function BenchmarkingDashboardClient({
                                 backgroundClip: "text",
                             }}
                         >
-                            유튜브 랭킹 및 채널 분석 리포트
+                            유튜브 급성장 채널 순위
                         </span>
-                        {/* 검색 엔진을 위한 보이지 않는 핵심 키워드 덩어리 */}
-                        <span className="sr-only">유튜브 순위, 실시간 유튜브 떡상 알고리즘 분석, 급상승 채널 조회수 수익 벤치마킹 대시보드</span>
+                        {/* [2026-10-16] 화면에 안 보이는 키워드 묶음(sr-only)을 h1 에서 뺐다.
+                            검색엔진이 '숨긴 텍스트'로 볼 수 있어 득보다 위험이 크다.
+                            검색어는 보이는 제목·설명문에 담는다. */}
                     </h1>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <p className="text-base text-[#555555]">성장 가능성이 높은 꿀통 채널들의 바이럴 파워와 일평균 성과를 분석합니다</p>
+                        <p className="text-base text-[#555555]">구독자 대비 조회수가 잘 나오는 유튜브 채널을 찾아 바이럴 화력과 일평균 성과를 비교합니다</p>
                         <BenchmarkingInfoPanel />
                         <ShareButton />
                     </div>

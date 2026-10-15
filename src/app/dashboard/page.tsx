@@ -13,15 +13,18 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 const DISPLAY_LIMIT = 50;
 
+// [2026-10-16] 'TOP 50'은 50개만 보이던 시절 이름이다. 지금은 조합별 최대 1,000위.
+// 제목 앞쪽에 사람들이 실제로 검색하는 표현('유튜브 실시간 급상승 동영상 순위')을 두고,
+// 설명에는 쇼츠·카테고리·국내/해외 같은 세부 검색어를 자연스럽게 담는다.
 export const metadata: Metadata = {
-  title: "실시간 떡상 영상 TOP 50",
+  title: "유튜브 실시간 급상승 동영상 순위 TOP 1000",
   description:
-    "지금 이 순간 조회수가 폭발적으로 오르고 있는 국내 유튜브 영상 TOP 50. 숏츠/롱폼, 구독자 구간별 필터로 진짜 떡상 영상을 찾아보세요. 해외 트렌드도 함께 볼 수 있습니다.",
+    "지금 조회수가 가장 빠르게 오르는 유튜브 급상승 동영상 순위. 시간당 조회수 증가로 매긴 국내·해외 인기 영상을 쇼츠·롱폼, 카테고리, 구독자 구간별로 최대 1,000위까지 확인하세요. 매시간 갱신됩니다.",
   alternates: { canonical: "/dashboard" },
   openGraph: {
-    title: "실시간 떡상 영상 TOP 50 | Viral Hunter",
+    title: "유튜브 실시간 급상승 동영상 순위 TOP 1000 | Viral Hunter",
     description:
-      "지금 이 순간 조회수가 폭발적으로 오르고 있는 국내 유튜브 영상 TOP 50. 매시간 자동 갱신됩니다.",
+      "지금 조회수가 가장 빠르게 오르는 유튜브 동영상 순위. 쇼츠·롱폼, 카테고리별로 최대 1,000위까지, 매시간 갱신됩니다.",
     url: `${SITE.url}/dashboard`,
     type: "website",
   },
@@ -160,7 +163,7 @@ export default async function DashboardPage() {
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "실시간 국내 떡상 영상 TOP 50",
+    name: "유튜브 실시간 급상승 동영상 순위 (국내)",
     url: `${SITE.url}/dashboard`,
     numberOfItems: initialVideos.length,
     itemListElement: initialVideos.slice(0, 10).map((v, i) => ({
