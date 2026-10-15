@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -458,7 +458,12 @@ export function DashboardClient({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // 필터를 빠르게 연달아 누르면 앞 요청의 응답이 늦게 도착해 최신 결과를 덮을 수 있다.
+    // 마지막 요청의 응답만 반영한다.
+    const requestSeq = useRef(0);
+
     const refetch = useCallback(() => {
+        const seq = ++requestSeq.current;
         setLoading(true);
         setError(null);
         // 데이터 출처 스위치. 기본값은 기존과 같은 GitHub gzip 파일이고,
@@ -475,14 +480,23 @@ export function DashboardClient({
         // 미리 잘라둔 구조라 이 문제가 없었다)
         // 언어도 같은 이유로 서버에서 거른다. 해외 상위 1,000건은 영어·힌디가
         // 절반이라 화면에서 걸러내면 일본어 같은 언어는 몇 건 안 남는다.
+        // [2026-10-16] 형식·카테고리·정렬도 서버로 넘긴다. 1,000건을 받아 화면에서
+        // 거르면 1,000건 밖의 영상은 카테고리를 골라도 나오지 않았다
+        // (국내 Education 339건 중 24건만 보임). 조합마다 그 안의 상위 1,000건을 받는다.
+        // 아래 화면 쪽 필터·정렬은 그대로 둔다 — 서버 결과에는 영향이 없고,
+        // 새 응답이 오기 전까지 들고 있는 목록을 바로 걸러 보여준다.
         const source = isSupabase
             ? `/api/ranking?tier=${tier}&limit=1000` +
               (origin ? `&origin=${origin}` : "") +
-              (origin === "IMPORTED" && lang ? `&lang=${lang}` : "")
+              (origin === "IMPORTED" && lang ? `&lang=${lang}` : "") +
+              (isShorts === true ? "&format=Shorts" : isShorts === false ? "&format=Long-form" : "") +
+              (category ? `&category=${encodeURIComponent(category)}` : "") +
+              (sortBy !== "hourly_views" ? `&sort=${sortBy}` : "")
             : RANKING_TIER_URLS[tier];
 
         fetchGzipJson<ViralVideo[]>(source)
             .then((data) => {
+                if (seq !== requestSeq.current) return;
                 setAllVideos(data);
                 // 카테고리 목록은 합집합으로 유지한다. 지역으로 걸러 받으면
                 // 그 지역에 없는 카테고리가 목록에서 사라지는데, 사용자가
@@ -493,9 +507,9 @@ export function DashboardClient({
                     return Array.from(set).sort();
                 });
             })
-            .catch((e) => { setError(e.message); })
-            .finally(() => { setLoading(false); });
-    }, [tier, origin, lang]);
+            .catch((e) => { if (seq === requestSeq.current) setError(e.message); })
+            .finally(() => { if (seq === requestSeq.current) setLoading(false); });
+    }, [tier, origin, lang, isShorts, category, sortBy]);
 
     useEffect(() => { refetch(); }, [refetch]);
 

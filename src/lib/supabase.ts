@@ -65,6 +65,15 @@ export interface RankingRow extends ViralVideo {
  * GitHub 파일은 조합별 상위 50위만 담고 있어 전체의 12% 만 나갔다.
  * 여기서는 컷 없이 정렬해 원하는 만큼 잘라 쓴다.
  */
+/** 랭킹 정렬 기준 → 컬럼. 화면의 SortKey 와 같은 이름을 쓴다. */
+export const RANKING_SORT_COLUMNS = {
+    hourly_views: "hourly_view_increase",
+    total_views: "total_views",
+    hourly_likes: "hourly_like_increase",
+    hourly_comments: "hourly_comment_increase",
+} as const;
+export type RankingSort = keyof typeof RANKING_SORT_COLUMNS;
+
 export async function fetchRanking(opts: {
     tier?: TierKey;
     /**
@@ -82,23 +91,39 @@ export async function fetchRanking(opts: {
      * 절반이라, 화면에서 걸러내면 일본어 같은 언어는 몇 건 안 남는다.
      */
     lang?: string;
+    /**
+     * [2026-10-16] 형식·카테고리·정렬도 서버에서 고른다.
+     *
+     * 전에는 (구간·지역·언어) 상위 1,000건을 받아 화면에서 걸렀다. 그러면 1,000건
+     * 밖의 영상은 카테고리를 골라도 안 나왔다 — 국내 Education 339건 중 24건만,
+     * Gaming 996건 중 72건만 보였다(국내 1,000위 컷이 시간당 5,700회). '누적 조회수'
+     * 정렬도 그 1,000건 안에서만 줄을 세워 진짜 순서가 아니었다.
+     * 이제 조합마다 그 조건 안의 상위 1,000건을 받는다. 캐시가 조합×데이터 버전이라
+     * 조회는 조합당 시간에 한 번이고, 기존 색인으로 30ms 안팎이다.
+     */
+    format?: "Shorts" | "Long-form";
+    category?: string;
+    sort?: RankingSort;
     limit?: number;
     offset?: number;
 }): Promise<RankingRow[]> {
     const tier = opts.tier ?? "all";
     const limit = Math.min(opts.limit ?? 500, MAX_ROWS);
     const offset = Math.max(opts.offset ?? 0, 0);
+    const sortColumn = RANKING_SORT_COLUMNS[opts.sort ?? "hourly_views"];
 
     let q = supabase()
         .from("video_ranking")
         .select(VIDEO_COLUMNS)
-        .order("hourly_view_increase", { ascending: false })
+        .order(sortColumn, { ascending: false })
         .range(offset, offset + limit - 1);
 
     // 'all' 은 구간 구분 없이 전체. 나머지는 sub_tier 로 좁힌다.
     if (tier !== "all") q = q.eq("sub_tier", tier);
     if (opts.origin) q = q.eq("origin_type", opts.origin);
     if (opts.lang) q = q.eq("audio_lang", opts.lang);
+    if (opts.format) q = q.eq("is_shorts", opts.format === "Shorts");
+    if (opts.category) q = q.eq("category_name", opts.category);
 
     const { data, error } = await q;
     if (error) throw new Error(`Supabase ranking 조회 실패: ${error.message}`);

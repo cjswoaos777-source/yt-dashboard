@@ -1,5 +1,8 @@
 import { unstable_cache } from "next/cache";
-import { fetchRanking, fetchRankingVersion, rankingCacheSeconds, type TierKey } from "@/lib/supabase";
+import {
+    fetchRanking, fetchRankingVersion, rankingCacheSeconds, RANKING_SORT_COLUMNS,
+    type TierKey, type RankingSort,
+} from "@/lib/supabase";
 
 /**
  * 대시보드 랭킹 API.
@@ -19,7 +22,8 @@ export const dynamic = "force-dynamic";
 const VALID_TIERS: TierKey[] = ["all", "tier1", "tier2", "tier3", "micro"];
 
 /**
- * 캐시는 tier·origin·lang·limit·offset 조합 + 데이터 버전마다 따로 잡는다.
+ * 캐시는 tier·origin·lang·format·category·sort·limit·offset 조합 + 데이터 버전마다 따로 잡는다.
+ * (format·category·sort 는 2026-10-16 추가. fetchRanking 주석 참고)
  *
  * [2026-09-18] 버전(updated_at)을 키에 넣었다. 전에는 30분 고정이라 매시
  * 25분에 바뀌는 데이터와 어긋나 한 시간 넘게 옛 스냅샷이 나가곤 했다.
@@ -30,16 +34,26 @@ const REVALIDATE_SECONDS = 3600;
 
 type Origin = "DOMESTIC" | "IMPORTED" | undefined;
 
-const cachedRanking = (version: string, tier: TierKey, origin: Origin, lang: string | undefined, limit: number, offset: number) =>
+type Format = "Shorts" | "Long-form" | undefined;
+
+const cachedRanking = (
+    version: string, tier: TierKey, origin: Origin, lang: string | undefined,
+    format: Format, category: string | undefined, sort: RankingSort,
+    limit: number, offset: number,
+) =>
     unstable_cache(
-        () => fetchRanking({ tier, origin, lang, limit, offset }),
-        ["api-ranking-v4", version, tier, origin ?? "all", lang ?? "any", String(limit), String(offset)],
+        () => fetchRanking({ tier, origin, lang, format, category, sort, limit, offset }),
+        ["api-ranking-v5", version, tier, origin ?? "all", lang ?? "any",
+         format ?? "any", category ?? "any", sort, String(limit), String(offset)],
         { revalidate: REVALIDATE_SECONDS },
     )();
 
 // 언어 코드는 'en', 'hi', 'zh' 처럼 소문자 2~3자다. 그 밖의 값은 캐시 키만
 // 늘리고 결과는 빈 배열이라 받지 않는다.
 const LANG_RE = /^[a-z]{2,3}$/;
+
+// 카테고리는 YouTube 영문 이름('People & Blogs' 등)이다. 그 밖의 값은 캐시 키만 늘린다.
+const CATEGORY_RE = /^[A-Za-z &]{2,40}$/;
 
 function toInt(v: string | null, fallback: number): number {
     const n = Number(v);
@@ -63,13 +77,22 @@ export async function GET(request: Request) {
     const rawLang = searchParams.get("lang");
     const lang = rawLang && LANG_RE.test(rawLang) ? rawLang : undefined;
 
+    const rawFormat = searchParams.get("format");
+    const format: Format = rawFormat === "Shorts" || rawFormat === "Long-form" ? rawFormat : undefined;
+
+    const rawCategory = searchParams.get("category");
+    const category = rawCategory && CATEGORY_RE.test(rawCategory) ? rawCategory : undefined;
+
+    const rawSort = searchParams.get("sort") ?? "hourly_views";
+    const sort: RankingSort = Object.hasOwn(RANKING_SORT_COLUMNS, rawSort) ? (rawSort as RankingSort) : "hourly_views";
+
     // 상한을 두지 않으면 한 번에 수만 행을 요청해 응답이 커진다.
     const limit = Math.min(toInt(searchParams.get("limit"), 500), 1000);
     const offset = toInt(searchParams.get("offset"), 0);
 
     try {
         const { version, syncedAt } = await fetchRankingVersion();
-        const rows = await cachedRanking(version, tier, origin, lang, limit, offset);
+        const rows = await cachedRanking(version, tier, origin, lang, format, category, sort, limit, offset);
         // CDN 캐시는 다음 스냅샷이 올 때까지만. 그 뒤엔 짧게 잡아 자주 확인한다.
         // stale-while-revalidate 를 두지 않는 이유: 만료 뒤 옛 응답을 내보내며
         // 뒤에서 갱신하면, 그 옛 응답이 또 한 시간 캐시되는 일이 있었다.
