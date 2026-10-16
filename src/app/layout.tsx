@@ -37,7 +37,8 @@ const notoSansKr = Noto_Sans_KR({
 
 // 네이버 서치어드바이저(searchadvisor.naver.com) 소유 확인 코드.
 // 사이트 등록 → HTML 태그 방식 선택 후 content 값을 여기에 붙여넣으면 적용됩니다.
-const NAVER_SITE_VERIFICATION: string = "";
+// [2026-10-16] trend.readthe1stars.com 으로 등록. (예전 yt-viralhunter.vercel.app 등록은 별개)
+const NAVER_SITE_VERIFICATION: string = "1b3491bc3f86e7e83c6f56ce3cfe7f66cc9248b7";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
