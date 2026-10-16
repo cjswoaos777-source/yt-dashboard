@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       cdnCache("/channel/:id", 3600, 86400),
+      // 채널 성과 카드 이미지 (opengraph-image.tsx). 그리는 데 글꼴 받기까지 수백 ms 라 꼭 보관한다.
+      cdnCache("/channel/:id/opengraph-image", 3600, 86400),
       cdnCache("/channel", 3600, 86400),
       cdnCache("/insights", 3600, 86400),
       cdnCache("/insights/:slug", 3600, 86400),

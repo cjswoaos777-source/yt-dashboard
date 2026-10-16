@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { getChannel, isAwaitingBaseline, isIndexableChannel, daysSinceKst } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
+import { ChannelShare } from "./ChannelShare";
 import { MetricsDisclosure } from "@/components/legal";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
@@ -80,7 +81,8 @@ export async function generateMetadata({
             description,
             url: `${SITE.url}/channel/${channelId}`,
             type: "profile",
-            images: channel.video_thumbnail ? [{ url: channel.video_thumbnail }] : undefined,
+            // [2026-10-16] 미리보기 이미지는 같은 폴더의 opengraph-image.tsx(성과 카드)가 채운다.
+            // 여기서 images 를 지정하면 그 카드 대신 영상 썸네일이 뜬다.
         },
     };
 }
@@ -375,6 +377,18 @@ export default async function ChannelDetailPage({
                         </div>
                     ))}
                 </section>
+
+                {/* 공유 — 채널 주인·팬이 링크를 퍼뜨리게 한다 (ChannelShare 주석) */}
+                <ChannelShare
+                    channelId={channel.channel_id}
+                    pageUrl={`${SITE.url}/channel/${channel.channel_id}`}
+                    channelTitle={channel.channel_title}
+                    shareText={
+                        isCurrent && categoryRank > 0
+                            ? `📈 ${channel.channel_title} · ${channel.main_category} 구독자 ${categoryRank}위 | Viral Hunter`
+                            : `📈 ${channel.channel_title} · 급상승 순위 ${daysSeen}일 등장 | Viral Hunter`
+                    }
+                />
 
                 {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다. */}
                 <details className="mb-12 rounded-2xl border border-neutral-200 bg-white p-5">
