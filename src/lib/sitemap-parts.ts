@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { SITE } from "@/lib/site";
 import { getAllNotices } from "@/lib/notices";
+import { getPublishedReports } from "@/lib/reports";
 import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
 import { CHANNEL_INDEX_MAX_STALE_DAYS, kstDateDaysAgo } from "@/lib/channels";
@@ -102,6 +103,7 @@ export function pagesUrls(): SitemapUrl[] {
         { loc: `${b}/insights/upload-time`, changefreq: "weekly", priority: 0.7 },
         { loc: `${b}/insights/shorts-vs-longform`, changefreq: "weekly", priority: 0.7 },
         { loc: `${b}/insights/channel-age`, changefreq: "weekly", priority: 0.7 },
+        { loc: `${b}/report`, changefreq: "weekly", priority: 0.8 },
         { loc: `${b}/notice`, changefreq: "weekly", priority: 0.5 },
         { loc: `${b}/about`, changefreq: "monthly", priority: 0.4 },
     ];
@@ -117,7 +119,19 @@ export function pagesUrls(): SitemapUrl[] {
     } catch {
         // 공지 읽기 실패해도 정적 URL 은 내보낸다
     }
-    return [...staticUrls, ...notices];
+    // [2026-10-21] 주간 리포트 — 공개(published)된 것만. 사이트에서 가장 '고유한 글'이라 우선순위를 높게 둔다.
+    let reports: SitemapUrl[] = [];
+    try {
+        reports = getPublishedReports().map((r) => ({
+            loc: `${b}/report/${r.slug}`,
+            ...(r.date && { lastmod: r.date }),
+            changefreq: "monthly",
+            priority: 0.8,
+        }));
+    } catch {
+        // 리포트 읽기 실패해도 나머지는 내보낸다
+    }
+    return [...staticUrls, ...reports, ...notices];
 }
 
 /**
