@@ -133,7 +133,14 @@ export function pagesUrls(): SitemapUrl[] {
  * 사이트맵에 없는 3~6일 채널도 페이지 자체는 index 라, 링크를 타고 발견되면
  * 색인된다. 사이트맵은 '먼저 알려주는' 역할이지 색인의 전제가 아니다.
  */
-export const SITEMAP_CHANNEL_MIN_DAYS = 7;
+export const SITEMAP_CHANNEL_MIN_DAYS = 14;
+
+/*
+ * [2026-10-21] 7 → 14. 구글에는 14일 이상 채널만 색인시키기로 했다(GOOGLE_CHANNEL_MIN_DAYS).
+ * 사이트맵은 구글도 읽으므로, googlebot noindex 인 페이지를 싣으면 서치콘솔이
+ * '제출된 URL 에 noindex' 로 잡는다. 다음·빙은 7~13일 채널도 링크와 IndexNow
+ * (sync_supabase.submit_indexnow, 3일 이상)로 계속 알게 된다.
+ */
 
 /*
  * [2026-10-12] 순위에서 빠진 지 30일이 넘은 채널(CHANNEL_INDEX_MAX_STALE_DAYS)은 싣지 않는다.
@@ -183,7 +190,7 @@ const channelUrlsCached = unstable_cache(
         }
         return out;
     },
-    ["sitemap-channels-v3",String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
+    ["sitemap-channels-v4", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
     { revalidate: 3600 },
 );
 

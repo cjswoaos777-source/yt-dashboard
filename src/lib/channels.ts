@@ -396,6 +396,26 @@ export function isIndexableChannel(
     return ago !== null && ago <= CHANNEL_INDEX_MAX_STALE_DAYS;
 }
 
+/**
+ * 구글에만 적용하는 더 높은 기준 — 순위에 이만큼 이상 오른 채널만 구글에 색인시킨다.
+ *
+ * [2026-10-21] 구글이 사이트 전체를 '대량 자동 생성'으로 낮게 평가하는 중이다.
+ * 고친 /dashboard 도 10-16 에 보고 간 뒤 색인하지 않았다. 같은 틀의 채널 페이지가
+ * 사이트의 99%라 비율이 문제다. 그래서 구글에는 강한 채널(14일 이상, 약 1,260개)만
+ * 보여 준다. 다음·빙은 지금 이 페이지들로 매일 노출되고 있어서 기준(3일)을 그대로 둔다.
+ * (meta name="googlebot" 은 구글만 읽는다)
+ * 검색 클릭을 냈던 채널은 8~34일 등장이었다. 14일로 올리면 그중 일부가 구글에서 빠지지만,
+ * 지금은 구글이 채널 페이지를 거의 색인하지 않으므로 잃는 것이 없다.
+ * 구글 색인이 회복되면 이 값을 낮춰 되돌린다.
+ */
+export const GOOGLE_CHANNEL_MIN_DAYS = 14;
+
+export function isGoogleIndexableChannel(
+    d: Parameters<typeof isIndexableChannel>[0],
+): boolean {
+    return isIndexableChannel(d) && d.daysSeen >= GOOGLE_CHANNEL_MIN_DAYS;
+}
+
 function getChannelCached(channelId: string, version: string) {
     return unstable_cache(
         async (): Promise<ChannelDetail | null> => {

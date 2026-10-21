@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, TrendingUp, Users, Eye, Video } from "lucide-react";
 import type { Metadata } from "next";
-import { getChannel, isAwaitingBaseline, isIndexableChannel, daysSinceKst } from "@/lib/channels";
+import { getChannel, isAwaitingBaseline, isIndexableChannel, isGoogleIndexableChannel, daysSinceKst } from "@/lib/channels";
 import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
 import { ChannelShare } from "./ChannelShare";
@@ -70,11 +70,13 @@ export async function generateMetadata({
     // GitHub 경로는 daysSeen 이 0 이라 여전히 noindex 다.
     // [2026-10-12] 순위에서 빠진 지 30일이 넘은 기록 페이지도 뺀다 (isIndexableChannel 주석).
     const indexable = isIndexableChannel(data);
+    // [2026-10-21] 구글에만 더 높은 기준(14일). googleBot 은 meta name="googlebot" 으로 나간다.
+    const googleIndexable = isGoogleIndexableChannel(data);
 
     return {
         title,
         description,
-        robots: { index: indexable, follow: true },
+        robots: { index: indexable, follow: true, googleBot: { index: googleIndexable, follow: true } },
         alternates: { canonical: `/channel/${channelId}` },
         openGraph: {
             title: `${channel.channel_title} 채널 분석 | Viral Hunter`,
