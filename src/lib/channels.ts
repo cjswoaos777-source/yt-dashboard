@@ -4,6 +4,7 @@ import { CHANNEL_PAGE_MIN_SUBSCRIBERS } from "@/lib/channel-constants";
 import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
 import type { TierChannel, SparklinePoint } from "@/lib/tier-channel-types";
+import type { ChannelInsight } from "@/lib/channel-insight";
 
 export { CHANNEL_PAGE_MIN_SUBSCRIBERS };
 
@@ -352,6 +353,8 @@ export interface ChannelRecent {
     subs_from_date: string | null;
     subs_to: number | null;
     subs_to_date: string | null;
+    /** 사이트맵 채널만 있다 (channel-insight.ts) */
+    insight?: ChannelInsight | null;
 }
 
 /** 이 채널 페이지를 색인시켜도 되는 최소 등장 일수 */
@@ -594,7 +597,7 @@ function sbChannelCached(channelId: string) {
             // ③ 최근 30일 기록 — 없어도 페이지는 그린다 (실패해도 본문만 빠진다).
             const { data: rec } = await sb
                 .from("channel_recent")
-                .select("videos,videos_30d,shorts_30d,subs_from,subs_from_date,subs_to,subs_to_date")
+                .select("videos,videos_30d,shorts_30d,subs_from,subs_from_date,subs_to,subs_to_date,insight")
                 .eq("channel_id", channelId)
                 .maybeSingle();
 
@@ -612,7 +615,7 @@ function sbChannelCached(channelId: string) {
                 recent: (rec as ChannelRecent | null) ?? null,
             };
         },
-        ["sb-channel-detail-v4", channelId],
+        ["sb-channel-detail-v5", channelId],
         { revalidate: SB_REVALIDATE },
     )();
 }

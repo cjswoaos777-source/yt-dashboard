@@ -8,6 +8,7 @@ import { SITE } from "@/lib/site";
 import { SparklineChart } from "./SparklineChart";
 import { ChannelShare } from "./ChannelShare";
 import { MetricsDisclosure } from "@/components/legal";
+import { buildInsight } from "@/lib/channel-insight";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
@@ -117,6 +118,8 @@ export default async function ChannelDetailPage({
         recent = null,
     } = data;
     const recentVideos = recent?.videos ?? [];
+    // 사이트맵 채널만 분석이 있다 (channel-insight.ts)
+    const insight = recent?.insight ? buildInsight(recent.insight, channel.subscriber_count ?? 0) : null;
 
     // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
     // 그냥 항목을 숨기면 왜 없는지 알 수 없으므로 이유를 밝힌다.
@@ -391,6 +394,40 @@ export default async function ChannelDetailPage({
                             : `📈 ${channel.channel_title} · 급상승 순위 ${daysSeen}일 등장 | Viral Hunter`
                     }
                 />
+
+                {/* 채널 분석 — 비슷한 채널과 비교한 해석. 페이지마다 다른 문장이 나오는 중심 내용이다. */}
+                {insight && insight.sentences.length > 0 && (
+                    <section className="mb-8">
+                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">
+                            {channel.channel_title} 채널 분석
+                        </h2>
+                        <p className="mb-3 text-[12px] text-neutral-400">
+                            최근 30일 Viral Hunter 수집 데이터로 비슷한 규모의 채널과 비교했습니다.
+                        </p>
+                        <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5">
+                            {insight.tags.length > 0 && (
+                                <div className="mb-3 flex flex-wrap gap-1.5">
+                                    {insight.tags.map((t) => (
+                                        <span
+                                            key={t}
+                                            className="rounded-full border border-violet-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-violet-700"
+                                        >
+                                            {t}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            <ul className="space-y-2 text-[13.5px] leading-[1.8] text-[#333333]">
+                                {insight.sentences.map((t) => (
+                                    <li key={t} className="flex gap-2">
+                                        <span className="mt-[0.7em] h-1 w-1 shrink-0 rounded-full bg-violet-400" />
+                                        <span>{t}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
+                )}
 
                 {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다. */}
                 <details className="mb-12 rounded-2xl border border-neutral-200 bg-white p-5">
