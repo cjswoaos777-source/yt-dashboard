@@ -150,10 +150,10 @@ const sbTagList = unstable_cache(
         if (error) throw new Error(`Supabase 태그 목록 조회 실패: ${error.message}`);
 
         // 인덱스 파일에 있던 updated_at 은 테이블에 없다. 영상 스냅샷 시각을 쓴다.
+        // 모든 행이 같은 값이라 아무 행 하나면 된다 (정렬하면 8만 행을 다 훑는다 — fetchRankingVersion 주석).
         const { data: up } = await sb
             .from("video_ranking")
             .select("updated_at")
-            .order("updated_at", { ascending: false })
             .limit(1);
 
         return {

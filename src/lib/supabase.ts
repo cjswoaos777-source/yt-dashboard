@@ -286,12 +286,16 @@ export async function fetchBenchmarkChannels(
     return pages.flat();
 }
 
-/** 이 스냅샷이 몇 시 기준인지. 화면에 "N시 기준"으로 표시된다. */
+/**
+ * 이 스냅샷이 몇 시 기준인지. 화면에 "N시 기준"으로 표시된다.
+ *
+ * [2026-10-22] 정렬을 뺐다. 모든 행이 같은 값이라 아무 행이면 되는데, updated_at 에
+ * 인덱스가 없어 정렬하면 8만 행을 다 훑었고 가끔 3초 제한에 걸려 실패했다.
+ */
 export async function fetchUpdatedAt(): Promise<string | null> {
     const { data, error } = await supabase()
         .from("video_ranking")
         .select("updated_at")
-        .order("updated_at", { ascending: false })
         .limit(1);
     if (error) throw new Error(`Supabase updated_at 조회 실패: ${error.message}`);
     return data?.[0]?.updated_at ?? null;
