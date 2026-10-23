@@ -56,6 +56,8 @@ const LANG_RE = /^[a-z]{2,3}$/;
 const CATEGORY_RE = /^[A-Za-z &]{2,40}$/;
 
 function toInt(v: string | null, fallback: number): number {
+    // Number(null) 은 0 이라, 값이 없을 때 limit 이 0(빈 응답)이 되던 것을 막는다.
+    if (v === null || v.trim() === "") return fallback;
     const n = Number(v);
     return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
 }
