@@ -3,11 +3,11 @@ import { getAllNotices, getCategoryColor } from "@/lib/notices";
 
 export const metadata = {
     title: "공지사항",
-    description: "Viral Hunter 운영 공지, 업데이트 소식, 장애 안내를 확인하세요.",
+    description: "Viral Hunter 운영 공지와 업데이트 소식. 유튜브 급상승 랭킹, 채널 분석, 주간 트렌드 리포트에 새로 생긴 기능과 데이터 기준 변경, 장애 안내를 확인하세요.",
     alternates: { canonical: "/notice" },
     openGraph: {
         title: "공지사항 | Viral Hunter",
-        description: "Viral Hunter 운영 공지, 업데이트 소식, 장애 안내를 확인하세요.",
+        description: "Viral Hunter 운영 공지와 업데이트 소식. 유튜브 급상승 랭킹, 채널 분석, 주간 트렌드 리포트에 새로 생긴 기능과 데이터 기준 변경, 장애 안내를 확인하세요.",
         url: "/notice",
         type: "website",
     },
