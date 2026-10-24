@@ -324,6 +324,19 @@ export interface ChannelDetail {
     related?: RelatedChannel[];
     /** 최근 30일 포착 영상·구독자 변화 (channel_recent). 없으면 null */
     recent?: ChannelRecent | null;
+    /** 주제 태그·업로드 요일·영상 길이 (channel_extra). SEO 실험군에만 표시 (seo-experiment.ts) */
+    extra?: ChannelExtra | null;
+}
+
+/** 채널 고유 정보 (channel_extra, utube_rank/seo_channel_extra.py 가 매일 채움) */
+export interface ChannelExtra {
+    topics: { t: string; n: number }[];
+    /** 월~일 업로드 수 */
+    weekday: number[];
+    long_n: number;
+    long_avg_sec: number | null;
+    short_n: number;
+    short_avg_sec: number | null;
 }
 
 /** 최근 30일 포착 영상 한 줄 (channel_recent.videos 원소) */
@@ -601,6 +614,13 @@ function sbChannelCached(channelId: string) {
                 .eq("channel_id", channelId)
                 .maybeSingle();
 
+            // ④ 채널 고유 정보 — 없어도 페이지는 그린다.
+            const { data: extra } = await sb
+                .from("channel_extra")
+                .select("topics,weekday,long_n,long_avg_sec,short_n,short_avg_sec")
+                .eq("channel_id", channelId)
+                .maybeSingle();
+
             const a = arc as { first_seen: string; last_seen: string; days_seen: number };
             return {
                 channel,
@@ -613,9 +633,10 @@ function sbChannelCached(channelId: string) {
                 daysSeen: a.days_seen ?? 0,
                 related,
                 recent: (rec as ChannelRecent | null) ?? null,
+                extra: (extra as ChannelExtra | null) ?? null,
             };
         },
-        ["sb-channel-detail-v5", channelId],
+        ["sb-channel-detail-v6", channelId],
         { revalidate: SB_REVALIDATE },
     )();
 }

@@ -106,6 +106,7 @@ export function pagesUrls(): SitemapUrl[] {
         { loc: `${b}/report`, changefreq: "weekly", priority: 0.8 },
         { loc: `${b}/notice`, changefreq: "weekly", priority: 0.5 },
         { loc: `${b}/about`, changefreq: "monthly", priority: 0.4 },
+        { loc: `${b}/about/metrics`, changefreq: "monthly", priority: 0.5 },
     ];
 
     let notices: SitemapUrl[] = [];

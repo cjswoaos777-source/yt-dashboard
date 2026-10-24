@@ -9,6 +9,8 @@ import { SparklineChart } from "./SparklineChart";
 import { ChannelShare } from "./ChannelShare";
 import { MetricsDisclosure } from "@/components/legal";
 import { buildInsight } from "@/lib/channel-insight";
+import { buildExtraView } from "@/lib/channel-extra";
+import { seoGroup } from "@/lib/seo-experiment";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
@@ -120,6 +122,10 @@ export default async function ChannelDetailPage({
     const recentVideos = recent?.videos ?? [];
     // 사이트맵 채널만 분석이 있다 (channel-insight.ts)
     const insight = recent?.insight ? buildInsight(recent.insight, channel.subscriber_count ?? 0) : null;
+    // [2026-10-24] SEO 실험 ch-unique-2026-10 (seo-experiment.ts): 실험군에만 채널 고유 정보를 더하고
+    // 공통 지표 설명을 링크로 줄인다. 대조군은 그대로 둔다. 11-21 판정.
+    const seoTreatment = seoGroup(channel.channel_id) === "treatment";
+    const extraView = seoTreatment && data.extra ? buildExtraView(data.extra) : null;
 
     // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
     // 그냥 항목을 숨기면 왜 없는지 알 수 없으므로 이유를 밝힌다.
@@ -429,7 +435,45 @@ export default async function ChannelDetailPage({
                     </section>
                 )}
 
-                {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다. */}
+                {/* 채널 고유 정보 — SEO 실험군만 (seo-experiment.ts) */}
+                {extraView && extraView.sentences.length > 0 && (
+                    <section className="mb-8">
+                        <h2 className="mb-3 text-[15px] font-bold text-[#1A1A1A]">
+                            {channel.channel_title}이(가) 다루는 주제와 업로드 습관
+                        </h2>
+                        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+                            {extraView.topics.length > 0 && (
+                                <div className="mb-3 flex flex-wrap gap-1.5">
+                                    {extraView.topics.map((t) => (
+                                        <span
+                                            key={t}
+                                            className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[12px] font-medium text-neutral-700"
+                                        >
+                                            #{t}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            <ul className="space-y-1.5 text-[13.5px] leading-[1.8] text-[#333333]">
+                                {extraView.sentences.map((s) => (
+                                    <li key={s}>{s}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
+                )}
+
+                {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다.
+                    SEO 실험군은 모든 페이지에 똑같이 붙던 이 설명을 /about/metrics 링크로 줄인다. */}
+                {seoTreatment ? (
+                    <p className="mb-12 text-[12.5px] text-neutral-500">
+                        일평균 증가·성장 지수·순위를 어떻게 계산하는지는{" "}
+                        <Link href="/about/metrics" className="font-medium text-neutral-700 underline underline-offset-2">
+                            지표 설명
+                        </Link>
+                        에서 볼 수 있습니다.
+                    </p>
+                ) : (
                 <details className="mb-12 rounded-2xl border border-neutral-200 bg-white p-5">
                     <summary className="cursor-pointer text-[13px] font-semibold text-[#1A1A1A]">
                         각 지표는 무슨 뜻인가요?
@@ -465,6 +509,7 @@ export default async function ChannelDetailPage({
                         </div>
                     </dl>
                 </details>
+                )}
 
                 {/* 요약 */}
                 <section className="mb-12">
