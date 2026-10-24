@@ -8,6 +8,8 @@
  * channel_id 의 FNV-1a 32비트 해시가 짝수면 treatment.
  */
 export const SEO_EXPERIMENT_ID = "ch-unique-2026-10";
+/** 실험군 본문이 바뀐 날 (사이트맵 lastmod 에 반영) */
+export const SEO_EXPERIMENT_START = "2026-10-24";
 
 export function fnv1a(s: string): number {
     let h = 0x811c9dc5;

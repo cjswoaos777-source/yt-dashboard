@@ -5,6 +5,7 @@ import { getPublishedReports } from "@/lib/reports";
 import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
 import { CHANNEL_INDEX_MAX_STALE_DAYS, kstDateDaysAgo } from "@/lib/channels";
+import { seoGroup, SEO_EXPERIMENT_START } from "@/lib/seo-experiment";
 
 /**
  * sitemap 구성.
@@ -192,9 +193,13 @@ const channelUrlsCached = unstable_cache(
             if (error) throw new Error(`사이트맵 채널 조회 실패: ${error.message}`);
             const rows = (data ?? []) as unknown as { channel_id: string; last_seen: string }[];
             for (const r of rows) {
+                // [2026-10-24] SEO 실험 실험군은 그날 본문이 바뀌었으므로 lastmod 를 그 날짜 이후로 둔다
+                // (사실과 맞는 lastmod. 바뀌지 않은 대조군은 그대로).
+                const lastmod = seoGroup(r.channel_id) === "treatment" && r.last_seen < SEO_EXPERIMENT_START
+                    ? SEO_EXPERIMENT_START : r.last_seen;
                 out.push({
                     loc: `${b}/channel/${r.channel_id}`,
-                    lastmod: r.last_seen,        // YYYY-MM-DD 그대로 유효한 W3C 날짜다
+                    lastmod,        // YYYY-MM-DD 그대로 유효한 W3C 날짜다
                     // 매시간 데이터가 바뀌지만 구글이 매시간 와서 확인할 필요는 없다.
                     // weekly 로 두어 재크롤 부담을 낮춘다.
                     changefreq: "weekly",
@@ -205,7 +210,7 @@ const channelUrlsCached = unstable_cache(
         }
         return out;
     },
-    ["sitemap-channels-v4", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
+    ["sitemap-channels-v5", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS)],
     { revalidate: 3600 },
 );
 
