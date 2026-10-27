@@ -15,7 +15,7 @@ import type { NextConfig } from "next";
  * 그 응답은 HTML 이 아니라서 섞이면 안 된다(그 요청은 ?_rsc= 로 주소도 다르다).
  *
  * 보관 시간은 데이터가 바뀌는 주기에 맞췄다.
- *   채널·인사이트 1시간 (매일 저녁 갱신) / 랭킹·구독자 구간 5분 (매시 25분경 갱신)
+ *   채널·인사이트·카테고리 1시간 (매일 저녁 갱신) / 랭킹·구독자 구간 5분 (매시 25분경 갱신)
  * stale-while-revalidate 동안은 옛 보관본을 즉시 주고 뒤에서 새로 그린다.
  */
 function cdnCache(source: string, seconds: number, staleSeconds: number) {
@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
       cdnCache("/dashboard/benchmarking", 300, 3600),
       cdnCache("/tier", 300, 600),
       cdnCache("/tier/:level", 300, 600),
+      // 카테고리 순위는 채널 지표로 만든다 (매일 저녁 갱신)
+      cdnCache("/category", 3600, 86400),
+      cdnCache("/category/:slug", 3600, 86400),
     ];
   },
 };

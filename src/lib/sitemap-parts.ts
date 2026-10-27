@@ -6,6 +6,7 @@ import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
 import { CHANNEL_INDEX_MAX_STALE_DAYS, kstDateDaysAgo } from "@/lib/channels";
 import { seoGroup, SEO_EXPERIMENT_START } from "@/lib/seo-experiment";
+import { CATEGORY_SLUGS } from "@/lib/categories";
 
 /**
  * sitemap 구성.
@@ -100,6 +101,9 @@ export function pagesUrls(): SitemapUrl[] {
         { loc: `${b}/tier/tier2`, changefreq: "hourly", priority: 0.7 },
         { loc: `${b}/tier/tier3`, changefreq: "hourly", priority: 0.7 },
         { loc: `${b}/tier/micro`, changefreq: "hourly", priority: 0.7 },
+        // [2026-10-27] 카테고리별 급상승 유튜버 순위. 카테고리 목록이 고정이라 여기 함께 담는다.
+        { loc: `${b}/category`, changefreq: "daily", priority: 0.7 },
+        ...CATEGORY_SLUGS.map((s) => ({ loc: `${b}/category/${s}`, changefreq: "daily", priority: 0.7 })),
         { loc: `${b}/insights`, changefreq: "weekly", priority: 0.7 },
         { loc: `${b}/insights/upload-time`, changefreq: "weekly", priority: 0.7 },
         { loc: `${b}/insights/shorts-vs-longform`, changefreq: "weekly", priority: 0.7 },
