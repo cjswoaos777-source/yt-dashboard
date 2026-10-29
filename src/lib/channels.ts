@@ -396,40 +396,63 @@ export function kstDateDaysAgo(days: number): string {
 }
 
 /**
- * 채널 상세를 색인시킬지. 얇은 페이지(짧게 스쳐간 채널, 오래된 기록)는 뺀다.
+ * 순위에 있거나 빠진 지 30일 이내인가.
+ *
+ * [2026-10-29] 사이트맵과 같은 한국 날짜 비교로 세고 하루 여유를 준다.
+ * 전에는 반올림 일수(daysSinceKst)로 세서 30일째 날 정오에 noindex 로 바뀌었고,
+ * 사이트맵(그날 자정까지 실음)과 어긋나 '제출했는데 noindex' 가 하루 11~22개씩 생겼다.
+ */
+function isFreshChannel(d: Pick<ChannelDetail, "isCurrent" | "lastSeen">): boolean {
+    if (d.isCurrent) return true;
+    return !!d.lastSeen && d.lastSeen >= kstDateDaysAgo(CHANNEL_INDEX_MAX_STALE_DAYS + 1);
+}
+
+/**
+ * 30일 넘은 기록 채널을 다음·빙·네이버에 계속 보여 줄 기준 (2026-10-29, 1단계).
+ *
+ * 다음 검색 유입의 86%가 이미 순위에서 빠진 채널 페이지로 들어왔다(채널 이름 검색).
+ * 30일이 지나도 수집기가 새 영상을 계속 잡는 채널은 '최근 30일 포착 영상'과 채널 분석이
+ * 살아 있어 얇은 페이지가 아니다. 순위 7일 이상 + 최근 30일 영상 5개 이상(약 610개)부터 열고,
+ * 다음 유입과 색인 반응을 본 뒤 2단계(3일·3개, 약 1,549개)를 판단한다.
+ * 구글에는 열지 않는다(isGoogleIndexableChannel).
+ */
+export const ARCHIVE_INDEX_MIN_DAYS = 7;
+export const ARCHIVE_INDEX_MIN_RECENT_VIDEOS = 5;
+
+/**
+ * 채널 상세를 색인시킬지 (meta robots — 다음·빙·네이버). 얇은 페이지(짧게 스쳐간 채널, 오래된 기록)는 뺀다.
  *
  * [2026-10-12] 해외 채널(IMPORTED)도 뺀다. 한국어 사이트에 외국 소형 채널 페이지가
  * 섞여 있으면 사이트 평가를 끌어내린다. '색인 안 함' 목록에서 해외 채널 비중(23%)이
  * 사이트맵 안 비중(16%)보다 높았다. 페이지는 그대로 열리고 검색에만 안 나온다.
  */
 export function isIndexableChannel(
-    d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen"> & { channel: Pick<TierChannel, "origin_type"> },
+    d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen" | "recent"> & { channel: Pick<TierChannel, "origin_type"> },
 ): boolean {
     if (d.channel.origin_type !== "DOMESTIC") return false;
     if (d.daysSeen < CHANNEL_INDEX_MIN_DAYS) return false;
-    if (d.isCurrent) return true;
-    const ago = daysSinceKst(d.lastSeen);
-    return ago !== null && ago <= CHANNEL_INDEX_MAX_STALE_DAYS;
+    if (isFreshChannel(d)) return true;
+    return d.daysSeen >= ARCHIVE_INDEX_MIN_DAYS && (d.recent?.videos_30d ?? 0) >= ARCHIVE_INDEX_MIN_RECENT_VIDEOS;
 }
 
 /**
- * 구글에만 적용하는 더 높은 기준 — 순위에 이만큼 이상 오른 채널만 구글에 색인시킨다.
+ * 구글에만 적용하는 기준.
  *
- * [2026-10-21] 구글이 사이트 전체를 '대량 자동 생성'으로 낮게 평가하는 중이다.
- * 고친 /dashboard 도 10-16 에 보고 간 뒤 색인하지 않았다. 같은 틀의 채널 페이지가
- * 사이트의 99%라 비율이 문제다. 그래서 구글에는 강한 채널(14일 이상, 약 1,260개)만
- * 보여 준다. 다음·빙은 지금 이 페이지들로 매일 노출되고 있어서 기준(3일)을 그대로 둔다.
- * (meta name="googlebot" 은 구글만 읽는다)
- * 검색 클릭을 냈던 채널은 8~34일 등장이었다. 14일로 올리면 그중 일부가 구글에서 빠지지만,
- * 지금은 구글이 채널 페이지를 거의 색인하지 않으므로 잃는 것이 없다.
- * 구글 색인이 회복되면 이 값을 낮춰 되돌린다.
+ * [2026-10-21] 14일 이상 채널(약 1,260개)만 구글에 보여 줬다.
+ * [2026-10-29] 구글 '2026년 9월 스팸 업데이트'(09-24~10-08)에 사이트가 걸렸다(10-05~07 노출 0).
+ * 같은 틀의 채널 페이지 수천 개가 '확장된 콘텐츠 악용'으로 보였을 가능성이 크다.
+ * 회복될 때까지 채널 상세는 구글에 전부 내보내지 않는다(meta name="googlebot" noindex).
+ * 핵심 페이지가 다시 색인되면 GOOGLE_CHANNEL_INDEX_ENABLED 를 켜고, 가장 알찬 채널부터
+ * 50개 → 100개씩 늘린다(SEO 운영안 10-29).
  */
+export const GOOGLE_CHANNEL_INDEX_ENABLED = false;
 export const GOOGLE_CHANNEL_MIN_DAYS = 14;
 
 export function isGoogleIndexableChannel(
     d: Parameters<typeof isIndexableChannel>[0],
 ): boolean {
-    return isIndexableChannel(d) && d.daysSeen >= GOOGLE_CHANNEL_MIN_DAYS;
+    if (!GOOGLE_CHANNEL_INDEX_ENABLED) return false;
+    return isFreshChannel(d) && isIndexableChannel(d) && d.daysSeen >= GOOGLE_CHANNEL_MIN_DAYS;
 }
 
 function getChannelCached(channelId: string, version: string) {

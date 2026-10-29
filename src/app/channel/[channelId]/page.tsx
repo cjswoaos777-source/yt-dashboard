@@ -72,8 +72,10 @@ export async function generateMetadata({
     //
     // GitHub 경로는 daysSeen 이 0 이라 여전히 noindex 다.
     // [2026-10-12] 순위에서 빠진 지 30일이 넘은 기록 페이지도 뺀다 (isIndexableChannel 주석).
+    // [2026-10-29] 단, 최근 영상이 계속 잡히는 기록 채널은 다음·빙·네이버에 남긴다(1단계).
     const indexable = isIndexableChannel(data);
     // [2026-10-21] 구글에만 더 높은 기준(14일). googleBot 은 meta name="googlebot" 으로 나간다.
+    // [2026-10-29] 스팸 업데이트 회복 전까지 구글에는 채널 상세를 전부 내보내지 않는다.
     const googleIndexable = isGoogleIndexableChannel(data);
 
     return {
