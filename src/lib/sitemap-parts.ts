@@ -100,6 +100,8 @@ export function pagesUrls(): SitemapUrl[] {
         { loc: b, changefreq: "daily", priority: 1 },
         { loc: `${b}/dashboard`, changefreq: "hourly", priority: 0.9 },
         { loc: `${b}/dashboard/benchmarking`, changefreq: "hourly", priority: 0.8 },
+        // [2026-10-29] 지금 만들 만한 영상 (매시간 새로 고른다)
+        { loc: `${b}/ideas`, changefreq: "hourly", priority: 0.9 },
         { loc: `${b}/channel`, changefreq: "daily", priority: 0.8 },
         { loc: `${b}/tag`, changefreq: "hourly", priority: 0.8 },
         { loc: `${b}/tier`, changefreq: "daily", priority: 0.7 },

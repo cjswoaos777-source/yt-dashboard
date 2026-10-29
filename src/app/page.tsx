@@ -230,13 +230,14 @@ export default function LandingPage() {
           Viral Hunter에서 볼 수 있는 것
         </h2>
         <p className="font-sans text-[#555555] mb-8">
-          한국 유튜브에서 지금 뜨는 영상과 채널을 여섯 가지 방법으로 봅니다.
+          한국 유튜브에서 지금 뜨는 영상과 채널을 일곱 가지 방법으로 봅니다.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { href: "/dashboard", title: "실시간 급상승 순위", desc: "업로드 2일 안 된 영상을 시간당 조회수 증가로 줄 세운 TOP 1,000. 숏츠·롱폼, 카테고리, 구독자 구간별로 고를 수 있습니다." },
             { href: "/category", title: "카테고리별 급상승 유튜버", desc: "게임, 예능, 교육 등 11개 카테고리마다 이번 주 가장 빠르게 크는 채널을 모았습니다." },
             { href: "/dashboard/benchmarking", title: "성장 채널 분석", desc: "구독자 대비 조회수가 잘 나오는 채널을 체급별로 비교합니다. 개설 90일 안 된 신규 채널도 따로 볼 수 있습니다." },
+            { href: "/ideas", title: "지금 만들 만한 영상", desc: "지금 반응을 보고 만들어 볼 만한 주제와 형식을 매시간 골라 드립니다. 메일로도 받을 수 있어요." },
             { href: "/report", title: "주간 트렌드 리포트", desc: "매주 월요일, 지난 한 주 무엇이 떴는지 숫자와 해석으로 정리합니다." },
             { href: "/insights", title: "데이터 인사이트", desc: "업로드 시간대, 숏츠와 롱폼, 채널 나이에 따라 성과가 어떻게 다른지 수집 데이터로 확인했습니다." },
             { href: "/about/metrics", title: "지표 설명", desc: "시간당 증가량, 성장 지수, 구독자 구간을 어떻게 계산하는지 공개합니다." },

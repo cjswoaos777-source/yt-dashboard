@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     alternates: { canonical: "/privacy/en", languages: { ko: "/privacy", en: "/privacy/en" } },
 };
 
-const EFFECTIVE_DATE = "September 25, 2026";
+const EFFECTIVE_DATE = "October 29, 2026";
 
 export default function PrivacyEnPage() {
     return (
@@ -25,12 +25,36 @@ export default function PrivacyEnPage() {
 
             <h2>1. Personal information we collect directly</h2>
             <p>
-                The Service has no sign-up or login. We do not ask for or store your name, email address, phone
-                number or any other information that identifies you. Only if you email us ({CONTACT_EMAIL}) do
-                we keep your email address and message in our inbox in order to reply.
+                The Service has no sign-up or login, and we do not ask for your name or phone number. Only if you
+                sign up for the report email do we receive the information described in section 2. If you email us
+                ({CONTACT_EMAIL}), we keep your email address and message in our inbox in order to reply.
             </p>
 
-            <h2>2. Analytics and cookies (Google Analytics)</h2>
+            <h2 id="report-mail">2. Report email</h2>
+            <ul>
+                <li>
+                    What we collect: your email address, the frequency you chose, and when you signed up, confirmed and
+                    were sent an email, and the page where you signed up.
+                </li>
+                <li>Purpose: only to send the &ldquo;videos worth making now&rdquo; report and the confirmation email. We do not send advertising.</li>
+                <li>
+                    Retention: deleted immediately when you unsubscribe. Sign-ups that are not confirmed are deleted
+                    automatically after 7 days.
+                </li>
+                <li>
+                    Processors and transfers abroad: email addresses are stored in a database run by Supabase Inc.
+                    (USA; server located in Mumbai, India), and emails are sent with Gmail by Google LLC (USA). Data is
+                    sent over encrypted connections when you sign up and when an email is sent, and kept for the period
+                    above.
+                </li>
+                <li>Your right to refuse: if you do not consent you cannot receive the report email, but you can still use the site.</li>
+                <li>
+                    Changing frequency or unsubscribing: any time, using the link at the bottom of every email or by
+                    emailing us.
+                </li>
+            </ul>
+
+            <h2>3. Analytics and cookies (Google Analytics)</h2>
             <p>
                 We use Google Analytics 4 to understand how the Service is used. Google Analytics uses cookies to
                 collect usage information that does not directly identify you, such as pages visited, time on
@@ -47,14 +71,14 @@ export default function PrivacyEnPage() {
                 </li>
             </ul>
 
-            <h2>3. Server logs</h2>
+            <h2>4. Server logs</h2>
             <p>
                 The Service is hosted on Vercel. For reliable and secure operation, standard server logs (IP
                 address, request time, browser information) may be kept temporarily by the hosting provider. We
                 do not use these logs to identify users.
             </p>
 
-            <h2>4. Use of YouTube API Services</h2>
+            <h2>5. Use of YouTube API Services</h2>
             <p>
                 The Service uses YouTube API Services to retrieve and display public YouTube video and channel
                 information (titles, view counts, subscriber counts, etc.).
@@ -78,20 +102,22 @@ export default function PrivacyEnPage() {
                 </li>
             </ul>
 
-            <h2>5. Sharing with third parties</h2>
+            <h2>6. Sharing with third parties</h2>
             <p>
-                We do not sell or share your personal information with third parties. Only Google (analytics) and
-                Vercel (hosting), listed above, process information to operate the Service.
+                We do not sell or share your personal information with third parties. Only Google (analytics and
+                email delivery), Supabase (storing report email addresses) and Vercel (hosting), listed above,
+                process information to operate the Service.
             </p>
 
-            <h2>6. Contact</h2>
+            <h2>7. Contact</h2>
             <p>
                 For privacy questions, email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
             </p>
 
-            <h2>7. Changes</h2>
+            <h2>8. Changes</h2>
             <ul>
-                <li>{EFFECTIVE_DATE}: first published</li>
+                <li>September 25, 2026: first published</li>
+                <li>October 29, 2026: added the report email section (collecting email addresses)</li>
             </ul>
         </>
     );

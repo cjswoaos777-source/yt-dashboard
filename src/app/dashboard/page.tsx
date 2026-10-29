@@ -247,7 +247,9 @@ function RankingMethod() {
           <Link href="/report" className="underline underline-offset-2 hover:text-neutral-900">주간 트렌드 리포트</Link>,
           카테고리별로 뜨는 유튜버는{" "}
           <Link href="/category" className="underline underline-offset-2 hover:text-neutral-900">카테고리 순위</Link>
-          에서 볼 수 있습니다.
+          에서 볼 수 있습니다. 이 순위로 &lsquo;지금 무엇을 만들면 좋을지&rsquo; 고른 결과는{" "}
+          <Link href="/ideas" className="underline underline-offset-2 hover:text-neutral-900">지금 만들 만한 영상</Link>
+          에 매시간 정리합니다.
         </p>
       </div>
     </section>

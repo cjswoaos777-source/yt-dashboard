@@ -10,6 +10,7 @@
  *   channel_open  page_type        사이트 안에서 채널 상세로 넘어간 클릭
  *   filter_change board, filter_name, filter_value
  *   share         page_type        공유(주소 복사) 버튼 — 주요 이벤트
+ *   report_subscribe page_type, frequency  리포트 메일 신청 (확인 메일 전 단계)
  *
  * gtag 스크립트는 afterInteractive 로 늦게 뜨므로, 아직 없으면 잠깐 기다렸다 보낸다.
  * 광고 차단 등으로 끝내 없으면 조용히 버린다 (화면 동작에는 영향이 없어야 한다).
@@ -42,6 +43,9 @@ export function pageTypeOf(path: string): string {
     if (path.startsWith("/tag")) return "tag";
     if (path.startsWith("/tier")) return "tier";
     if (path.startsWith("/insights")) return "insights";
+    if (path.startsWith("/ideas")) return "ideas";
+    if (path.startsWith("/report")) return "report";
+    if (path.startsWith("/subscribe")) return "subscribe";
     if (path.startsWith("/notice")) return "notice";
     if (path.startsWith("/about")) return "about";
     if (path.startsWith("/privacy") || path.startsWith("/terms")) return "legal";
