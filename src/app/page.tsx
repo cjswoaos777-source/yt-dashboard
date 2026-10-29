@@ -221,6 +221,71 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── 둘러보기 + 데이터 출처 ─────────────────────────────
+          [2026-10-29] SEO 운영안: 홈에 '무엇을, 어떤 데이터로, 얼마나 자주, 누가'를 적는다.
+          구글이 홈까지 '크롤링됨-색인 안 됨'으로 둔 상태라, 홍보 문구 대신 사이트의 실제 쓰임과
+          데이터 출처를 보이는 글로 둔다. 숫자는 수집기 정의(utube_rank/agents/collector.py)와 맞춘다. */}
+      <section className="px-6 pb-24 max-w-5xl mx-auto">
+        <h2 className="font-serif text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-3">
+          Viral Hunter에서 볼 수 있는 것
+        </h2>
+        <p className="font-sans text-[#555555] mb-8">
+          한국 유튜브에서 지금 뜨는 영상과 채널을 여섯 가지 방법으로 봅니다.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { href: "/dashboard", title: "실시간 급상승 순위", desc: "업로드 2일 안 된 영상을 시간당 조회수 증가로 줄 세운 TOP 1,000. 숏츠·롱폼, 카테고리, 구독자 구간별로 고를 수 있습니다." },
+            { href: "/category", title: "카테고리별 급상승 유튜버", desc: "게임, 예능, 교육 등 11개 카테고리마다 이번 주 가장 빠르게 크는 채널을 모았습니다." },
+            { href: "/dashboard/benchmarking", title: "성장 채널 분석", desc: "구독자 대비 조회수가 잘 나오는 채널을 체급별로 비교합니다. 개설 90일 안 된 신규 채널도 따로 볼 수 있습니다." },
+            { href: "/report", title: "주간 트렌드 리포트", desc: "매주 월요일, 지난 한 주 무엇이 떴는지 숫자와 해석으로 정리합니다." },
+            { href: "/insights", title: "데이터 인사이트", desc: "업로드 시간대, 숏츠와 롱폼, 채널 나이에 따라 성과가 어떻게 다른지 수집 데이터로 확인했습니다." },
+            { href: "/about/metrics", title: "지표 설명", desc: "시간당 증가량, 성장 지수, 구독자 구간을 어떻게 계산하는지 공개합니다." },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group rounded-2xl border border-neutral-200 bg-white p-6 flex flex-col gap-2 transition-colors hover:border-neutral-400"
+            >
+              <h3 className="font-sans font-semibold text-[#1A1A1A] text-base flex items-center gap-1">
+                {item.title}
+                <ArrowRight className="h-4 w-4 text-neutral-400 transition-transform duration-200 group-hover:translate-x-1" />
+              </h3>
+              <p className="font-sans text-sm text-[#555555] leading-relaxed">{item.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-6 pb-24 max-w-5xl mx-auto">
+        <h2 className="font-serif text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-6">
+          데이터는 이렇게 모읍니다
+        </h2>
+        <ul className="font-sans text-[#333333] leading-relaxed space-y-3 max-w-3xl list-disc pl-5">
+          <li>
+            <strong>출처</strong>: YouTube Data API로 받은 공개 데이터(조회수, 좋아요, 댓글, 구독자 수)입니다. 로그인이 필요한 데이터나
+            채널 주인만 보는 통계는 쓰지 않습니다.
+          </li>
+          <li>
+            <strong>수집 범위</strong>: 매일 15개 카테고리에서 한국 지역 검색 기준으로 업로드 2일 안 된 영상을 찾고,
+            4분 미만 영상은 조회수 3만 회, 4분 이상은 1만 회를 넘은 것만 모읍니다. 한국 유튜브 전체가 아니라
+            이미 반응이 오기 시작한 영상의 표본입니다.
+          </li>
+          <li>
+            <strong>갱신 주기</strong>: 영상 조회수는 매시간 다시 재서 순위를 갱신하고, 채널 8,000여 곳의 구독자·조회수는 하루 한 번 추적합니다.
+          </li>
+          <li>
+            <strong>보관 기간</strong>: YouTube API 정책에 따라 영상·채널 수치는 30일이 지나면 지우거나 다시 받습니다. 그래서 오래전 기록은 남기지 않습니다.
+          </li>
+          <li>
+            <strong>운영</strong>: 현직 데이터 엔지니어 한 명이 개인적으로 만들고 운영합니다. 유튜브(Google)와 관계가 없는 독립 사이트입니다.
+          </li>
+        </ul>
+        <p className="font-sans text-sm text-[#555555] mt-6">
+          계산 방식은 <Link href="/about/metrics" className="underline underline-offset-2 hover:text-[#1A1A1A]">지표 설명</Link>에서,
+          운영자와 만든 이유는 <Link href="/about" className="underline underline-offset-2 hover:text-[#1A1A1A]">소개</Link>에서 볼 수 있습니다.
+        </p>
+      </section>
+
       {/* ── 운영자 안내 ─────────────────────────────────────── */}
       <section className="px-4 pb-14 sm:px-6 lg:px-10">
         <p className="mx-auto max-w-2xl text-center font-sans text-xs leading-relaxed text-neutral-400">

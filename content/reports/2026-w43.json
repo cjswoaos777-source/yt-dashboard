@@ -1,0 +1,556 @@
+{
+ "slug": "2026-w43",
+ "period_start": "2026-10-19",
+ "period_end": "2026-10-25",
+ "prev_start": "2026-10-12",
+ "generated_at": "2026-10-29 10:43 KST",
+ "totals": {
+  "cur": {
+   "videos": 77473,
+   "shorts": 44243,
+   "median_views": 61772,
+   "channels": 21886
+  },
+  "prev": {
+   "videos": 71778,
+   "shorts": 40248,
+   "median_views": 64479,
+   "channels": 20620
+  }
+ },
+ "format": [
+  {
+   "wk": "prev",
+   "is_shorts": false,
+   "n": 31530,
+   "median_views": 37308,
+   "p90_views": 182401
+  },
+  {
+   "wk": "cur",
+   "is_shorts": true,
+   "n": 44243,
+   "median_views": 80475,
+   "p90_views": 356641
+  },
+  {
+   "wk": "cur",
+   "is_shorts": false,
+   "n": 33230,
+   "median_views": 35972,
+   "p90_views": 170549
+  },
+  {
+   "wk": "prev",
+   "is_shorts": true,
+   "n": 40248,
+   "median_views": 86736,
+   "p90_views": 374733
+  }
+ ],
+ "categories": [
+  {
+   "category": "People & Blogs",
+   "n": 18096,
+   "prev_n": 15820,
+   "median_views": 67867,
+   "prev_median_views": 71008,
+   "shorts_n": 12332
+  },
+  {
+   "category": "Entertainment",
+   "n": 15432,
+   "prev_n": 14339,
+   "median_views": 59075,
+   "prev_median_views": 60844,
+   "shorts_n": 9119
+  },
+  {
+   "category": "News & Politics",
+   "n": 12615,
+   "prev_n": 11812,
+   "median_views": 57378,
+   "prev_median_views": 61103,
+   "shorts_n": 4878
+  },
+  {
+   "category": "Gaming",
+   "n": 8073,
+   "prev_n": 7583,
+   "median_views": 54882,
+   "prev_median_views": 56499,
+   "shorts_n": 3843
+  },
+  {
+   "category": "Sports",
+   "n": 5131,
+   "prev_n": 5346,
+   "median_views": 61789,
+   "prev_median_views": 69403,
+   "shorts_n": 3076
+  },
+  {
+   "category": "Film & Animation",
+   "n": 3402,
+   "prev_n": 3294,
+   "median_views": 61064,
+   "prev_median_views": 63737,
+   "shorts_n": 2368
+  },
+  {
+   "category": "Music",
+   "n": 3031,
+   "prev_n": 3004,
+   "median_views": 66314,
+   "prev_median_views": 63854,
+   "shorts_n": 2285
+  },
+  {
+   "category": "Howto & Style",
+   "n": 2821,
+   "prev_n": 2505,
+   "median_views": 58084,
+   "prev_median_views": 65103,
+   "shorts_n": 1655
+  },
+  {
+   "category": "Education",
+   "n": 2773,
+   "prev_n": 2308,
+   "median_views": 56939,
+   "prev_median_views": 60919,
+   "shorts_n": 999
+  },
+  {
+   "category": "Comedy",
+   "n": 2109,
+   "prev_n": 2003,
+   "median_views": 100590,
+   "prev_median_views": 100159,
+   "shorts_n": 1770
+  },
+  {
+   "category": "Travel & Events",
+   "n": 1117,
+   "prev_n": 1070,
+   "median_views": 43987,
+   "prev_median_views": 53530,
+   "shorts_n": 292
+  },
+  {
+   "category": "Pets & Animals",
+   "n": 1036,
+   "prev_n": 956,
+   "median_views": 64636,
+   "prev_median_views": 63675,
+   "shorts_n": 846
+  },
+  {
+   "category": "Autos & Vehicles",
+   "n": 769,
+   "prev_n": 753,
+   "median_views": 44777,
+   "prev_median_views": 48846,
+   "shorts_n": 258
+  },
+  {
+   "category": "Science & Technology",
+   "n": 742,
+   "prev_n": 688,
+   "median_views": 66440,
+   "prev_median_views": 70250,
+   "shorts_n": 437
+  },
+  {
+   "category": "Nonprofits & Activism",
+   "n": 326,
+   "prev_n": 297,
+   "median_views": 26850,
+   "prev_median_views": 26523,
+   "shorts_n": 85
+  }
+ ],
+ "top_videos": [
+  {
+   "video_id": "3XmhJVNTUyk",
+   "title": "수능 3분만에 풀고 엄청 속상해하는 이지영쌤..",
+   "channel_id": "UCgSeHmcjUARxrcNvAls_mTA",
+   "channel_title": "오늘마셋(TODAY MINDSET)",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 10548717,
+   "subs": 116000,
+   "d": "2026-10-25"
+  },
+  {
+   "video_id": "iqQWCYMlMw0",
+   "title": "ATEEZ(에이티즈) - 'Drip' Official MV",
+   "channel_id": "UCQdq-lqPEq_yZ_wP_kuVB9Q",
+   "channel_title": "KQ ENTERTAINMENT",
+   "category": "Music",
+   "is_shorts": false,
+   "views": 10421631,
+   "subs": 3450000,
+   "d": "2026-10-23"
+  },
+  {
+   "video_id": "kC3jaCzvvhM",
+   "title": "강아지는 아무 잘못이 없어요 #jpop",
+   "channel_id": "UC2iUmetkhGNoPwrrGbcYQpQ",
+   "channel_title": "이제와쏭",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 9959143,
+   "subs": 59200,
+   "d": "2026-10-21"
+  },
+  {
+   "video_id": "roHWN9fL2SM",
+   "title": "NMIXX(엔믹스) “긴 소원(Birthday Wish)” M/V",
+   "channel_id": "UCaO6TYtlC8U5ttz62hTrZgg",
+   "channel_title": "JYP Entertainment",
+   "category": "Music",
+   "is_shorts": false,
+   "views": 9829330,
+   "subs": 32200000,
+   "d": "2026-10-19"
+  },
+  {
+   "video_id": "rsNhWkC4neE",
+   "title": "IVE 아이브 'Looks Can Kill' MV",
+   "channel_id": "UCYDmx2Sfpnaxg488yBpZIGg",
+   "channel_title": "STARSHIP",
+   "category": "Music",
+   "is_shorts": false,
+   "views": 8876285,
+   "subs": 6730000,
+   "d": "2026-10-19"
+  },
+  {
+   "video_id": "sL5Fr4m64KA",
+   "title": "[26FW]우리가 사랑하는 계절(해먹편15'')",
+   "channel_id": "UC6bgx24NDoYFBrMYHro00ww",
+   "channel_title": "노르디스크 NORDISK",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 8726431,
+   "subs": 2070,
+   "d": "2026-10-21"
+  },
+  {
+   "video_id": "YWlFi2h8Q24",
+   "title": "리트리버 순하다며 방치한 미국 견주 때문에 벌어진 일 ㄷㄷ",
+   "channel_id": "UCONB1F76ffbrljG146kOWuA",
+   "channel_title": "멀리보는 강아지",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 7686299,
+   "subs": 15900,
+   "d": "2026-10-21"
+  },
+  {
+   "video_id": "8FRJwl6G270",
+   "title": "[26FW]우리가 사랑하는 계절(Sunset 15'')",
+   "channel_id": "UC6bgx24NDoYFBrMYHro00ww",
+   "channel_title": "노르디스크 NORDISK",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 7649736,
+   "subs": 2070,
+   "d": "2026-10-21"
+  },
+  {
+   "video_id": "hdwGWGSfABA",
+   "title": "정한X조슈아 (SEVENTEEN) '12 o'clock' Official MV",
+   "channel_id": "UC3IZKseVpdzPSBaWxBxundA",
+   "channel_title": "HYBE LABELS",
+   "category": "Music",
+   "is_shorts": true,
+   "views": 7085429,
+   "subs": 83100000,
+   "d": "2026-10-19"
+  },
+  {
+   "video_id": "mT7jAqCnVrU",
+   "title": "좀 있으면 말로는 못 이기겠다ㅋㅋㅋ #육아 #딸래미 #니네엄마 #모녀 #유머",
+   "channel_id": "UCWpzvqYD_5TXNt2N0x4wCaw",
+   "channel_title": "도파민부자",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 6570746,
+   "subs": 21200,
+   "d": "2026-10-23"
+  }
+ ],
+ "small_channel_hits": [
+  {
+   "video_id": "P5eOlB8uihQ",
+   "title": "둘 다 신인인데 화음 반응은 정반대｜튜이드 vs A2O LITE",
+   "channel_id": "UCYp0A6uGgHKHEJwfA_C-WNA",
+   "channel_title": "춤대춤",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 2096879,
+   "subs": 311,
+   "d": "2026-10-23",
+   "ratio": 6742.38
+  },
+  {
+   "video_id": "7_ZhXs8N-4I",
+   "title": "누구보다 빠르게 순정으로 승부한 이모카세의 최후 ㄷㄷ #이모카세 #흑백요리사 #안성재",
+   "channel_id": "UChritQ_2fOBnJjfpstahaZw",
+   "channel_title": "감자구리",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 604866,
+   "subs": 74,
+   "d": "2026-10-20",
+   "ratio": 6048.66
+  },
+  {
+   "video_id": "AzHn-CnjDJw",
+   "title": "KBO 포스트시즌 준플레이오프 기아 vs LG",
+   "channel_id": "UCNOQm_Yu7yfX-CKIa1UxgfQ",
+   "channel_title": "감자전 GAMJJ",
+   "category": "Sports",
+   "is_shorts": true,
+   "views": 1136901,
+   "subs": 208,
+   "d": "2026-10-21",
+   "ratio": 5465.87
+  },
+  {
+   "video_id": "sL5Fr4m64KA",
+   "title": "[26FW]우리가 사랑하는 계절(해먹편15'')",
+   "channel_id": "UC6bgx24NDoYFBrMYHro00ww",
+   "channel_title": "노르디스크 NORDISK",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 8726431,
+   "subs": 2070,
+   "d": "2026-10-21",
+   "ratio": 4215.67
+  },
+  {
+   "video_id": "wkLFr9U4pJQ",
+   "title": "17년 무관 끝낸 주장 전설이냐 묻자",
+   "channel_id": "UCeK-MjEWfOe1BhALeSQZwdg",
+   "channel_title": "다큐피스",
+   "category": "Sports",
+   "is_shorts": true,
+   "views": 340098,
+   "subs": 54,
+   "d": "2026-10-22",
+   "ratio": 3400.98
+  },
+  {
+   "video_id": "HSRsnQi5TUE",
+   "title": "허경환 중얼거림 웃긴 모먼트 TOP7",
+   "channel_id": "UCYfpcMa2NX5lrKY0iqcyllw",
+   "channel_title": "꿔바롱",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 639025,
+   "subs": 190,
+   "d": "2026-10-21",
+   "ratio": 3363.29
+  },
+  {
+   "video_id": "7fKzZFuuFIk",
+   "title": "드롭은 싫고 기적은 필요함ㅋㅋ 골프 탈출샷 TOP3 ⛳",
+   "channel_id": "UCGHAolloq75VwEpjQzmXWQQ",
+   "channel_title": "숏숏골프",
+   "category": "Sports",
+   "is_shorts": true,
+   "views": 317900,
+   "subs": 40,
+   "d": "2026-10-25",
+   "ratio": 3179.0
+  },
+  {
+   "video_id": "YSmJrcjWQyY",
+   "title": "로꼬 입틀막하게 만든 존박 랩 실력 ㄷㄷ #shorts",
+   "channel_id": "UCnfG39GXrtfo3IiSlyYE4-w",
+   "channel_title": "blackberryroom",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 299477,
+   "subs": 29,
+   "d": "2026-10-25",
+   "ratio": 2994.77
+  },
+  {
+   "video_id": "1w9iC7byYGI",
+   "title": "윈터야 질러봐!",
+   "channel_id": "UCq3PvtrecqF4tb67dAEDHGg",
+   "channel_title": "입덕복선",
+   "category": "Howto & Style",
+   "is_shorts": true,
+   "views": 275668,
+   "subs": 26,
+   "d": "2026-10-23",
+   "ratio": 2756.68
+  },
+  {
+   "video_id": "jsrYlm-fLKc",
+   "title": "남침의 순간",
+   "channel_id": "UC0sdgXRC9mg6JGdMmeKCr5w",
+   "channel_title": "천천사",
+   "category": "Gaming",
+   "is_shorts": true,
+   "views": 674437,
+   "subs": 245,
+   "d": "2026-10-23",
+   "ratio": 2752.8
+  }
+ ],
+ "new_channels": [
+  {
+   "channel_id": "UCF10VsIQX1_f9k0K4fQ2i6A",
+   "channel_title": "아워무비",
+   "created": "2026-08-13",
+   "subs": 19600,
+   "video_id": "70wB_ZonFuo",
+   "title": "와이프 바람나 이혼해도 슬프지 않은 이유 #슬기로운의사생활 #슬의생 #언젠가는슬기로울전공의생활 #언슬전 #조정석 #유연석 #정경호 #안은진 #전미도",
+   "views": 5973874,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCkJYDOAOKxupR65WlhE9czg",
+   "channel_title": "짱구중독",
+   "created": "2026-08-22",
+   "subs": 15300,
+   "video_id": "aMP1mxuS33s",
+   "title": "봉미선 전설의 아침 식사 준비 ㅋㅋㅋ",
+   "views": 3665871,
+   "is_shorts": true,
+   "category": "Film & Animation"
+  },
+  {
+   "channel_id": "UCHGoKgrsDw2uBp4d8iaX5Nw",
+   "channel_title": "낭만피플",
+   "created": "2026-08-02",
+   "subs": 15300,
+   "video_id": "G_5qiT9RkYs",
+   "title": "국민들만 몰랐던 국대 내부 실태 이름 대신 7번이라 불린 손흥민",
+   "views": 2985183,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCe2NvhugGPAsNAnoqBsZLjA",
+   "channel_title": "슛돌이",
+   "created": "2026-10-07",
+   "subs": 6310,
+   "video_id": "75zlRdj0Bzo",
+   "title": "6연승에도 선수들에게 화를 낸 이정효 감독을 보고 무리뉴가 떠오른 박문성",
+   "views": 2763676,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCTRZbrI7v075TdnY7W3vxVQ",
+   "channel_title": "짜릿한국",
+   "created": "2026-09-14",
+   "subs": 8030,
+   "video_id": "ktJ4XvoGgA4",
+   "title": "고속도로마다 걸려있는 현수막의 주인",
+   "views": 2501178,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UC-SSQ7h4Bm8S_CBHQ5ZhVKA",
+   "channel_title": "찐인생",
+   "created": "2026-10-23",
+   "subs": 6870,
+   "video_id": "5h0foe9jAaA",
+   "title": "이만기 한숙희 부부의 현실 일상ㅋㅋ 한잔 꺾고 먹고 자고!",
+   "views": 2442084,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UC9W59sCb91XIXf9yLMx2DBw",
+   "channel_title": "마이히어로",
+   "created": "2026-08-22",
+   "subs": 4770,
+   "video_id": "02A2PizOp3E",
+   "title": "뇌사 아들 호흡기를 때려던 날 아빠가 중환자실을 점거한 이유",
+   "views": 1754027,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCtgGKxn5wVcsmYXpTiS0fOg",
+   "channel_title": "하이파츠",
+   "created": "2026-08-22",
+   "subs": 5120,
+   "video_id": "_y17QyHSpgA",
+   "title": "아기용 배트에 경악했던 양신 양준혁",
+   "views": 1738331,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCXBXhjXmL4xXoMscwotcqAg",
+   "channel_title": "댄서PICK",
+   "created": "2026-08-25",
+   "subs": 1050,
+   "video_id": "Hd1T60Qqwd8",
+   "title": "웃긴 노래에도 끝까지 웃참하는 효연& 카리나ㅋㅋ",
+   "views": 1684707,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCOs_IGMSQAur2kvkHLUmjBQ",
+   "channel_title": "팀코리아 극장",
+   "created": "2026-08-23",
+   "subs": 4700,
+   "video_id": "zHpnR3msbSU",
+   "title": "유도선수 훈장인 만두귀조차 없는 무패 유도 전설의 정체 최고의 예술 업어치기 기술",
+   "views": 1627534,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  }
+ ],
+ "by_day": [
+  {
+   "d": "2026-10-19",
+   "n": 10467,
+   "median_views": 61608
+  },
+  {
+   "d": "2026-10-20",
+   "n": 10709,
+   "median_views": 63301
+  },
+  {
+   "d": "2026-10-21",
+   "n": 11420,
+   "median_views": 59670
+  },
+  {
+   "d": "2026-10-22",
+   "n": 11538,
+   "median_views": 59509
+  },
+  {
+   "d": "2026-10-23",
+   "n": 10991,
+   "median_views": 63265
+  },
+  {
+   "d": "2026-10-24",
+   "n": 11454,
+   "median_views": 60261
+  },
+  {
+   "d": "2026-10-25",
+   "n": 10894,
+   "median_views": 59840
+  }
+ ]
+}
