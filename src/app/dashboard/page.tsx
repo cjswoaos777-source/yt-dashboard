@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import Link from "next/link";
 import { ViralVideo } from "@/lib/viral-types";
 import { DashboardClient } from "./DashboardClient";
 import { RANKING_TIER_URLS, getCdnVersion } from "@/lib/cdn";
@@ -189,6 +190,66 @@ export default async function DashboardPage() {
         updatedAt={updatedAt}
         latestNotice={latestNotice}
       />
+      <RankingMethod />
     </>
+  );
+}
+
+/**
+ * 순위 산정 방식 (서버에서 그리는 고정 글).
+ *
+ * [2026-10-29] SEO 운영안: 순위 목록은 매시간 바뀌므로 페이지 글이 거의 목록뿐이었다.
+ * 다음 검색은 '방문할 때마다 결과가 다르게 나오는 검색 결과형 문서'를 수집 제한 대상으로 꼽는다.
+ * 바뀌지 않는 설명을 함께 두어 이 페이지가 무엇을 어떻게 재는지 밝힌다.
+ * 숫자는 수집기 정의와 /about/metrics 의 설명에 맞춘다.
+ */
+function RankingMethod() {
+  const items: { term: string; body: React.ReactNode }[] = [
+    {
+      term: "대상",
+      body: <>매일 15개 카테고리에서 한국 지역 검색 기준으로 찾은, 업로드 2일 안 된 영상입니다. 4분 미만 영상은 조회수 3만 회, 4분 이상은 1만 회를 넘은 것만 담습니다. 한국 유튜브의 모든 영상이 아니라 이미 반응이 오기 시작한 영상의 표본입니다.</>,
+    },
+    {
+      term: "줄 세우는 기준",
+      body: <>담은 영상의 조회수·좋아요·댓글 수를 매시간 다시 받아 <strong>한 시간 전과의 차이</strong>(시간당 증가량)로 줄을 세웁니다. 기본은 조회수 증가이고, 좋아요 증가·댓글 증가·누적 조회수로도 정렬할 수 있습니다.</>,
+    },
+    {
+      term: "갱신",
+      body: <>매시간 25분 무렵 새 집계로 바뀝니다. 화면 위의 &apos;N시 집계&apos;가 지금 보고 있는 집계 시각입니다.</>,
+    },
+    {
+      term: "필터",
+      body: <>형식(숏츠·롱폼), 지역(국내·해외), 구독자 구간(100만 이상, 10만~100만, 1만~10만, 1만 미만), 카테고리로 나눠 볼 수 있습니다. 카테고리는 영상을 올린 사람이 직접 고른 유튜브 카테고리라 내용과 다를 수 있습니다.</>,
+    },
+    {
+      term: "읽을 때 주의",
+      body: <>광고로 집행된 브랜드 영상은 광고 조회수도 유튜브 조회수에 들어가 구독자에 비해 크게 나올 수 있습니다. 순위와 증가량은 YouTube API의 공개 데이터로 자체 계산한 값이며, YouTube가 제공하거나 보증하는 수치가 아닙니다.</>,
+    },
+  ];
+  return (
+    <section className="px-4 pb-12 sm:px-6 lg:px-10" aria-labelledby="ranking-method">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 id="ranking-method" className="text-lg font-bold tracking-tight text-neutral-900">
+          이 순위는 이렇게 매깁니다
+        </h2>
+        <dl className="mt-4 grid gap-4 md:grid-cols-2">
+          {items.map((it) => (
+            <div key={it.term} className="min-w-0">
+              <dt className="text-[13px] font-semibold text-neutral-800">{it.term}</dt>
+              <dd className="mt-1 text-[13px] leading-relaxed text-neutral-600">{it.body}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-5 text-[13px] text-neutral-600">
+          계산 방법은{" "}
+          <Link href="/about/metrics" className="underline underline-offset-2 hover:text-neutral-900">지표 설명</Link>,
+          지난주 흐름은{" "}
+          <Link href="/report" className="underline underline-offset-2 hover:text-neutral-900">주간 트렌드 리포트</Link>,
+          카테고리별로 뜨는 유튜버는{" "}
+          <Link href="/category" className="underline underline-offset-2 hover:text-neutral-900">카테고리 순위</Link>
+          에서 볼 수 있습니다.
+        </p>
+      </div>
+    </section>
   );
 }
