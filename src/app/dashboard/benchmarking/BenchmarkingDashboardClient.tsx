@@ -151,27 +151,21 @@ function BenchmarkingInfoPanel() {
                         </ul>
                     </div>
 
-                    {/* 소제목 2 */}
+                    {/* 소제목 2
+                        [2026-10-30] 채널 등급 추적(1~375위 1시간·376~1,000위 6시간·그 아래 하루)을 끄고,
+                        최근 7일 안에 수집된 채널의 숫자를 매일 오후 5시 수집 뒤 한 번 받는 방식으로 바꿨다. */}
                     <div className="rounded-xl bg-violet-50 p-4">
                         <h4 className="mb-2 text-[13px] font-bold text-violet-800">
-                            🔍 점수가 높을수록 더 자주 다시 확인해요
+                            🔍 채널 숫자는 하루 한 번 새로 받아요
                         </h4>
                         <p className="mb-3 text-[12px] leading-relaxed text-violet-700">
-                            국내 숏츠·국내 롱폼·해외 숏츠·해외 롱폼 네 리그에서 각각 상위 2,000개(총 8,000개)를 고르고,
-                            순위가 높을수록 조회수·구독자를 자주 다시 수집합니다.
+                            국내 숏츠·국내 롱폼·해외 숏츠·해외 롱폼 네 리그에서 각각 상위 2,000개(총 8,000개)를 고릅니다.
+                            순위와 상관없이, 최근 7일 안에 수집에 걸린 채널은 모두 매일 오후 5시 수집 뒤 구독자·조회수를 한 번 새로 받습니다.
                         </p>
                         <ul className="space-y-2 text-[12px] text-violet-700">
                             <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">1~375위</span>
-                                <span>1시간마다 갱신</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">376~1,000위</span>
-                                <span>6시간마다 갱신</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">1,001~2,000위</span>
-                                <span>하루 1번 갱신</span>
+                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">8,000개 전부</span>
+                                <span>하루 1번 갱신 (오후 5시 수집 뒤)</span>
                             </li>
                         </ul>
                     </div>
