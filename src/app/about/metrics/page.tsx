@@ -49,32 +49,28 @@ const ITEMS: { term: string; body: React.ReactNode }[] = [
 
 export default function MetricsPage() {
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
-                <h1
-                    className="mb-3 font-serif text-3xl font-bold tracking-tight text-[#1A1A1A] md:text-4xl"
-                    style={{ fontFamily: "var(--font-playfair), serif" }}
-                >
-                    지표 설명
-                </h1>
-                <p className="mb-8 text-[15px] leading-relaxed text-neutral-500">
+        /* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */
+        <main className="vh-main vh-article">
+            <header className="vh-phead">
+                <h1>지표 설명</h1>
+                <p className="vh-lead">
                     Viral Hunter의 숫자가 무엇을 뜻하고 어떻게 계산되는지 정리했습니다.
                 </p>
-                <dl className="space-y-6">
-                    {ITEMS.map((it) => (
-                        <div key={it.term} className="rounded-2xl border border-neutral-200 bg-white p-5">
-                            <dt className="mb-1.5 text-[15px] font-bold text-[#1A1A1A]">{it.term}</dt>
-                            <dd className="text-[14px] leading-[1.8] text-[#444444]">{it.body}</dd>
-                        </div>
-                    ))}
-                </dl>
-                <div className="mt-10 rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
-                    <MetricsDisclosure />
-                    <p className="mt-2 text-[12px] text-neutral-500">
-                        서비스 소개는 <Link href="/about" className="underline underline-offset-2">소개</Link> 페이지에 있습니다.
-                    </p>
-                </div>
-            </main>
-        </div>
+            </header>
+            <dl className="vh-metrics">
+                {ITEMS.map((it) => (
+                    <div key={it.term} className="vh-card">
+                        <dt>{it.term}</dt>
+                        <dd>{it.body}</dd>
+                    </div>
+                ))}
+            </dl>
+            <div className="vh-note">
+                <MetricsDisclosure />
+                <p className="mt-2">
+                    서비스 소개는 <Link href="/about">소개</Link> 페이지에 있습니다.
+                </p>
+            </div>
+        </main>
     );
 }

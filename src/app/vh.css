@@ -619,3 +619,39 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
   .vh-noticelist a { flex-wrap: wrap; gap: 6px 10px; padding: 14px 16px; }
   .vh-noticelist-t { flex-basis: 100%; order: 3; white-space: normal; }
 }
+
+/* ════ 소개·지표 설명 (2026-10-30) ════ */
+.vh-about { gap: 34px; }
+.vh-about-uses { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.vh-about-use { display: grid; gap: 8px; align-content: start; }
+.vh-about-num { color: var(--vh-brand); font: 400 34px/1 var(--vh-font-rank); }
+.vh-about-use h3 { font-size: 16px; font-weight: 800; }
+.vh-about-use p { color: var(--vh-ink-2); font-size: 14px; line-height: 1.65; }
+.vh-about-tag { justify-self: start; margin-top: 4px; padding: 3px 10px; border-radius: 999px; background: var(--vh-surface-2); color: var(--vh-ink-2); font-size: 12px; font-weight: 600; }
+.vh-about-tech { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.vh-about-techitem { display: flex; align-items: center; gap: 14px; }
+.vh-about-ic { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--vh-surface-2); color: var(--vh-ink-2); }
+.vh-about-ic svg { width: 18px; height: 18px; }
+.vh-about-role { color: var(--vh-ink-3); font-size: 12px; font-weight: 700; }
+.vh-about-stack { color: var(--vh-ink); font-size: 14.5px; font-weight: 600; }
+.vh-about-maker { display: grid; gap: 22px; background: linear-gradient(135deg, #FFF4EE 0%, #FFFFFF 60%); }
+.vh-about-story { display: grid; gap: 16px; color: var(--vh-ink); font-size: 15.5px; line-height: 1.85; }
+.vh-about-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.vh-about-btns svg, .vh-center .vh-cta svg { width: 16px; height: 16px; }
+.vh-btn-line svg { width: 16px; height: 16px; margin: 0 6px 0 0; }
+.vh-btn-line svg:last-child { margin: 0 0 0 6px; }
+.vh-about-support { scroll-margin-top: 80px; }
+.vh-about-give { display: grid; gap: 18px; }
+.vh-about-givetext { color: var(--vh-ink); font-size: 15.5px; line-height: 1.75; }
+.vh-about-pay { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; }
+.vh-about-kakao { display: inline-flex; flex: none; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 999px; background: #FEE500; color: #191919; font-size: 15px; font-weight: 800; text-decoration: none; }
+.vh-about-kakao:hover { background: #F5DC00; }
+.vh-about-kakao svg { width: 17px; height: 17px; }
+.vh-about-qr { display: flex; align-items: center; gap: 12px; }
+.vh-about-qr img { border: 1px solid var(--vh-line); border-radius: 12px; }
+.vh-about-qr p { color: var(--vh-ink-3); font-size: 13px; line-height: 1.6; }
+.vh-about-free { color: var(--vh-ink-3); font-size: 13px; }
+.vh-metrics { display: grid; gap: 12px; margin: 0; }
+.vh-metrics dt { margin-bottom: 6px; color: var(--vh-ink); font-size: 16px; font-weight: 800; }
+.vh-metrics dd { margin: 0; color: var(--vh-ink-2); font-size: 14.5px; line-height: 1.8; }
+.vh-card .vh-btn-line { border: 1px solid var(--vh-line); }
