@@ -156,15 +156,15 @@ export default async function BenchmarkingPage() {
 
     if (errorDetail) {
         return (
-            <div className="min-h-screen bg-[#FDFDFC] flex items-center justify-center p-10">
-                <div className="border border-red-200 bg-red-50 p-6 rounded-2xl max-w-2xl w-full">
+            <main className="vh-main vh-small">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
                     <h1 className="text-lg font-bold text-red-700 mb-3">데이터 로딩 실패</h1>
                     <p className="font-mono text-sm text-red-600 whitespace-pre-wrap">{errorDetail}</p>
                     <p className="mt-4 text-sm text-neutral-500">
                         CDN URL을 확인하거나 잠시 후 다시 시도해보세요.
                     </p>
                 </div>
-            </div>
+            </main>
         );
     }
 
