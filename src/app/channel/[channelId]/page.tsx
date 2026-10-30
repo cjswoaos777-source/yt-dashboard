@@ -11,6 +11,7 @@ import { MetricsDisclosure } from "@/components/legal";
 import { buildInsight } from "@/lib/channel-insight";
 import { buildExtraView } from "@/lib/channel-extra";
 import { seoGroup } from "@/lib/seo-experiment";
+import { Num } from "@/components/site/rank";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
@@ -33,18 +34,6 @@ function fmtKr(n: number, unit = ""): string {
     if (n >= 10_000) return `${(n / 10_000).toFixed(1)}만${unit}`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}천${unit}`;
     return `${n.toLocaleString()}${unit}`;
-}
-
-/** "12.3만명" 같은 값에서 단위만 작게 그린다. 글자는 그대로다. */
-function Num({ t }: { t: string }) {
-    const m = t.match(/^([+-]?[\d.,]+)(.*)$/);
-    if (!m) return <>{t}</>;
-    return (
-        <>
-            {m[1]}
-            {m[2] && <span className="vh-u">{m[2]}</span>}
-        </>
-    );
 }
 
 export async function generateMetadata({

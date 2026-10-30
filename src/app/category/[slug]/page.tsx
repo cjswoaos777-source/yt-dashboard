@@ -15,6 +15,7 @@ import {
 import { hasChannelPage } from "@/lib/channel-constants";
 import { SITE } from "@/lib/site";
 import { MetricsDisclosure } from "@/components/legal";
+import { Num } from "@/components/site/rank";
 
 export const dynamic = "force-dynamic";
 
@@ -55,18 +56,17 @@ const LEAGUE_LABEL: Record<string, string> = {
 /** 구독자 1만 이상은 채널 분석 페이지로, 그보다 작은 채널은 유튜브로 연결한다. */
 function ChannelName({ c }: { c: CategoryChannel }) {
     const { href, external } = channelLink(c);
-    const cls = "text-[#1A1A1A] underline-offset-2 hover:underline";
     if (!external) {
         return (
-            <Link href={href} className={cls}>
+            <Link href={href} className="vh-chname">
                 {c.channel_title}
             </Link>
         );
     }
     return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className={`${cls} inline-flex items-center gap-1`}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className="vh-chname">
             {c.channel_title}
-            <ExternalLink className="h-3 w-3 shrink-0 text-neutral-300" aria-hidden="true" />
+            <ExternalLink className="vh-ext" aria-hidden="true" />
             <span className="sr-only">(유튜브에서 열기)</span>
         </a>
     );
@@ -150,7 +150,7 @@ export default async function CategoryPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
@@ -160,151 +160,125 @@ export default async function CategoryPage({
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
             />
 
-            <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/category"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·표 내용·링크는 그대로다. */}
+            <main className="vh-main vh-narrow">
+                <Link href="/category" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     카테고리 전체
                 </Link>
 
-                <header className="mb-8">
-                    <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
+                <header className="vh-phead">
+                    <p className="vh-eyebrow">
                         {meta.label} · {dayLabel(overview.targetDate)} 기준
                     </p>
-                    <h1
-                        className="mb-3 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        급상승 {meta.label} 유튜버 순위
-                    </h1>
-                    <p className="mb-3 text-[13.5px] leading-relaxed text-[#333333]">
-                        {meta.description}
-                    </p>
+                    <h1>급상승 {meta.label} 유튜버 순위</h1>
+                    <p className="vh-lead">{meta.description}</p>
                     {/* 숫자로 만든 요약. 카테고리마다 값이 달라 페이지마다 다른 문장이 된다. */}
-                    <p className="text-[13px] leading-relaxed text-neutral-500">
+                    <p className="vh-lead vh-lead-sm">
                         국내 {meta.label} 채널{" "}
-                        <strong className="font-semibold text-neutral-700">{snap.tracked.toLocaleString()}개</strong>를
+                        <strong>{snap.tracked.toLocaleString()}개</strong>를
                         추적해 최근 하루 평균 조회수가 많이 늘어난 순으로 세웠습니다. 1위는{" "}
-                        <strong className="font-semibold text-neutral-700">{first.channel_title}</strong>
+                        <strong>{first.channel_title}</strong>
                         (구독자 {fmtKr(first.subscriber_count, "명")})로 하루 평균 조회수가{" "}
-                        <strong className="font-semibold text-neutral-700">{fmtKr(first.avg_daily_view_increase, "회")}</strong>씩
+                        <strong>{fmtKr(first.avg_daily_view_increase, "회")}</strong>씩
                         늘고 있습니다. 상위 {snap.top.length}개 중 {smallInTop}개는 구독자 1만 명 미만 채널입니다.
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
-                <dl className="mb-10 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <dl className="vh-kpis">
                     {[
                         { k: "추적 채널", v: `${snap.tracked.toLocaleString()}개` },
                         { k: "숏츠 중심 채널", v: `${pct(snap.shorts, snap.ranked)}%` },
                         { k: "구독자 중위값", v: fmtKr(snap.medianSubscribers, "명") },
                         { k: "3개월 안에 생긴 채널", v: `${snap.newChannels.toLocaleString()}개` },
                     ].map((s) => (
-                        <div key={s.k} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
-                            <dt className="text-[11px] text-neutral-400">{s.k}</dt>
-                            <dd className="mt-0.5 text-[17px] font-semibold tabular-nums text-[#1A1A1A]">{s.v}</dd>
+                        <div key={s.k} className="vh-kpi">
+                            <dt>{s.k}</dt>
+                            <dd>
+                                <Num t={s.v} />
+                            </dd>
                         </div>
                     ))}
                 </dl>
 
-                <section>
-                    <h2 className="mb-3 text-[15px] font-bold text-[#1A1A1A]">
+                <section className="vh-sec">
+                    <h2 className="vh-sec-h">
                         하루 평균 조회수가 많이 느는 채널 TOP {snap.top.length}
                     </h2>
-                    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                        <div className="overflow-x-auto">
-                            {/* 휴대폰에서는 형식·일평균 구독자 칸을 숨겨 옆으로 밀지 않아도 핵심 숫자가 보이게 한다. */}
-                            <table className="w-full text-left text-[13px] sm:min-w-[560px]">
-                                <thead>
-                                    <tr className="border-b border-neutral-100 text-[11px] text-neutral-400">
-                                        <th scope="col" className="whitespace-nowrap px-3 py-2.5 font-medium sm:px-4">순위</th>
-                                        <th scope="col" className="px-3 py-2.5 font-medium sm:px-4">채널</th>
-                                        <th scope="col" className="hidden whitespace-nowrap px-4 py-2.5 font-medium sm:table-cell">형식</th>
-                                        <th scope="col" className="whitespace-nowrap px-3 py-2.5 text-right font-medium sm:px-4">일평균 조회수</th>
-                                        <th scope="col" className="hidden whitespace-nowrap px-4 py-2.5 text-right font-medium sm:table-cell">일평균 구독자</th>
-                                        <th scope="col" className="whitespace-nowrap px-3 py-2.5 text-right font-medium sm:px-4">구독자</th>
+                    <div className="vh-table-card">
+                        {/* 휴대폰에서는 한 줄을 두 줄 카드로 바꿔 옆으로 밀지 않아도 다 보이게 한다 (형식·일평균 구독자는 둘째 줄). */}
+                        <table className="vh-table vh-cattop">
+                            <thead>
+                                <tr>
+                                    <th scope="col">순위</th>
+                                    <th scope="col">채널</th>
+                                    <th scope="col">형식</th>
+                                    <th scope="col" className="vh-num">일평균 조회수</th>
+                                    <th scope="col" className="vh-num">일평균 구독자</th>
+                                    <th scope="col" className="vh-num">구독자</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {snap.top.map((c, i) => (
+                                    <tr key={c.channel_id} data-top={i < 3 ? "" : undefined}>
+                                        <td className="vh-trk">{i + 1}</td>
+                                        <th scope="row">
+                                            <ChannelName c={c} />
+                                            {isNewChannel(c) && <span className="vh-newage">개설 {c.ageDays}일</span>}
+                                        </th>
+                                        <td className="vh-tfmt">{LEAGUE_LABEL[c.league_group] ?? "-"}</td>
+                                        <td className="vh-num vh-tavg">{fmtDelta(c.avg_daily_view_increase, "회")}</td>
+                                        <td className="vh-num vh-tdsub">{fmtDelta(c.avg_daily_sub_increase, "명")}</td>
+                                        <td className="vh-num vh-tsubs">{fmtKr(c.subscriber_count, "명")}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {snap.top.map((c, i) => (
-                                        <tr
-                                            key={c.channel_id}
-                                            className="border-b border-neutral-50 transition-colors last:border-0 hover:bg-neutral-50/60"
-                                        >
-                                            <td className="px-3 py-2.5 tabular-nums text-neutral-400 sm:px-4">{i + 1}</td>
-                                            <th scope="row" className="px-3 py-2.5 font-medium [overflow-wrap:anywhere] sm:px-4">
-                                                <ChannelName c={c} />
-                                                {isNewChannel(c) && (
-                                                    <span className="ml-1.5 whitespace-nowrap rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">
-                                                        개설 {c.ageDays}일
-                                                    </span>
-                                                )}
-                                            </th>
-                                            <td className="hidden whitespace-nowrap px-4 py-2.5 text-[12px] text-neutral-500 sm:table-cell">
-                                                {LEAGUE_LABEL[c.league_group] ?? "-"}
-                                            </td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums text-[#1A1A1A] sm:px-4">
-                                                {fmtDelta(c.avg_daily_view_increase, "회")}
-                                            </td>
-                                            <td className="hidden whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-neutral-700 sm:table-cell">
-                                                {fmtDelta(c.avg_daily_sub_increase, "명")}
-                                            </td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-neutral-500 sm:px-4">
-                                                {fmtKr(c.subscriber_count, "명")}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 
-                <div className="mt-10 grid gap-6 md:grid-cols-2">
-                    <section>
-                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">구독자가 가장 빨리 느는 채널</h2>
-                        <p className="mb-3 text-[12px] text-neutral-500">하루 평균 구독자 증가 순</p>
-                        <ol className="space-y-1.5">
+                <div className="vh-two-even">
+                    <section className="vh-sec">
+                        <div className="vh-sec-title">
+                            <h2>구독자가 가장 빨리 느는 채널</h2>
+                            <p className="vh-sec-note">하루 평균 구독자 증가 순</p>
+                        </div>
+                        <ol className="vh-mlist">
                             {snap.topSubs.map((c, i) => (
-                                <li
-                                    key={c.channel_id}
-                                    className="flex items-baseline gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-[13px]"
-                                >
-                                    <span className="w-5 shrink-0 text-right text-[12px] tabular-nums text-neutral-400">{i + 1}</span>
-                                    <span className="min-w-0 flex-1 truncate font-medium"><ChannelName c={c} /></span>
-                                    <span className="shrink-0 text-right">
-                                        <span className="font-semibold tabular-nums text-[#1A1A1A]">{fmtDelta(c.avg_daily_sub_increase, "명")}</span>
-                                        <span className="ml-1.5 text-[11px] tabular-nums text-neutral-400">/ {fmtKr(c.subscriber_count, "명")}</span>
+                                <li key={c.channel_id}>
+                                    <span className="vh-mlist-rk">{i + 1}</span>
+                                    <span className="vh-mlist-name"><ChannelName c={c} /></span>
+                                    <span className="vh-mlist-v">
+                                        <b>{fmtDelta(c.avg_daily_sub_increase, "명")}</b>
+                                        <small>/ {fmtKr(c.subscriber_count, "명")}</small>
                                     </span>
                                 </li>
                             ))}
                         </ol>
                     </section>
 
-                    <section>
-                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">최근 3개월 안에 생긴 채널</h2>
-                        <p className="mb-3 text-[12px] text-neutral-500">개설 90일 이내 채널의 하루 평균 조회수 증가 순</p>
+                    <section className="vh-sec">
+                        <div className="vh-sec-title">
+                            <h2>최근 3개월 안에 생긴 채널</h2>
+                            <p className="vh-sec-note">개설 90일 이내 채널의 하루 평균 조회수 증가 순</p>
+                        </div>
                         {snap.newest.length > 0 ? (
-                            <ol className="space-y-1.5">
+                            <ol className="vh-mlist">
                                 {snap.newest.map((c, i) => (
-                                    <li
-                                        key={c.channel_id}
-                                        className="flex items-baseline gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-[13px]"
-                                    >
-                                        <span className="w-5 shrink-0 text-right text-[12px] tabular-nums text-neutral-400">{i + 1}</span>
-                                        <span className="min-w-0 flex-1 truncate font-medium"><ChannelName c={c} /></span>
-                                        <span className="shrink-0 text-right">
-                                            <span className="font-semibold tabular-nums text-[#1A1A1A]">{fmtDelta(c.avg_daily_view_increase, "회")}</span>
-                                            <span className="ml-1.5 text-[11px] tabular-nums text-neutral-400">개설 {c.ageDays}일</span>
+                                    <li key={c.channel_id}>
+                                        <span className="vh-mlist-rk">{i + 1}</span>
+                                        <span className="vh-mlist-name"><ChannelName c={c} /></span>
+                                        <span className="vh-mlist-v">
+                                            <b>{fmtDelta(c.avg_daily_view_increase, "회")}</b>
+                                            <small>개설 {c.ageDays}일</small>
                                         </span>
                                     </li>
                                 ))}
                             </ol>
                         ) : (
-                            <p className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[12px] text-neutral-500">
+                            <p className="vh-note">
                                 지금 순위에는 최근 3개월 안에 생긴 채널이 없습니다.
                             </p>
                         )}
@@ -312,18 +286,16 @@ export default async function CategoryPage({
                 </div>
 
                 {/* 이 순위가 무엇이고 무엇이 아닌지 밝힌다. '유튜버 순위'를 전체 구독자 순위로 읽으면 오해가 된다. */}
-                <div className="mt-10 space-y-1.5 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[12px] leading-relaxed text-neutral-500">
+                <div className="vh-note vh-note-stack">
                     <p>
-                        이 순위는 Viral Hunter가 <strong className="text-neutral-700">구독자 수 대비 조회 성과가 높은 채널</strong>을
+                        이 순위는 Viral Hunter가 <strong>구독자 수 대비 조회 성과가 높은 채널</strong>을
                         골라 추적한 결과입니다. 구독자가 매우 많은 대형 채널은 선별 기준상 들어 있지 않아, 한국 유튜브 전체
                         구독자 순위와는 다릅니다.
                     </p>
                     <p>
                         일평균 조회수·구독자는 최근 최대 7일 동안 채널 전체 조회수·구독자가 하루 평균 늘어난 양입니다.
                         카테고리는 채널이 올린 영상 중 가장 많은 유튜브 분류를 따릅니다. 채널 지표는 매일 저녁 갱신됩니다.{" "}
-                        <Link href="/about/metrics" className="text-neutral-700 underline underline-offset-2">
-                            지표 설명
-                        </Link>
+                        <Link href="/about/metrics">지표 설명</Link>
                     </p>
                     <p>
                         구독자 1만 명 이상 채널은 Viral Hunter 채널 분석 페이지로, 그보다 작은 채널은 유튜브 채널로 연결됩니다.
@@ -331,22 +303,17 @@ export default async function CategoryPage({
                 </div>
 
                 {/* 다른 카테고리 — 내부 링크 */}
-                <section className="mt-12 border-t border-neutral-100 pt-8">
-                    <h2 className="mb-4 text-[14px] font-bold text-[#1A1A1A]">다른 카테고리 순위</h2>
-                    <ul className="flex flex-wrap gap-2">
+                <section className="vh-sec">
+                    <h2 className="vh-sec-h">다른 카테고리 순위</h2>
+                    <ul className="vh-chiplist">
                         {others.map((s) => (
                             <li key={s}>
-                                <Link
-                                    href={`/category/${s}`}
-                                    className="inline-flex rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:bg-neutral-50"
-                                >
-                                    {CATEGORY_META[s].label}
-                                </Link>
+                                <Link href={`/category/${s}`}>{CATEGORY_META[s].label}</Link>
                             </li>
                         ))}
                     </ul>
                 </section>
             </main>
-        </div>
+        </>
     );
 }

@@ -46,6 +46,18 @@ export function Kr({ n, prefix = "", unit = "" }: { n: number; prefix?: string; 
     );
 }
 
+/** "12.3만명"처럼 이미 만든 글에서 단위만 작게 그린다. 글자는 그대로다. */
+export function Num({ t }: { t: string }) {
+    const m = t.match(/^([+-]?[\d.,]+)(.*)$/);
+    if (!m) return <>{t}</>;
+    return (
+        <>
+            {m[1]}
+            {m[2] && <span className="vh-u">{m[2]}</span>}
+        </>
+    );
+}
+
 const watch = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 const thumb = (id: string, size: "mq" | "hq" = "mq") => `https://img.youtube.com/vi/${id}/${size}default.jpg`;
 const isShorts = (r: RankingRow) => r.video_type?.startsWith("Shorts") ?? false;

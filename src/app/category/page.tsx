@@ -54,71 +54,53 @@ export default async function CategoryIndexPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
             />
 
-            <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/dashboard"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */}
+            <main className="vh-main vh-narrow">
+                <Link href="/dashboard" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     대시보드로
                 </Link>
 
-                <header className="mb-8">
-                    <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
-                        {dayLabel(overview.targetDate)} 기준
-                    </p>
-                    <h1
-                        className="mb-3 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        카테고리별 급상승 유튜버 순위
-                    </h1>
-                    <p className="mb-3 text-[13.5px] leading-relaxed text-[#333333]">
+                <header className="vh-phead">
+                    <p className="vh-eyebrow">{dayLabel(overview.targetDate)} 기준</p>
+                    <h1>카테고리별 급상승 유튜버 순위</h1>
+                    <p className="vh-lead">
                         {CATEGORY_SLUGS.length}개 카테고리에서 최근 하루 평균 조회수가 가장 빠르게 늘고 있는
                         국내 유튜브 채널을 매일 정리합니다. 카테고리를 고르면 상위 30개 채널과 구독자가 빨리 느는 채널,
                         새로 생긴 채널을 볼 수 있습니다.
                     </p>
                     {/* /channel 목록과 같은 이유로 무엇이 아닌지도 밝힌다. */}
-                    <p className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[12px] leading-relaxed text-neutral-500">
-                        이 순위는 <strong className="text-neutral-700">구독자 수 대비 조회 성과가 높은 채널</strong>을
+                    <p className="vh-note">
+                        이 순위는 <strong>구독자 수 대비 조회 성과가 높은 채널</strong>을
                         골라 추적한 결과입니다. 구독자가 매우 많은 대형 채널은 선별 기준상 들어 있지 않아, 한국 유튜브
                         전체 구독자 순위와는 다릅니다.
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
-                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="vh-catgrid">
                     {CATEGORY_SLUGS.map((s) => {
                         const meta = CATEGORY_META[s];
                         const snap = overview.categories[s];
                         const first = snap.top[0];
                         return (
                             <li key={s}>
-                                <Link
-                                    href={`/category/${s}`}
-                                    className="flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50/60"
-                                >
-                                    <h2 className="text-[15px] font-bold text-[#1A1A1A]">
-                                        {meta.label} 유튜버 순위
-                                    </h2>
-                                    <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
-                                        {meta.description}
-                                    </p>
-                                    <p className="mt-3 text-[12px] text-neutral-400">
-                                        추적 채널 {snap.tracked.toLocaleString()}개
-                                    </p>
+                                <Link href={`/category/${s}`}>
+                                    <h2>{meta.label} 유튜버 순위</h2>
+                                    <p className="vh-catgrid-desc">{meta.description}</p>
+                                    <p className="vh-catgrid-n">추적 채널 {snap.tracked.toLocaleString()}개</p>
                                     {first && (
-                                        <p className="mt-1 truncate text-[12.5px] text-neutral-700">
-                                            <span className="text-neutral-400">1위</span>{" "}
-                                            <span className="font-medium">{first.channel_title}</span>
-                                            <span className="ml-1.5 tabular-nums text-neutral-500">
+                                        <p className="vh-catgrid-first">
+                                            <span className="vh-catgrid-rk">1위</span>{" "}
+                                            <span className="vh-catgrid-name">{first.channel_title}</span>
+                                            <span className="vh-catgrid-v">
                                                 하루 +{fmtKr(first.avg_daily_view_increase, "회")}
                                             </span>
                                         </p>
@@ -129,6 +111,6 @@ export default async function CategoryIndexPage() {
                     })}
                 </ul>
             </main>
-        </div>
+        </>
     );
 }
