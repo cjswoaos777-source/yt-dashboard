@@ -1,37 +1,23 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Playfair_Display, Bebas_Neue, Noto_Sans_KR } from "next/font/google";
+import { Bebas_Neue } from "next/font/google";
 import Script from "next/script";
+// [2026-10-30 새 디자인] 한글 글꼴은 Pretendard 하나로 통일한다. 페이지에 쓰인 글자 조각만 받는
+// 동적 서브셋을 사이트 안에서 직접 내보낸다(외부 CDN 없음). 예전 Plus Jakarta·Playfair·Noto 는 뺐고,
+// 그 변수(--font-inter·--font-playfair·--font-noto)는 vh.css 가 Pretendard 로 돌린다.
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import "./vh.css";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
+import { SiteHeader } from "@/components/site/site-header";
+import { SiteFooterNew } from "@/components/site/site-footer";
 import { SITE } from "@/lib/site";
 
-// Primary sans — replaces Inter; PJS 700/800 visually matches Korean glyph weight much better
-const jakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-inter",   // keep var name so globals.css --font-sans picks it up
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  display: "swap",
-});
-
+// 순위 숫자(B 시안의 굵은 숫자)에만 쓴다.
 const bebasNeue = Bebas_Neue({
   variable: "--font-bebas",
   subsets: ["latin"],
   weight: "400",
-  display: "swap",
-});
-
-const notoSansKr = Noto_Sans_KR({
-  variable: "--font-noto",
-  subsets: ["latin"],
-  weight: ["700", "900"],
   display: "swap",
 });
 
@@ -102,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={cn(jakartaSans.variable, playfair.variable, bebasNeue.variable, notoSansKr.variable)}>
+    <html lang="ko" className={bebasNeue.variable}>
       <body className="font-sans antialiased text-foreground bg-background">
         {/* WebSite 구조화 데이터 */}
         <script
@@ -127,7 +113,12 @@ export default function RootLayout({
         <AnalyticsTracker />
 
 
-        <SmoothScroll>{children}</SmoothScroll>
+        <SmoothScroll>
+          {/* 모든 화면 공통 머리·바닥글 (예전 사이드바와 화면마다 붙던 SiteFooter 를 대신한다) */}
+          <SiteHeader />
+          {children}
+          <SiteFooterNew />
+        </SmoothScroll>
       </body>
     </html>
   );

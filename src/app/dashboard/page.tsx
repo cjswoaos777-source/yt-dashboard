@@ -227,31 +227,24 @@ function RankingMethod() {
     },
   ];
   return (
-    <section className="px-4 pb-12 sm:px-6 lg:px-10" aria-labelledby="ranking-method">
-      <div className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
-        <h2 id="ranking-method" className="text-lg font-bold tracking-tight text-neutral-900">
-          이 순위는 이렇게 매깁니다
-        </h2>
-        <dl className="mt-4 grid gap-4 md:grid-cols-2">
+    // [2026-10-30 새 디자인] 글은 그대로 두고 모양만 바꿨다 (SEO 점검: 서버에서 그리는 고정 글 유지).
+    <div className="vh-main" style={{ paddingTop: 0 }}>
+      <section className="vh-method" aria-labelledby="ranking-method">
+        <h2 id="ranking-method">이 순위는 이렇게 매깁니다</h2>
+        <dl>
           {items.map((it) => (
-            <div key={it.term} className="min-w-0">
-              <dt className="text-[13px] font-semibold text-neutral-800">{it.term}</dt>
-              <dd className="mt-1 text-[13px] leading-relaxed text-neutral-600">{it.body}</dd>
+            <div key={it.term}>
+              <dt>{it.term}</dt>
+              <dd>{it.body}</dd>
             </div>
           ))}
         </dl>
-        <p className="mt-5 text-[13px] text-neutral-600">
-          계산 방법은{" "}
-          <Link href="/about/metrics" className="underline underline-offset-2 hover:text-neutral-900">지표 설명</Link>,
-          지난주 흐름은{" "}
-          <Link href="/report" className="underline underline-offset-2 hover:text-neutral-900">주간 트렌드 리포트</Link>,
-          카테고리별로 뜨는 유튜버는{" "}
-          <Link href="/category" className="underline underline-offset-2 hover:text-neutral-900">카테고리 순위</Link>
-          에서 볼 수 있습니다. 이 순위로 &lsquo;지금 무엇을 만들면 좋을지&rsquo; 고른 결과는{" "}
-          <Link href="/ideas" className="underline underline-offset-2 hover:text-neutral-900">지금 만들 만한 영상</Link>
-          에 매시간 정리합니다.
+        <p>
+          계산 방법은 <Link href="/about/metrics">지표 설명</Link>, 지난주 흐름은 <Link href="/report">주간 트렌드 리포트</Link>,
+          카테고리별로 뜨는 유튜버는 <Link href="/category">카테고리 순위</Link>에서 볼 수 있습니다. 이 순위로 &lsquo;지금 무엇을
+          만들면 좋을지&rsquo; 고른 결과는 <Link href="/ideas">지금 만들 만한 영상</Link>에 매시간 정리합니다.
         </p>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import { ViralVideo } from "@/lib/viral-types";
 import { RANKING_TIER_URLS, TierKey } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
@@ -11,15 +10,22 @@ import type { NoticeMeta } from "@/lib/notices";
 import { MetricsDisclosure } from "@/components/legal";
 import { track, currentPageType } from "@/lib/analytics";
 
-// ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
-function parseUpdatedHour(raw: string): string {
-    // '2026-03-31-10' 형식
+/*
+ * [2026-10-30 새 디자인] 카드 격자 → 한 줄 목록(순위 숫자·썸네일·제목·최근 1시간).
+ * 휴대폰에서 영상 하나가 화면을 거의 다 쓰던 것(50개에 약 2만 6천 px)을 줄인다.
+ * 필터·정렬·언어·구독자 구간·더 보기·공유·GA(filter_change, share)는 그대로다.
+ * 필터는 지역·형식·정렬만 밖에 두고 나머지는 '필터' 안으로 접는다(점진적 공개).
+ */
+
+// ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → 10
+function parseUpdatedHour(raw: string): number | null {
     const dashMatch = raw.match(/(\d{4}-\d{2}-\d{2})-(\d{1,2})$/);
-    if (dashMatch) return `${parseInt(dashMatch[2], 10)}시`;
-    // 'HH:MM' 형식
+    if (dashMatch) return parseInt(dashMatch[2], 10);
     const colonMatch = raw.match(/^(\d{1,2}):(\d{2})$/);
-    if (colonMatch) return `${parseInt(colonMatch[1], 10)}시`;
-    return raw;
+    if (colonMatch) return parseInt(colonMatch[1], 10);
+    const hourMatch = raw.match(/^(\d{1,2})시$/);
+    if (hourMatch) return parseInt(hourMatch[1], 10);
+    return null;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,33 +39,49 @@ type OriginState = null | "DOMESTIC" | "IMPORTED";
  *
  * 나라가 아니라 오디오 언어다. 유튜브가 주는 나라 정보는 채널 주인이 스스로
  * 적는 선택 항목이라 절반 가까이 비어 있지만, 오디오 언어는 영상의 99.8% 에
- * 있다. 사용자에게는 사실상 나라 필터처럼 읽히도록 대표 지역을 함께 적는다.
- *
- * 순서는 해외 영상 비중순 (2026-09-15 실측: 영어 39%, 힌디 15%, 스페인어 4%,
+ * 있다. 순서는 해외 영상 비중순 (2026-09-15 실측: 영어 39%, 힌디 15%, 스페인어 4%,
  * 일본어 3.6%, 인도네시아어 3.4%, 아랍어 2.8%, 포르투갈어 2%, 러시아어 1.7%).
  * 코드는 지역 접미사를 뗀 기본 코드다 (en-US 도 en 으로 들어온다).
+ * [2026-10-30] 국기 이모지는 윈도우에서 'US' 같은 글자로 보여 뺐다.
  */
 const LANG_CHIPS: { code: string; label: string }[] = [
-    { code: "en", label: "🇺🇸 영어" },
-    { code: "hi", label: "🇮🇳 힌디어" },
-    { code: "es", label: "🇪🇸 스페인어" },
-    { code: "ja", label: "🇯🇵 일본어" },
-    { code: "id", label: "🇮🇩 인도네시아어" },
-    { code: "ar", label: "🇸🇦 아랍어" },
-    { code: "pt", label: "🇧🇷 포르투갈어" },
-    { code: "ru", label: "🇷🇺 러시아어" },
-    { code: "vi", label: "🇻🇳 베트남어" },
-    { code: "th", label: "🇹🇭 태국어" },
-    { code: "zh", label: "🇨🇳 중국어" },
+    { code: "en", label: "영어" },
+    { code: "hi", label: "힌디어" },
+    { code: "es", label: "스페인어" },
+    { code: "ja", label: "일본어" },
+    { code: "id", label: "인도네시아어" },
+    { code: "ar", label: "아랍어" },
+    { code: "pt", label: "포르투갈어" },
+    { code: "ru", label: "러시아어" },
+    { code: "vi", label: "베트남어" },
+    { code: "th", label: "태국어" },
+    { code: "zh", label: "중국어" },
 ];
 const LANG_CODES = new Set(LANG_CHIPS.map((c) => c.code));
+
+/** 유튜브 카테고리(업로더가 고른 영문 값) → 화면 이름. 서버로 넘기는 값은 영문 그대로다. */
+const CATEGORY_KO: Record<string, string> = {
+    "Autos & Vehicles": "자동차",
+    Comedy: "코미디",
+    Education: "교육",
+    Entertainment: "엔터테인먼트",
+    "Film & Animation": "영화·애니",
+    Gaming: "게임",
+    "Howto & Style": "노하우·스타일",
+    Music: "음악",
+    "News & Politics": "뉴스·정치",
+    "Nonprofits & Activism": "비영리·사회",
+    "People & Blogs": "인물·블로그",
+    "Pets & Animals": "동물",
+    "Science & Technology": "과학·기술",
+    Sports: "스포츠",
+    "Travel & Events": "여행",
+};
+const categoryKo = (c: string) => CATEGORY_KO[c] ?? c;
+
 /**
- * 처음에 그리는 개수.
- *
- * 데이터 출처가 GitHub 파일이던 때는 조합별 상위 50위까지만 담겨 있어서
- * 이 값이 곧 상한이었다. Supabase 로 옮기면서 컷이 사라져 한 번에 1,000건까지
- * 받아오지만, 카드 1,000개를 한꺼번에 그리면 브라우저가 버벅인다.
- * 그래서 처음에는 50개만 그리고 나머지는 '더 보기'로 펼친다.
+ * 처음에 그리는 개수. 한 번에 1,000건까지 받지만, 처음에는 50개만 그리고
+ * 나머지는 '더 보기'로 펼친다.
  */
 const DISPLAY_LIMIT = 50;
 
@@ -67,13 +89,20 @@ const DISPLAY_LIMIT = 50;
 const PAGE_STEP = 50;
 
 // ─── Tier Config ──────────────────────────────────────────────────────────────
+// 화면에는 'Tier 1' 대신 구독자 범위를 그대로 적는다. 키(sub_tier)는 그대로다.
+const TIER_CONFIG: { key: TierKey; label: string }[] = [
+    { key: "all", label: "전체" },
+    { key: "tier1", label: "100만 이상" },
+    { key: "tier2", label: "10만~100만" },
+    { key: "tier3", label: "1만~10만" },
+    { key: "micro", label: "1만 미만" },
+];
 
-const TIER_CONFIG: { key: TierKey; label: string; sub: string }[] = [
-    { key: "all",   label: "전체",       sub: "" },
-    { key: "tier1", label: "Tier 1",    sub: "100만+" },
-    { key: "tier2", label: "Tier 2",    sub: "10~100만" },
-    { key: "tier3", label: "Tier 3",    sub: "1~10만" },
-    { key: "micro", label: "마이크로",   sub: "~1만" },
+const SORTS: { key: SortKey; label: string; valueLabel: string }[] = [
+    { key: "hourly_views", label: "조회수 급상승", valueLabel: "최근 1시간 조회수" },
+    { key: "hourly_likes", label: "좋아요 급상승", valueLabel: "최근 1시간 좋아요" },
+    { key: "hourly_comments", label: "댓글 급상승", valueLabel: "최근 1시간 댓글" },
+    { key: "total_views", label: "누적 조회수", valueLabel: "누적 조회수" },
 ];
 
 // ─── Gzip Fetch Helper (browser DecompressionStream) ─────────────────────────
@@ -101,22 +130,19 @@ function fmtKr(n: number, unit = ""): string {
     return `${n.toLocaleString()}${unit}`;
 }
 
-function getHeroLabel(sortBy: SortKey): string {
-    switch (sortBy) {
-        case "hourly_views": return "조회수 급상승";
-        case "total_views": return "누적 조회수";
-        case "hourly_likes": return "좋아요 급상승";
-        case "hourly_comments": return "댓글 급상승";
-    }
-}
-
-function getHeroValue(v: ViralVideo, sortBy: SortKey): string {
-    switch (sortBy) {
-        case "hourly_views": return fmtKr(v.hourly_view_increase, "회");
-        case "total_views": return fmtKr(v.total_views, "회");
-        case "hourly_likes": return fmtKr(v.hourly_like_increase);
-        case "hourly_comments": return fmtKr(v.hourly_comment_increase);
-    }
+/** 숫자와 단위를 나눠 단위만 작게 그린다 ('33.2' + '만') */
+function Kr({ n, prefix = "", unit = "" }: { n: number; prefix?: string; unit?: string }) {
+    const t = fmtKr(n);
+    const m = t.match(/^([\d.,]+)(.*)$/);
+    const num = m ? m[1] : t;
+    const u = (m ? m[2] : "") + unit;
+    return (
+        <>
+            {prefix}
+            {num}
+            {u && <span className="vh-u">{u}</span>}
+        </>
+    );
 }
 
 function getSortValue(v: ViralVideo, sortBy: SortKey): number {
@@ -132,84 +158,25 @@ function thumbUrl(videoId: string) {
     return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
-// ─── Pill Button ──────────────────────────────────────────────────────────────
-
-function Pill({ active, onClick, children }: {
-    active: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-}) {
-    return (
-        <button
-            onClick={onClick}
-            style={{
-                transition: "all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                fontFamily: "var(--font-pretendard), 'Pretendard', sans-serif"
-            }}
-            className={cn(
-                "relative inline-flex items-center justify-center gap-1.5 rounded-full px-[14px] h-[32px] text-[13px] font-medium select-none whitespace-nowrap",
-                "hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
-                "active:scale-95",
-                active
-                    ? "bg-black text-white shadow-sm border border-black"
-                    : "bg-white border border-neutral-200 text-[#555555] hover:border-neutral-300 hover:text-neutral-900"
-            )}
-        >
-            {active && (
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0 -ml-0.5">
-                    <path d="M1.5 5.5L3.5 7.5L8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-            )}
-            {children}
-        </button>
-    );
-}
-
-// ─── Home Info Panel ──────────────────────────────────────────────────────────
+// ─── 순위 산정 방식 (짧은 설명) ───────────────────────────────────────────────
 
 function HomeInfoPanel() {
     const [open, setOpen] = useState(false);
     return (
-        <div className="relative">
-            <button
-                onClick={() => setOpen((v) => !v)}
-                aria-expanded={open}
-                className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-[12px] font-medium text-neutral-500 shadow-sm transition-all hover:border-neutral-300 hover:text-neutral-800 hover:shadow"
-            >
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-                    <circle cx="6.5" cy="6.5" r="6" stroke="currentColor" strokeWidth="1.2" />
-                    <text x="6.5" y="10" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="700">?</text>
-                </svg>
-                랭킹 산정 방식
-                <svg
-                    width="10" height="10" viewBox="0 0 10 10" fill="none"
-                    className={cn("transition-transform duration-200", open ? "rotate-180" : "")}
-                >
-                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
+        <div style={{ position: "relative" }}>
+            <button type="button" className="vh-btn-ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+                이 순위는 무엇인가요? <span aria-hidden="true">{open ? "▴" : "▾"}</span>
             </button>
-
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-[min(420px,90vw)] rounded-2xl border border-neutral-100 bg-white p-5 shadow-xl">
-                    {/* 제목 */}
-                    <h3 className="mb-3 text-[15px] font-black tracking-tight text-neutral-900">
-                        🔥 실시간 떡상 영상 랭킹이란?
-                    </h3>
-                    {/* 본문 */}
-                    <p className="text-[13px] leading-relaxed text-neutral-600">
-                        채널의 체급(구독자 수)이라는 계급장을 떼고, 지금 이 순간 유튜브 알고리즘의 선택을 받아
-                        가장 무섭게 터지고 있는 <strong className="text-neutral-800">&apos;신규 영상&apos;</strong>들만 모아둔
-                        실시간 트렌드 지표입니다.
+                <div className="vh-pop">
+                    <h3>지금 뜨는 영상 순위란?</h3>
+                    <p>
+                        채널의 체급(구독자 수)이라는 계급장을 떼고, 지금 이 순간 유튜브 알고리즘의 선택을 받아 가장 무섭게 터지고 있는
+                        <strong> 새 영상</strong>들만 모아 둔 실시간 트렌드 지표입니다.
                     </p>
-                    <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
-                        지금 당장 조회수를 쓸어 담고 있는 영상의 썸네일과 제목 기획을 참고해 보세요.
-                    </p>
-                    {/* 닫기 */}
-                    <button
-                        onClick={() => setOpen(false)}
-                        className="mt-4 text-[11px] font-medium text-neutral-400 hover:text-neutral-700"
-                    >
-                        닫기 ✕
+                    <p>지금 당장 조회수를 쓸어 담고 있는 영상의 썸네일과 제목 기획을 참고해 보세요. 자세한 기준은 아래 &lsquo;이 순위는 이렇게 매깁니다&rsquo;에 있어요.</p>
+                    <button type="button" className="vh-btn-ghost" style={{ marginTop: 12 }} onClick={() => setOpen(false)}>
+                        닫기
                     </button>
                 </div>
             )}
@@ -217,114 +184,68 @@ function HomeInfoPanel() {
     );
 }
 
+// ─── Row Skeleton ─────────────────────────────────────────────────────────────
 
-
-// ─── Video Card Skeleton ──────────────────────────────────────────────
-
-function VideoCardSkeleton() {
+function RowSkeleton() {
     return (
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
-            <div className="relative aspect-video w-full animate-pulse bg-neutral-200" />
-            <div className="flex flex-col p-4 gap-3">
-                <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 animate-pulse rounded-full bg-neutral-200" />
-                    <div className="h-4 w-3/4 animate-pulse rounded-lg bg-neutral-200" />
-                </div>
-                <div className="h-3 w-1/2 animate-pulse rounded-lg bg-neutral-100" />
-                <div className="mt-1 flex justify-between">
-                    <div className="h-8 w-24 animate-pulse rounded-xl bg-orange-50" />
-                    <div className="h-8 w-20 animate-pulse rounded-xl bg-neutral-100" />
-                </div>
-                <div className="flex gap-1.5 mt-1">
-                    <div className="h-5 w-16 animate-pulse rounded-full bg-neutral-100" />
-                    <div className="h-5 w-12 animate-pulse rounded-full bg-neutral-100" />
-                </div>
-            </div>
-        </div>
+        <li className="vh-row" aria-hidden="true">
+            <span className="vh-skel" style={{ width: 28, height: 28, justifySelf: "center" }} />
+            <span className="vh-skel" style={{ aspectRatio: "16 / 9", width: "100%" }} />
+            <span style={{ display: "grid", gap: 8 }}>
+                <span className="vh-skel" style={{ height: 14, width: "80%" }} />
+                <span className="vh-skel" style={{ height: 12, width: "45%" }} />
+            </span>
+            <span className="vh-skel" style={{ height: 18, width: 72 }} />
+        </li>
     );
 }
 
-// ─── Video Card ────────────────────────────────────────────────────
+// ─── 순위 한 줄 ───────────────────────────────────────────────────────────────
 
-function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; sortBy: SortKey }) {
+function RankRow({ video, rank, sortBy, showOrigin }: { video: ViralVideo; rank: number; sortBy: SortKey; showOrigin: boolean }) {
     const [imgError, setImgError] = useState(false);
     const isShorts = video.video_type === "Shorts 📱";
+    const url = `https://www.youtube.com/watch?v=${video.video_id}`;
+    const sort = SORTS.find((s) => s.key === sortBy)!;
+    const value = getSortValue(video, sortBy);
 
     return (
-        <a
-            href={`https://www.youtube.com/watch?v=${video.video_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-        >
-            {/* Thumbnail */}
-            <div className="relative aspect-video w-full overflow-hidden bg-neutral-100">
-                {!imgError ? (
+        <li className="vh-row" data-top={rank <= 3 ? "" : undefined} data-wide={rank >= 100 ? "" : undefined}>
+            <span className="vh-rk">{rank}</span>
+            <a className="vh-th" href={url} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
+                {!imgError && (
                     <Image
                         src={thumbUrl(video.video_id)}
-                        alt={video.title}
+                        alt=""
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 640px) 96px, 128px"
                         onError={() => setImgError(true)}
                         unoptimized
                     />
-                ) : (
-                    <div className="flex h-full w-full items-center justify-center text-4xl">
-                        {isShorts ? "📱" : "📺"}
-                    </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10" />
-                <div className="absolute left-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/80 text-xs font-bold text-white shadow backdrop-blur-sm">
-                    {rank}
-                </div>
-                <div className="absolute right-2.5 top-2.5 z-20 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-                    {video.video_type}
-                </div>
-            </div>
-
-            {/* Body */}
-            <div className="flex flex-1 flex-col p-4">
-                <p className="mb-1 text-[11px] text-neutral-400" style={{ fontWeight: 500, letterSpacing: "0.02em" }}>
-                    {video.channel_title}
-                </p>
-                <div className="min-h-[3em]">
-                    <h3 className="line-clamp-2 text-sm leading-snug text-neutral-900" style={{ fontWeight: 700, letterSpacing: "-0.02em" }}>
-                        {video.title}
-                    </h3>
-                </div>
-                <div className="flex-1" />
-                <div className="mt-3">
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-neutral-400">
-                        {getHeroLabel(sortBy)}
-                    </p>
-                    <span
-                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1"
-                        style={{ background: "rgba(16, 185, 129, 0.10)" }}
-                    >
-                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
-                            <path d="M4.5 1.5L8 7.5H1L4.5 1.5Z" fill="#10B981" />
-                        </svg>
-                        <span className="text-[15px] leading-none" style={{ fontWeight: 600, color: "#10B981", letterSpacing: "-0.01em" }}>
-                            {getHeroValue(video, sortBy)}
-                        </span>
-                    </span>
-                </div>
-                <p className="mt-2 text-[11px] text-[#555555]" style={{ fontWeight: 500 }}>
-                    총 {fmtKr(video.total_views, "회")} &middot; 좋아요 {fmtKr(video.total_likes)} &middot; 댓글 {fmtKr(video.total_comments)}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                    {video.category_name && (
-                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[10px] font-medium text-neutral-500">
-                            {video.category_name}
-                        </span>
-                    )}
-                    <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[10px] font-medium text-neutral-500">
-                        {video.origin_type === "DOMESTIC" ? "🇰🇷 국내" : "🌐 해외"}
+                {isShorts && <span className="vh-th-tag">쇼츠</span>}
+            </a>
+            <div className="vh-tt">
+                <a className="vh-title" href={url} target="_blank" rel="noopener noreferrer">
+                    {video.title}
+                </a>
+                <div className="vh-meta">
+                    <b>{video.channel_title}</b>
+                    <span>{isShorts ? "쇼츠" : "롱폼"}</span>
+                    {video.category_name && <span>{categoryKo(video.category_name)}</span>}
+                    {showOrigin && <span>{video.origin_type === "DOMESTIC" ? "국내" : "해외"}</span>}
+                    <span className="vh-meta-extra">
+                        총 {fmtKr(video.total_views, "회")} · 좋아요 {fmtKr(video.total_likes)} · 댓글 {fmtKr(video.total_comments)}
                     </span>
                 </div>
             </div>
-        </a>
+            <div className="vh-mv">
+                <strong>
+                    <Kr n={value} prefix={sortBy === "total_views" ? "" : "+"} unit={sortBy === "total_views" ? "회" : ""} />
+                </strong>
+                <small>{sort.valueLabel}</small>
+            </div>
+        </li>
     );
 }
 
@@ -340,22 +261,8 @@ function ShareButton() {
         });
     }
     return (
-        <button
-            onClick={handleCopy}
-            title="현재 필터 URL 복사"
-            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-[12px] font-medium text-neutral-500 shadow-sm transition-all hover:border-neutral-300 hover:text-neutral-800 hover:shadow"
-        >
-            {copied ? (
-                <>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L4.5 9L10 3" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-emerald-600">링크 복사됨!</span>
-                </>
-            ) : (
-                <>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1H11V4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M4 11H1V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M11 1L6.5 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M1 11L5.5 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-                    공유
-                </>
-            )}
+        <button type="button" className="vh-btn-ghost" onClick={handleCopy} title="현재 필터 그대로 링크 복사">
+            {copied ? "링크 복사됨" : "공유"}
         </button>
     );
 }
@@ -452,7 +359,7 @@ export function DashboardClient({
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
     function setTier(v: TierKey) { setTierState(v); syncUrl({ tier: v === "all" ? null : v }); }
 
-    // ── 구독자 구간별 CDN fetch (tier 변경시 재요청) ─────────────────────────
+    // ── 데이터 받기 (필터가 바뀌면 다시) ─────────────────────────────────────
     const [allVideos, setAllVideos] = useState<ViralVideo[]>(initialVideos);
     const [categories, setCategories] = useState<string[]>(initialCategories);
     const [loading, setLoading] = useState(false);
@@ -466,25 +373,9 @@ export function DashboardClient({
         const seq = ++requestSeq.current;
         setLoading(true);
         setError(null);
-        // 데이터 출처 스위치. 기본값은 기존과 같은 GitHub gzip 파일이고,
-        // NEXT_PUBLIC_DATA_SOURCE=supabase 일 때만 API 라우트를 거친다.
-        //
-        // GitHub 파일은 조합별 상위 50위만 담고 있어 전체의 12% 뿐이지만,
-        // Supabase 경로는 컷이 없어 limit 만큼 깊이 가져올 수 있다.
-        // 응답 형태가 같아서 아래 처리는 양쪽 모두 그대로 동작한다.
-        //
-        // 지역을 서버에 넘기는 이유: 시간당 증가 상위는 해외가 압도한다.
-        // 실측으로 상위 1,000건 중 해외가 943건(94%)이라, 지역 구분 없이 받아
-        // 화면에서 걸러내면 국내는 57건만 남는다. 없앴던 50위 컷이 사실상
-        // 되살아나는 셈이라 서버에서 걸러야 한다. (GitHub 파일은 조합별로
-        // 미리 잘라둔 구조라 이 문제가 없었다)
-        // 언어도 같은 이유로 서버에서 거른다. 해외 상위 1,000건은 영어·힌디가
-        // 절반이라 화면에서 걸러내면 일본어 같은 언어는 몇 건 안 남는다.
-        // [2026-10-16] 형식·카테고리·정렬도 서버로 넘긴다. 1,000건을 받아 화면에서
-        // 거르면 1,000건 밖의 영상은 카테고리를 골라도 나오지 않았다
-        // (국내 Education 339건 중 24건만 보임). 조합마다 그 안의 상위 1,000건을 받는다.
-        // 아래 화면 쪽 필터·정렬은 그대로 둔다 — 서버 결과에는 영향이 없고,
-        // 새 응답이 오기 전까지 들고 있는 목록을 바로 걸러 보여준다.
+        // 지역·언어·형식·카테고리·정렬은 서버에서 거른다. 시간당 증가 상위는 해외가 압도해서
+        // (상위 1,000건 중 해외 94%) 화면에서 거르면 국내가 몇 건 안 남는다.
+        // 조합마다 그 안의 상위 1,000건을 받는다 ([2026-10-16]).
         const source = isSupabase
             ? `/api/ranking?tier=${tier}&limit=1000` +
               (origin ? `&origin=${origin}` : "") +
@@ -498,13 +389,11 @@ export function DashboardClient({
             .then((data) => {
                 if (seq !== requestSeq.current) return;
                 setAllVideos(data);
-                // 카테고리 목록은 합집합으로 유지한다. 지역으로 걸러 받으면
-                // 그 지역에 없는 카테고리가 목록에서 사라지는데, 사용자가
-                // 지역을 바꿨을 때 선택지가 없어지면 안 된다.
+                // 카테고리 목록은 합집합으로 유지한다. 지역을 바꿨을 때 선택지가 없어지면 안 된다.
                 setCategories((prev) => {
                     const set = new Set(prev);
                     for (const v of data) if (v.category_name) set.add(v.category_name);
-                    return Array.from(set).sort();
+                    return Array.from(set).sort((a, b) => categoryKo(a).localeCompare(categoryKo(b), "ko"));
                 });
             })
             .catch((e) => { if (seq === requestSeq.current) setError(e.message); })
@@ -514,13 +403,10 @@ export function DashboardClient({
     useEffect(() => { refetch(); }, [refetch]);
 
     // 집계 시각은 SSR 이 넘겨준 값이 아니라 지금 들고 있는 데이터에서 읽는다.
-    // SSR 값만 쓰면 탭을 열어 둔 채 필터를 바꿔 새 데이터를 받아도 라벨은
-    // 처음 시각에 머물러, 10시 데이터 위에 "7시 집계"가 떠 있게 된다.
-    const liveUpdatedAt = allVideos[0]?.updated_at || updatedAt;
+    // SSR 값만 쓰면 탭을 열어 둔 채 필터를 바꿔 새 데이터를 받아도 라벨이 처음 시각에 머문다.
+    const liveHour = parseUpdatedHour(allVideos[0]?.updated_at || updatedAt);
 
-
-    // ── 클라이언트 사이드 필터 + 정렬 (재쿼리 없음) ────────────────────────────
-    // 조건에 맞는 '전체' 목록. 화면에 몇 개를 그릴지는 아래 videos 가 정한다.
+    // ── 화면 쪽 필터 + 정렬 (재쿼리 없음) ───────────────────────────────────
     const matched = useMemo(() => {
         let filtered = allVideos;
         if (isShorts === true) filtered = filtered.filter((v) => v.video_type === "Shorts 📱");
@@ -530,261 +416,168 @@ export function DashboardClient({
         return [...filtered].sort((a, b) => getSortValue(b, sortBy) - getSortValue(a, sortBy));
     }, [allVideos, isShorts, origin, category, sortBy]);
 
-    // 실제로 그리는 것만 잘라낸다.
-    const videos = useMemo(
-        () => matched.slice(0, visibleCount),
-        [matched, visibleCount],
-    );
+    const videos = useMemo(() => matched.slice(0, visibleCount), [matched, visibleCount]);
 
     // 필터·정렬을 바꾸면 목록의 성격이 달라지므로 다시 처음부터 보여준다.
-    // (200개를 펼쳐둔 상태에서 카테고리를 바꾸면 엉뚱하게 200개가 그대로 보인다)
     useEffect(() => {
         setVisibleCount(DISPLAY_LIMIT);
     }, [isShorts, origin, lang, category, sortBy, tier]);
 
+    // '필터' 안에 접힌 조건이 몇 개 걸려 있는지 (밖에서도 보이게)
+    const hiddenActive = (tier !== "all" ? 1 : 0) + (category ? 1 : 0) + (lang ? 1 : 0);
+
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
-            <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
-
-                {/* ── Header ────────────────────────────────────────── */}
-                <div className="mb-10">
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-red-500" />
-                        {/* '기준'만 쓰면 그 시각의 실시간 값으로 오해하기 쉽다.
-                            수집이 매시 정각에 시작해 20분쯤 걸리므로, N시 데이터는
-                            N시 25분경에야 화면에 나타난다. 그 사실을 문구에 드러낸다. */}
-                        {/* 지역 범위는 아래 필터 pill 이 활성 상태로 이미 보여주므로
-                            여기 중복 표기하지 않는다. */}
-                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            Live · {liveUpdatedAt ? parseUpdatedHour(liveUpdatedAt) : "-"} 집계
-                            <span className="hidden sm:inline"> · 매시 25분경 갱신</span>
-                        </span>
-                    </div>
-                    {/* [2026-10-16] 이 페이지에 h1 이 하나도 없었다(div+span). 검색엔진이
-                        페이지 주제를 읽는 1순위 요소라 h1 으로 바꾸고, 사람들이 실제로
-                        검색하는 표현('유튜브 실시간 급상승 순위')을 담는다.
-                        'TOP 50'은 50개만 보이던 시절 이름이라 최대치인 1000으로. */}
-                    <h1 className="flex flex-col leading-none">
-                        <span
-                            className="text-[clamp(4rem,12vw,9rem)] leading-[0.9] tracking-tight"
-                            style={{
-                                fontFamily: "var(--font-bebas), sans-serif",
-                                background: "linear-gradient(135deg, #FF4500 0%, #FF8C00 35%, #1A1A1A 70%, #000000 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text",
-                            }}
-                        >
-                            TOP 1000
-                        </span>
-                        <span
-                            className="text-[clamp(1.5rem,5vw,3.5rem)] font-black tracking-tight leading-snug -mt-1"
-                            style={{
-                                fontFamily: "var(--font-noto), 'Noto Sans KR', sans-serif",
-                                background: "linear-gradient(135deg, #2A2A2A 0%, #555555 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text",
-                            }}
-                        >
-                            유튜브 실시간 급상승 순위
-                        </span>
-                    </h1>
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <p className="text-base text-[#555555]">
-                            지금 조회수가 가장 빠르게 오르는 유튜브 동영상을 최대 1,000위까지 · 쇼츠·롱폼, 카테고리, 구독자 구간별로 골라 보세요
-                        </p>
-                        <HomeInfoPanel />
-                        <ShareButton />
-                    </div>
-                    {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-2" />
+        <main className="vh-main">
+            {/* ── 머리 ─────────────────────────────────────────────── */}
+            <div className="vh-rhead">
+                {/* 수집이 매시 정각에 시작해 20분쯤 걸리므로 N시 데이터는 N시 25분경에 나타난다. */}
+                <p className="vh-eyebrow">
+                    <span className="vh-live-dot" aria-hidden="true" />
+                    {liveHour !== null ? `${liveHour}시 집계 · 다음 갱신 ${(liveHour + 1) % 24}:25 무렵` : "매시 25분경 갱신"}
+                </p>
+                {/* [2026-10-16] h1 은 사람들이 실제로 검색하는 표현('유튜브 실시간 급상승 순위')을 담는다. 문구는 그대로 둔다. */}
+                <h1>
+                    <span className="vh-top1000">TOP 1000</span>
+                    <span className="vh-h1-sub">유튜브 실시간 급상승 순위</span>
+                </h1>
+                <p className="vh-lead">
+                    지금 조회수가 가장 빠르게 오르는 유튜브 동영상을 최대 1,000위까지 · 쇼츠·롱폼, 카테고리, 구독자 구간별로 골라 보세요
+                </p>
+                <div className="vh-tools">
+                    <HomeInfoPanel />
+                    <ShareButton />
                 </div>
+                {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
+                <MetricsDisclosure />
+            </div>
 
-                {/* ── Latest Notice Banner ─────────────────────────── */}
-                {latestNotice && (
-                    <a
-                        href={`/notice/${latestNotice.slug}`}
-                        className="group mb-6 flex items-center gap-3 rounded-r-xl border-l-4 border-orange-400 bg-orange-50 px-4 py-3 transition-all hover:bg-orange-100/70"
-                    >
-                        <span className="text-base shrink-0">📢</span>
-                        <span className="shrink-0 text-[12px] font-semibold text-orange-600">
-                            [{latestNotice.date.replace(/-/g, ".")}]
-                        </span>
-                        <span className="flex-1 truncate text-[13px] font-medium text-neutral-800">
-                            {latestNotice.title}
-                        </span>
-                        <span className="shrink-0 text-[12px] font-semibold text-orange-600 transition-transform group-hover:translate-x-0.5">
-                            자세히 →
-                        </span>
-                    </a>
-                )}
+            {/* ── 최신 공지 ─────────────────────────────────────────── */}
+            {latestNotice && (
+                <a href={`/notice/${latestNotice.slug}`} className="vh-notice">
+                    <span className="vh-notice-tag">공지 {latestNotice.date.slice(5).replace("-", ".")}</span>
+                    <span className="vh-notice-title">{latestNotice.title}</span>
+                    <span className="vh-notice-go">자세히 →</span>
+                </a>
+            )}
 
-                {/* ── Filter Bar ────────────────────────────────────── */}
-                <div className="mb-8 space-y-3.5 rounded-2xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">
-
-                    {/* Row 1: Sort */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
-                            정렬 기준 ▸
-                        </span>
-                        {([
-                            { key: "hourly_views", label: "🔥 조회수 급상승" },
-                            { key: "hourly_likes", label: "❤️ 좋아요 급상승" },
-                            { key: "hourly_comments", label: "💬 댓글 급상승" },
-                            { key: "total_views", label: "📈 누적 조회수" },
-                        ] as { key: SortKey; label: string }[]).map(({ key, label }) => (
-                            <Pill key={key} active={sortBy === key} onClick={() => setSortBy(key)}>{label}</Pill>
+            {/* ── 필터: 지역·형식·정렬은 밖에, 나머지는 '필터' 안에 ────────────────── */}
+            <div className="vh-controls">
+                <div className="vh-tabs" role="group" aria-label="지역">
+                    {/* 기본값인 국내를 맨 앞에 둔다 */}
+                    <button type="button" aria-pressed={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>국내</button>
+                    <button type="button" aria-pressed={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>해외</button>
+                    <button type="button" aria-pressed={origin === null} onClick={() => setOrigin(null)}>국내+해외</button>
+                </div>
+                <div className="vh-seg" role="group" aria-label="형식">
+                    <button type="button" aria-pressed={isShorts === null} onClick={() => setIsShorts(null)}>전체</button>
+                    <button type="button" aria-pressed={isShorts === true} onClick={() => setIsShorts(true)}>쇼츠</button>
+                    <button type="button" aria-pressed={isShorts === false} onClick={() => setIsShorts(false)}>롱폼</button>
+                </div>
+                <label className="vh-select">
+                    정렬
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}>
+                        {SORTS.map((s) => (
+                            <option key={s.key} value={s.key}>{s.label}</option>
                         ))}
-                    </div>
-
-                    <div className="h-px bg-neutral-100" />
-
-                    {/* Row 2: Filters */}
-                    <div className="flex flex-col gap-3">
-                        {/* Format */}
-                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">형식</span>
-                            <div className="flex flex-wrap gap-[6px]">
-                                <Pill active={isShorts === null} onClick={() => setIsShorts(null)}>전체</Pill>
-                                <Pill active={isShorts === true} onClick={() => setIsShorts(true)}>📱 Shorts</Pill>
-                                <Pill active={isShorts === false} onClick={() => setIsShorts(false)}>📺 Long-form</Pill>
+                    </select>
+                </label>
+                <details className="vh-filter">
+                    <summary>
+                        필터{hiddenActive > 0 && <span className="vh-filter-count">{hiddenActive}</span>}
+                        <span aria-hidden="true">▾</span>
+                    </summary>
+                    <div className="vh-filter-body">
+                        <div className="vh-filter-row">
+                            <span>구독자</span>
+                            <div className="vh-chips">
+                                {TIER_CONFIG.map(({ key, label }) => (
+                                    <button key={key} type="button" className="vh-chip" aria-pressed={tier === key} onClick={() => setTier(key)}>
+                                        {label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-
-                        {/* Origin */}
-                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">지역</span>
-                            <div className="flex flex-wrap gap-[6px]">
-                                {/* 기본값인 국내를 맨 앞에 둔다 */}
-                                <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>🇰🇷 국내</Pill>
-                                <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>🌐 해외</Pill>
-                                <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
-                            </div>
-                        </div>
-
-                        {/* Language — 해외를 골랐을 때만. 국내는 한국어 하나라 칩이 의미 없다. */}
+                        {/* 언어 — 해외를 골랐을 때만. 국내는 한국어 하나라 칩이 의미 없다. */}
                         {origin === "IMPORTED" && isSupabase && (
-                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                                <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">언어</span>
-                                <div className="flex flex-wrap gap-[6px] flex-1">
-                                    <Pill active={lang === null} onClick={() => setLang(null)}>전체</Pill>
+                            <div className="vh-filter-row">
+                                <span>언어</span>
+                                <div className="vh-chips">
+                                    <button type="button" className="vh-chip" aria-pressed={lang === null} onClick={() => setLang(null)}>전체</button>
                                     {LANG_CHIPS.map(({ code, label }) => (
-                                        <Pill key={code} active={lang === code} onClick={() => setLang(code)}>{label}</Pill>
+                                        <button key={code} type="button" className="vh-chip" aria-pressed={lang === code} onClick={() => setLang(code)}>
+                                            {label}
+                                        </button>
                                     ))}
                                 </div>
                             </div>
                         )}
-
-                        {/* Tier (구독자 구간) */}
-                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">구독자</span>
-                            <div className="flex flex-wrap gap-[6px]">
-                                {TIER_CONFIG.map(({ key, label, sub }) => (
-                                    <Pill key={key} active={tier === key} onClick={() => setTier(key)}>
-                                        {label}
-                                        {sub && (
-                                            <span className="ml-1 text-[10px] opacity-70">{sub}</span>
-                                        )}
-                                    </Pill>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Category */}
                         {categories.length > 0 && (
-                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                                <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 sm:w-16 sm:mt-2">카테고리</span>
-                                <div className="flex flex-col gap-2 flex-1">
-                                    <div className="flex flex-wrap gap-[6px]">
-                                        <Pill active={category === null} onClick={() => setCategory(null)}>전체</Pill>
-                                        {categories.map((c) => (
-                                            <Pill key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Pill>
-                                        ))}
-                                    </div>
-                                    {/* [2026-10-01] 카테고리는 유튜브가 내용을 보고 정한 값이 아니라 업로더가
-                                        고른 값이다. 채널 기본값을 'Music' 으로 둔 쇼츠 채널이 많아 야구·콩트
-                                        영상이 Music 에 섞여 보인다는 문의가 있었다. 우리가 재분류하지 않고
-                                        출처를 밝힌다. */}
-                                    <p className="text-[11px] text-neutral-400">
-                                        카테고리는 영상을 올린 사람이 직접 지정한 유튜브 카테고리 기준입니다.
-                                        그래서 내용과 다른 카테고리에 들어간 영상이 있을 수 있어요.
-                                    </p>
+                            <div className="vh-filter-row">
+                                <span>카테고리</span>
+                                <div className="vh-chips">
+                                    <button type="button" className="vh-chip" aria-pressed={category === null} onClick={() => setCategory(null)}>전체</button>
+                                    {categories.map((c) => (
+                                        <button key={c} type="button" className="vh-chip" aria-pressed={category === c} onClick={() => setCategory(c)}>
+                                            {categoryKo(c)}
+                                        </button>
+                                    ))}
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* ── Error UI ──────────────────────────────────────── */}
-                {error && !loading && (
-                    <div className="mb-6 flex flex-col items-center gap-3 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
-                        <span className="text-3xl">🚨</span>
-                        <div>
-                            <p className="text-sm font-semibold text-red-700">데이터를 불러오지 못했습니다</p>
-                            <p className="mt-0.5 text-xs text-red-400">잠시 후 다시 시도해주세요</p>
-                        </div>
-                        <button
-                            onClick={refetch}
-                            className="rounded-full bg-red-600 px-5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 active:scale-95"
-                        >
-                            다시 시도
-                        </button>
-                    </div>
-                )}
-
-                {/* ── Status ────────────────────────────────────────── */}
-                {!error && !loading && (
-                    <div className="mb-5">
-                        {/* 전체가 몇 개인지 함께 보여준다. 예전에는 50위가 상한이라
-                            '50개 표시 중'이 곧 전부였지만, 이제는 더 있다는 걸 알려야 한다. */}
-                        <p className="text-xs font-medium text-neutral-400">
-                            {matched.length > videos.length
-                                ? `${matched.length.toLocaleString()}개 중 ${videos.length}개 표시 중`
-                                : `${videos.length}개 영상 표시 중`}
-                        </p>
-                    </div>
-                )}
-
-                {/* ── Grid ──────────────────────────────────────────── */}
-                {loading ? (
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <VideoCardSkeleton key={i} />
-                        ))}
-                    </div>
-                ) : !error && videos.length === 0 ? (
-                    <div className="flex h-64 items-center justify-center rounded-2xl border border-neutral-100 bg-neutral-50/50 text-sm text-neutral-400">
-                        선택한 필터에 해당하는 영상이 없습니다.
-                    </div>
-                ) : !error ? (
-                    <>
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {videos.map((video, i) => (
-                                <VideoCard key={video.video_id} video={video} rank={i + 1} sortBy={sortBy} />
-                            ))}
-                        </div>
-
-                        {/* 더 보기 — 데이터는 이미 받아둔 상태라 클릭 즉시 펼쳐진다(추가 요청 없음). */}
-                        {matched.length > videos.length && (
-                            <div className="mt-10 flex flex-col items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setVisibleCount((n) => n + PAGE_STEP)}
-                                    className="rounded-full border border-neutral-200 bg-white px-6 py-2.5 text-[13px] font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                                >
-                                    더 보기 (+{Math.min(PAGE_STEP, matched.length - videos.length)})
-                                </button>
-                                <p className="text-[11px] text-neutral-400">
-                                    {(matched.length - videos.length).toLocaleString()}개 더 있습니다
+                                {/* [2026-10-01] 카테고리는 업로더가 고른 값이다. 우리가 재분류하지 않고 출처를 밝힌다. */}
+                                <p className="vh-filter-note">
+                                    카테고리는 영상을 올린 사람이 직접 지정한 유튜브 카테고리 기준입니다. 그래서 내용과 다른 카테고리에 들어간 영상이 있을 수 있어요.
                                 </p>
                             </div>
                         )}
-                    </>
-                ) : null}
+                    </div>
+                </details>
+            </div>
 
+            {/* ── 오류 ─────────────────────────────────────────────── */}
+            {error && !loading && (
+                <div className="vh-error" role="alert">
+                    <b>데이터를 불러오지 못했어요</b>
+                    <span className="vh-count">잠시 후 다시 시도해 주세요</span>
+                    <button type="button" onClick={refetch}>다시 시도</button>
+                </div>
+            )}
 
-            </main>
-        </div>
+            {/* ── 개수 ─────────────────────────────────────────────── */}
+            {!error && !loading && (
+                <p className="vh-count">
+                    {matched.length > videos.length
+                        ? `${matched.length.toLocaleString()}개 중 ${videos.length}개 표시 중`
+                        : `${videos.length}개 영상 표시 중`}
+                </p>
+            )}
+
+            {/* ── 목록 ─────────────────────────────────────────────── */}
+            {loading ? (
+                <ol className="vh-list" aria-busy="true">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <RowSkeleton key={i} />
+                    ))}
+                </ol>
+            ) : !error && videos.length === 0 ? (
+                <div className="vh-empty">선택한 필터에 해당하는 영상이 없어요.</div>
+            ) : !error ? (
+                <>
+                    <ol className="vh-list">
+                        {videos.map((video, i) => (
+                            <RankRow key={video.video_id} video={video} rank={i + 1} sortBy={sortBy} showOrigin={origin === null} />
+                        ))}
+                    </ol>
+
+                    {/* 더 보기 — 데이터는 이미 받아둔 상태라 클릭 즉시 펼쳐진다(추가 요청 없음). */}
+                    {matched.length > videos.length && (
+                        <div className="vh-loadmore">
+                            <button type="button" onClick={() => setVisibleCount((n) => n + PAGE_STEP)}>
+                                {videos.length + 1}위부터 더 보기 (+{Math.min(PAGE_STEP, matched.length - videos.length)})
+                            </button>
+                            <small>{(matched.length - videos.length).toLocaleString()}개 더 있어요</small>
+                        </div>
+                    )}
+                </>
+            ) : null}
+        </main>
     );
 }

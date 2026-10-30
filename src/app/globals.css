@@ -53,7 +53,8 @@ body {
 }
 
 :root {
-  --background: #FDFDFC;
+  /* [2026-10-30 새 디자인] 바탕을 vh.css 의 --vh-bg(회색)와 맞춘다. 흰 판이 그 위에 놓인다. */
+  --background: #F2F4F6;
   --foreground: #555555;
   --heading: #1A1A1A;
   --card: #F9F9F9;
