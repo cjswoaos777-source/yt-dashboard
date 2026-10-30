@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, TrendingUp } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import {
     getTierSnapshot,
@@ -86,7 +87,7 @@ export default async function TierPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
@@ -96,113 +97,100 @@ export default async function TierPage({
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
             />
 
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/tier"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다 (썸네일만 더함). */}
+            <main className="vh-main vh-narrow">
+                <Link href="/tier" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     구독자 구간 전체
                 </Link>
 
-                <header className="mb-8">
-                    <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.15em] text-neutral-400">
-                        {meta.label}
-                    </p>
-                    <h1
-                        className="mb-3 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        {meta.range} 급상승 영상
-                    </h1>
-                    <p className="mb-4 text-[13.5px] leading-relaxed text-[#333333]">
-                        {meta.description}
-                    </p>
-                    <p className="text-[13px] text-neutral-500">
+                <header className="vh-phead">
+                    <p className="vh-eyebrow">{meta.label}</p>
+                    <h1>{meta.range} 급상승 영상</h1>
+                    <p className="vh-lead">{meta.description}</p>
+                    <p className="vh-lead vh-lead-sm">
                         국내 영상{" "}
-                        <strong className="font-semibold text-neutral-700">
-                            {snap.totalDomestic.toLocaleString()}건
-                        </strong>{" "}
+                        <strong>{snap.totalDomestic.toLocaleString()}건</strong>{" "}
                         중 상위 {snap.videos.length}개 · 합계 시간당{" "}
-                        <strong className="font-semibold text-neutral-700">
-                            +{fmtKr(snap.totalHourlyIncrease, "회")}
-                        </strong>
+                        <strong>+{fmtKr(snap.totalHourlyIncrease, "회")}</strong>
                         {snap.updatedAt && ` · ${snap.updatedAt} 집계`}
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
-                <ol className="space-y-2">
+                <ol className="vh-list">
                     {snap.videos.map((v, i) => (
                         <li
                             key={v.video_id}
-                            className="rounded-2xl border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50/60"
+                            className="vh-row"
+                            data-top={i < 3 ? "" : undefined}
+                            data-wide={i + 1 >= 100 ? "" : undefined}
                         >
-                            <div className="flex items-start gap-3">
-                                <span className="mt-0.5 w-6 shrink-0 text-right text-[12px] tabular-nums text-neutral-400">
-                                    {i + 1}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                    <a
-                                        href={`https://www.youtube.com/watch?v=${v.video_id}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[14px] font-medium leading-snug text-[#1A1A1A] underline-offset-2 hover:underline"
-                                    >
-                                        {v.title}
-                                    </a>
-                                    <p className="mt-1 text-[12px] text-neutral-500">
-                                        {v.channel_title}
-                                        <span className="mx-1.5 text-neutral-300">·</span>
-                                        {v.video_type}
-                                        <span className="mx-1.5 text-neutral-300">·</span>
-                                        {v.category_name}
-                                    </p>
-                                </div>
-                                <div className="shrink-0 text-right">
-                                    <p className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-[#1A1A1A]">
-                                        <TrendingUp className="h-3 w-3 text-orange-500" />
-                                        +{fmtKr(v.hourly_view_increase)}
-                                    </p>
-                                    <p className="text-[11px] tabular-nums text-neutral-400">
-                                        누적 {fmtKr(v.total_views)}
-                                    </p>
-                                </div>
+                            <span className="vh-rk">{i + 1}</span>
+                            <a
+                                className="vh-th"
+                                href={`https://www.youtube.com/watch?v=${v.video_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                tabIndex={-1}
+                                aria-hidden="true"
+                            >
+                                <Image
+                                    src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`}
+                                    alt=""
+                                    fill
+                                    sizes="(max-width: 640px) 96px, 128px"
+                                    unoptimized
+                                />
+                            </a>
+                            <div className="vh-tt">
+                                <a
+                                    className="vh-title"
+                                    href={`https://www.youtube.com/watch?v=${v.video_id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {v.title}
+                                </a>
+                                <p className="vh-meta vh-meta-inline">
+                                    {v.channel_title}
+                                    <span className="vh-dot">·</span>
+                                    {v.video_type}
+                                    <span className="vh-dot">·</span>
+                                    {v.category_name}
+                                </p>
+                            </div>
+                            <div className="vh-mv">
+                                <strong>+{fmtKr(v.hourly_view_increase)}</strong>
+                                <small>누적 {fmtKr(v.total_views)}</small>
                             </div>
                         </li>
                     ))}
                 </ol>
 
                 {/* 이 목록이 무엇인지 밝힌다. '급상승'의 기준을 모르면 숫자를 해석할 수 없다. */}
-                <p className="mt-6 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[12px] leading-relaxed text-neutral-500">
+                <p className="vh-note">
                     직전 1시간 동안 조회수가 늘어난 양(시간당 증가) 순으로 정렬했습니다.
                     국내 영상만 대상으로 하며, 매시간 갱신됩니다. 구독자 구간은 영상이 올라온
                     채널의 구독자 수를 기준으로 나눕니다.
                 </p>
 
                 {/* 다른 구간 — 내부 링크 */}
-                <section className="mt-12 border-t border-neutral-100 pt-8">
-                    <h2 className="mb-4 text-[14px] font-bold text-[#1A1A1A]">다른 구독자 구간</h2>
-                    <ul className="flex flex-wrap gap-2">
+                <section className="vh-sec">
+                    <h2 className="vh-sec-h">다른 구독자 구간</h2>
+                    <ul className="vh-chiplist vh-chip2">
                         {others.map((l) => (
                             <li key={l}>
-                                <Link
-                                    href={`/tier/${l}`}
-                                    className="inline-flex flex-col rounded-xl border border-neutral-200 bg-white px-4 py-2.5 transition-colors hover:bg-neutral-50"
-                                >
-                                    <span className="text-[13px] font-medium text-[#1A1A1A]">
-                                        {TIER_META[l].label}
-                                    </span>
-                                    <span className="text-[11px] text-neutral-400">
-                                        {TIER_META[l].range}
-                                    </span>
+                                <Link href={`/tier/${l}`}>
+                                    <span>{TIER_META[l].label}</span>
+                                    <small>{TIER_META[l].range}</small>
                                 </Link>
                             </li>
                         ))}
                     </ul>
                 </section>
             </main>
-        </div>
+        </>
     );
 }

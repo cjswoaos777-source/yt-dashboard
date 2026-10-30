@@ -576,3 +576,13 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
   .vh-idea { padding: 18px 16px; }
   .vh-iv { min-height: 70px; padding-left: 100px; }
 }
+
+/* ════ 구독자 구간 (2026-10-30) ════ */
+.vh-dot { color: #B0B8C1; }
+.vh-chip2 a { display: grid; gap: 1px; padding: 9px 15px; border-radius: 14px; }
+.vh-chip2 small { font-size: 11.5px; }
+.vh-tiergrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.vh-tiergrid-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.vh-tiergrid-head span { color: var(--vh-ink-3); font-size: 13px; font-weight: 600; }
+.vh-meta-inline { display: block; }
+.vh-meta-inline .vh-dot { margin: 0 5px; }
