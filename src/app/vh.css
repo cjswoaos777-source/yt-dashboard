@@ -683,3 +683,48 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-bench-filters { display: grid; gap: 14px; }
 .vh-bench-filters > .h-px { margin: 0; }
 .vh-bench-more { margin-top: 10px; }
+
+/* ════ 순위 화면: main 의 카드 글·순서를 그대로 둔 한 줄 (2026-10-30, '모양만' 배포용) ════ */
+.vh-live { display: flex; align-items: center; gap: 8px; color: var(--vh-ink-3); font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; }
+.vh-live-dot { flex: none; width: 8px; height: 8px; border-radius: 99px; background: var(--vh-up); animation: vh-pulse 2s ease-in-out infinite; }
+@keyframes vh-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .vh-live-dot { animation: none; } }
+.vh-pop-wrap { position: relative; }
+.vh-pop strong { color: var(--vh-ink); }
+.vh-pop-close { margin-top: 12px; padding: 0; border: 0; background: none; color: var(--vh-ink-3); font: 600 12px/1.2 var(--vh-font); cursor: pointer; }
+.vh-chip-check { margin: 0 5px 1px -2px; }
+.vh-rfilters { display: grid; gap: 12px; }
+.vh-rfilters-line { height: 1px; background: var(--vh-surface-2); }
+.vh-notice-ic { flex: none; }
+.vh-error-ic { font-size: 28px; }
+.vh-error p { color: #C25555; font-size: 12.5px; }
+.vh-loadmore p { color: var(--vh-ink-3); font-size: 12px; }
+.vh-rlist { display: block; }
+.vh-rrow { display: grid; grid-template-columns: 52px 128px minmax(0, 1fr) auto; grid-template-rows: auto auto; grid-template-areas: "rk th tt mv" "rk th meta mv"; align-items: center; column-gap: 16px; row-gap: 4px; padding: 12px 20px; border-top: 1px solid #F2F4F6; color: var(--vh-ink); text-decoration: none; }
+.vh-rrow:first-child { border-top: 0; }
+.vh-rrow:hover { background: #FAFBFC; }
+.vh-rrow:hover .vh-title { text-decoration: underline; }
+.vh-rrow > .vh-th { grid-area: th; }
+.vh-rrow > .vh-rk { grid-area: rk; }
+.vh-rrow > .vh-rtype { grid-area: th; align-self: end; justify-self: end; z-index: 1; margin: 0 4px 4px 0; padding: 1px 5px; border-radius: 4px; background: rgba(0, 0, 0, 0.66); color: #FFFFFF; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.vh-rrow > .vh-tt { grid-area: tt; align-self: end; }
+.vh-rrow > .vh-mv { grid-area: mv; display: flex; flex-direction: column-reverse; align-items: flex-end; }
+.vh-rrow > .vh-rmeta { grid-area: meta; align-self: start; }
+.vh-rch { overflow: hidden; color: var(--vh-ink-3); font-size: 12.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.vh-rrow .vh-title { font-size: 15px; }
+.vh-rmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--vh-ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.vh-rtag { padding: 1px 8px; border-radius: 999px; background: var(--vh-surface-2); color: var(--vh-ink-2); font-size: 11.5px; font-weight: 600; }
+.vh-th-fallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: 28px; }
+@media (max-width: 640px) {
+  .vh-rrow { grid-template-columns: 38px 96px minmax(0, 1fr); grid-template-rows: auto auto auto; grid-template-areas: "rk th tt" "rk th mv" "rk meta meta"; column-gap: 12px; row-gap: 6px; padding: 12px; align-items: start; }
+  .vh-rrow > .vh-rk { padding-top: 2px; font-size: 30px; }
+  .vh-rrow[data-wide] > .vh-rk { font-size: 20px; }
+  .vh-rrow > .vh-mv { flex-direction: row-reverse; justify-content: flex-end; align-items: baseline; gap: 6px; min-width: 0; }
+}
+
+/* ════ 홈 '모양만' (2026-10-30): 실시간 칸 없이 한 단 ════ */
+.vh-hero.vh-hero-solo { grid-template-columns: minmax(0, 1fr); }
+.vh-hero-solo .vh-hero-copy { max-width: 760px; }
+.vh-cta svg { width: 16px; height: 16px; }
+.vh-links h3 { display: flex; align-items: center; gap: 4px; }
+.vh-links h3 svg { flex: none; width: 15px; height: 15px; color: var(--vh-ink-3); }
