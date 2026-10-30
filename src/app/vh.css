@@ -603,3 +603,19 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-bar-track { height: 12px; width: 100%; overflow: hidden; border-radius: 99px; background: #E5E8EB; }
 .vh-bar { height: 12px; border-radius: 99px; background: #8B95A1; }
 .vh-bar-hi { background: var(--vh-brand); }
+
+/* ════ 공지 (2026-10-30) ════ */
+.vh-noticelist { margin: 0; padding: 6px 0; list-style: none; border-radius: var(--vh-radius); background: var(--vh-surface); }
+.vh-noticelist li + li { border-top: 1px solid var(--vh-surface-2); }
+.vh-noticelist a { display: flex; align-items: center; gap: 14px; padding: 15px 22px; color: var(--vh-ink); text-decoration: none; }
+.vh-noticelist a:hover .vh-noticelist-t { text-decoration: underline; }
+.vh-notice-cat { display: inline-flex; flex: none; align-items: center; padding: 2px 10px; border: 1px solid; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.vh-noticelist-t { flex: 1; min-width: 0; overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.vh-noticelist-d { flex: none; color: var(--vh-ink-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+.vh-pager a:not([aria-current]):not(:hover) { color: var(--vh-ink-2); }
+.vh-center { display: flex; justify-content: center; }
+.vh-center .vh-cta svg { width: 15px; height: 15px; }
+@media (max-width: 640px) {
+  .vh-noticelist a { flex-wrap: wrap; gap: 6px 10px; padding: 14px 16px; }
+  .vh-noticelist-t { flex-basis: 100%; order: 3; white-space: normal; }
+}

@@ -66,7 +66,7 @@ export default async function NoticeDetailPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -75,58 +75,46 @@ export default async function NoticeDetailPage({
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
             />
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */}
+            <main className="vh-main vh-article">
 
                 {/* Back */}
-                <Link
-                    href="/notice"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+                <Link href="/notice" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     공지 목록으로
                 </Link>
 
                 {/* Article */}
-                <article>
+                <article className="vh-art">
                     {/* Meta */}
-                    <div className="mb-5 flex flex-wrap items-center gap-3">
-                        <span
-                            className={`inline-flex items-center rounded-full border ${color.bg} ${color.text} ${color.border} px-2.5 py-0.5 text-[11px] font-semibold`}
-                        >
+                    <div className="vh-art-meta">
+                        <span className={`vh-notice-cat ${color.bg} ${color.text} ${color.border}`}>
                             {notice.category}
                         </span>
-                        <span className="text-[12px] font-medium text-neutral-400">
+                        <span>
                             {notice.date}
                         </span>
                     </div>
 
                     {/* Title */}
-                    <h1
-                        className="mb-10 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        {notice.title}
-                    </h1>
+                    <h1>{notice.title}</h1>
 
                     {/* Body (rendered HTML) */}
                     <div
-                        className="prose-notice text-[15px] leading-relaxed text-[#333333]"
+                        className="prose-notice vh-md"
                         dangerouslySetInnerHTML={{ __html: notice.contentHtml }}
                     />
                 </article>
 
                 {/* Bottom Back CTA */}
-                <div className="mt-16 flex justify-center border-t border-neutral-100 pt-8">
-                    <Link
-                        href="/notice"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-black px-5 py-2 text-[13px] font-medium text-white transition-all hover:scale-[0.97]"
-                    >
-                        <ArrowLeft className="h-3.5 w-3.5" />
+                <div className="vh-center">
+                    <Link href="/notice" className="vh-cta">
+                        <ArrowLeft aria-hidden="true" />
                         목록으로 돌아가기
                     </Link>
                 </div>
 
             </main>
-        </div>
+        </>
     );
 }

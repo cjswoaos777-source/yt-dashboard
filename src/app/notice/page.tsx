@@ -30,52 +30,37 @@ export default async function NoticeListPage({
     const visible = all.slice(start, start + PER_PAGE);
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
-            <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-10">
+        /* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */
+        <main className="vh-main vh-article">
 
                 {/* Header */}
-                <header className="mb-10">
-                    <div className="mb-3 flex items-center gap-2">
-                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-orange-400" />
-                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            Notice · 공지사항
-                        </span>
-                    </div>
-                    <h1
-                        className="font-serif text-4xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-5xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        📢 공지사항
-                    </h1>
-                    <p className="mt-3 text-base text-[#555555]">
+                <header className="vh-phead">
+                    <p className="vh-eyebrow">Notice · 공지사항</p>
+                    <h1>📢 공지사항</h1>
+                    <p className="vh-lead">
                         운영 공지, 업데이트 소식, 장애 안내를 모아두었습니다.
                     </p>
                 </header>
 
                 {/* List */}
                 {visible.length === 0 ? (
-                    <div className="flex h-64 items-center justify-center rounded-2xl border border-neutral-100 bg-neutral-50/50 text-sm text-neutral-400">
+                    <div className="vh-card vh-empty">
                         아직 등록된 공지사항이 없습니다.
                     </div>
                 ) : (
-                    <ul className="divide-y divide-neutral-100 rounded-2xl border border-neutral-100 bg-white shadow-sm">
+                    <ul className="vh-noticelist">
                         {visible.map((notice) => {
                             const color = getCategoryColor(notice.category);
                             return (
                                 <li key={notice.slug}>
-                                    <Link
-                                        href={`/notice/${notice.slug}`}
-                                        className="flex flex-col gap-2 px-6 py-5 transition-colors hover:bg-neutral-50/70 sm:flex-row sm:items-center sm:gap-4"
-                                    >
+                                    <Link href={`/notice/${notice.slug}`}>
                                         <span
-                                            className={`inline-flex w-fit shrink-0 items-center rounded-full border ${color.bg} ${color.text} ${color.border} px-2.5 py-0.5 text-[11px] font-semibold`}
+                                            className={`vh-notice-cat ${color.bg} ${color.text} ${color.border}`}
                                         >
                                             {notice.category}
                                         </span>
-                                        <span className="flex-1 text-[15px] font-medium text-[#1A1A1A] line-clamp-1">
-                                            {notice.title}
-                                        </span>
-                                        <span className="shrink-0 text-[12px] font-medium text-neutral-400">
+                                        <span className="vh-noticelist-t">{notice.title}</span>
+                                        <span className="vh-noticelist-d">
                                             {notice.date}
                                         </span>
                                     </Link>
@@ -87,12 +72,9 @@ export default async function NoticeListPage({
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <nav className="mt-8 flex items-center justify-center gap-1.5">
+                    <nav className="vh-pager">
                         {safePage > 1 && (
-                            <Link
-                                href={`/notice?page=${safePage - 1}`}
-                                className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-[13px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
-                            >
+                            <Link href={`/notice?page=${safePage - 1}`}>
                                 ← 이전
                             </Link>
                         )}
@@ -103,28 +85,20 @@ export default async function NoticeListPage({
                                 <Link
                                     key={n}
                                     href={`/notice?page=${n}`}
-                                    className={
-                                        isActive
-                                            ? "rounded-full bg-black px-3.5 py-1.5 text-[13px] font-semibold text-white"
-                                            : "rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[13px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
-                                    }
+                                    aria-current={isActive ? "page" : undefined}
                                 >
                                     {n}
                                 </Link>
                             );
                         })}
                         {safePage < totalPages && (
-                            <Link
-                                href={`/notice?page=${safePage + 1}`}
-                                className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-[13px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
-                            >
+                            <Link href={`/notice?page=${safePage + 1}`}>
                                 다음 →
                             </Link>
                         )}
                     </nav>
                 )}
 
-            </main>
-        </div>
+        </main>
     );
 }
