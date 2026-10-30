@@ -586,3 +586,7 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-tiergrid-head span { color: var(--vh-ink-3); font-size: 13px; font-weight: 600; }
 .vh-meta-inline { display: block; }
 .vh-meta-inline .vh-dot { margin: 0 5px; }
+
+/* ════ 태그 (2026-10-30) ════ */
+.vh-tagcloud a { font-weight: 700; }
+.vh-tagcloud small { font-variant-numeric: tabular-nums; }

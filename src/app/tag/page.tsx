@@ -73,50 +73,38 @@ export default async function TagIndexPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
             />
 
-            <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/dashboard"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */}
+            <main className="vh-main vh-narrow">
+                <Link href="/dashboard" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     대시보드로
                 </Link>
 
-                <header className="mb-8">
-                    <h1
-                        className="mb-2 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        지금 뜨는 유튜브 태그
-                    </h1>
-                    <p className="text-[13px] leading-relaxed text-neutral-500">
+                <header className="vh-phead">
+                    <h1>지금 뜨는 유튜브 태그</h1>
+                    <p className="vh-lead">
                         국내 영상에 달린 태그{" "}
-                        <strong className="font-semibold text-neutral-700">
-                            {total.toLocaleString()}개
-                        </strong>
+                        <strong>{total.toLocaleString()}개</strong>
                         를 지금 뜨는 규모 순으로 정렬했습니다. 매시간 갱신됩니다.
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
-                <ul className="flex flex-wrap gap-2">
+                <ul className="vh-chiplist vh-tagcloud">
                     {items.map((t) => (
                         <li key={t.tag}>
-                            <Link
-                                href={`/tag/${tagToSlug(t.tag)}`}
-                                className="inline-flex items-baseline gap-2 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-[13px] text-neutral-700 transition-colors hover:bg-neutral-50"
-                            >
-                                <span className="font-medium">#{t.tag}</span>
-                                <span className="text-[11px] tabular-nums text-neutral-400">
+                            <Link href={`/tag/${tagToSlug(t.tag)}`}>
+                                <span>#{t.tag}</span>
+                                <small>
                                     {t.video_count}개 · +{fmtKr(t.total_hourly_increase)}
-                                </span>
+                                </small>
                             </Link>
                         </li>
                     ))}
@@ -124,20 +112,12 @@ export default async function TagIndexPage({
 
                 {/* 페이지 이동 — 크롤러가 전체 목록을 따라갈 수 있도록 링크로 제공 */}
                 {totalPages > 1 && (
-                    <nav
-                        aria-label="태그 목록 페이지"
-                        className="mt-10 flex flex-wrap items-center justify-center gap-1.5"
-                    >
+                    <nav aria-label="태그 목록 페이지" className="vh-pager">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                             <Link
                                 key={p}
                                 href={p === 1 ? "/tag" : `/tag?page=${p}`}
                                 aria-current={p === page ? "page" : undefined}
-                                className={
-                                    p === page
-                                        ? "rounded-lg bg-black px-3 py-1.5 text-[12px] font-semibold text-white"
-                                        : "rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
-                                }
                             >
                                 {p}
                             </Link>
@@ -145,6 +125,6 @@ export default async function TagIndexPage({
                     </nav>
                 )}
             </main>
-        </div>
+        </>
     );
 }

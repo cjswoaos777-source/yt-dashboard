@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, TrendingUp } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getTag, tagToSlug } from "@/lib/tags";
 import { SITE } from "@/lib/site";
@@ -81,7 +82,7 @@ export default async function TagDetailPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
@@ -91,74 +92,72 @@ export default async function TagDetailPage({
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
             />
 
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/tag"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다 (썸네일만 더함). */}
+            <main className="vh-main vh-narrow">
+                <Link href="/tag" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     태그 목록으로
                 </Link>
 
-                <header className="mb-8">
-                    <h1
-                        className="mb-3 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        #{entry.tag}
-                    </h1>
-                    <p className="text-[13px] leading-relaxed text-neutral-500">
+                <header className="vh-phead">
+                    <h1>#{entry.tag}</h1>
+                    <p className="vh-lead">
                         이 태그가 달린 국내 영상 중 지금 조회수가 오르고 있는{" "}
-                        <strong className="font-semibold text-neutral-700">
-                            {entry.video_count}개
-                        </strong>
+                        <strong>{entry.video_count}개</strong>
                         입니다. 합계 시간당{" "}
-                        <strong className="font-semibold text-neutral-700">
-                            +{fmtKr(entry.total_hourly_increase, "회")}
-                        </strong>
+                        <strong>+{fmtKr(entry.total_hourly_increase, "회")}</strong>
                         . 매시간 갱신됩니다.
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
                 {/* 영상 목록 */}
-                <ol className="space-y-2">
+                <ol className="vh-list">
                     {entry.videos.map((v, i) => (
                         <li
                             key={v.video_id}
-                            className="rounded-2xl border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50/60"
+                            className="vh-row"
+                            data-top={i < 3 ? "" : undefined}
+                            data-wide={i + 1 >= 100 ? "" : undefined}
                         >
-                            <div className="flex items-start gap-3">
-                                <span className="mt-0.5 w-6 shrink-0 text-right text-[12px] tabular-nums text-neutral-400">
-                                    {i + 1}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                    <a
-                                        href={`https://www.youtube.com/watch?v=${v.video_id}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[14px] font-medium leading-snug text-[#1A1A1A] underline-offset-2 hover:underline"
-                                    >
-                                        {v.title}
-                                    </a>
-                                    <p className="mt-1 text-[12px] text-neutral-500">
-                                        {v.channel_title}
-                                        <span className="mx-1.5 text-neutral-300">·</span>
-                                        {v.video_type}
-                                        <span className="mx-1.5 text-neutral-300">·</span>
-                                        {v.category_name}
-                                    </p>
-                                </div>
-                                <div className="shrink-0 text-right">
-                                    <p className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-[#1A1A1A]">
-                                        <TrendingUp className="h-3 w-3 text-orange-500" />
-                                        +{fmtKr(v.hourly_view_increase)}
-                                    </p>
-                                    <p className="text-[11px] tabular-nums text-neutral-400">
-                                        누적 {fmtKr(v.total_views)}
-                                    </p>
-                                </div>
+                            <span className="vh-rk">{i + 1}</span>
+                            <a
+                                className="vh-th"
+                                href={`https://www.youtube.com/watch?v=${v.video_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                tabIndex={-1}
+                                aria-hidden="true"
+                            >
+                                <Image
+                                    src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`}
+                                    alt=""
+                                    fill
+                                    sizes="(max-width: 640px) 96px, 128px"
+                                    unoptimized
+                                />
+                            </a>
+                            <div className="vh-tt">
+                                <a
+                                    className="vh-title"
+                                    href={`https://www.youtube.com/watch?v=${v.video_id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {v.title}
+                                </a>
+                                <p className="vh-meta vh-meta-inline">
+                                    {v.channel_title}
+                                    <span className="vh-dot">·</span>
+                                    {v.video_type}
+                                    <span className="vh-dot">·</span>
+                                    {v.category_name}
+                                </p>
+                            </div>
+                            <div className="vh-mv">
+                                <strong>+{fmtKr(v.hourly_view_increase)}</strong>
+                                <small>누적 {fmtKr(v.total_views)}</small>
                             </div>
                         </li>
                     ))}
@@ -166,23 +165,18 @@ export default async function TagDetailPage({
 
                 {/* 관련 태그 — 크롤러가 다른 태그 페이지로 이동할 경로 */}
                 {related.length > 0 && (
-                    <section className="mt-12 border-t border-neutral-100 pt-8">
-                        <h2 className="mb-4 text-[14px] font-bold text-[#1A1A1A]">관련 태그</h2>
-                        <ul className="flex flex-wrap gap-2">
+                    <section className="vh-sec">
+                        <h2 className="vh-sec-h">관련 태그</h2>
+                        <ul className="vh-chiplist">
                             {related.map((t) => (
                                 <li key={t}>
-                                    <Link
-                                        href={`/tag/${tagToSlug(t)}`}
-                                        className="inline-block rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[12px] text-neutral-700 transition-colors hover:bg-neutral-50"
-                                    >
-                                        #{t}
-                                    </Link>
+                                    <Link href={`/tag/${tagToSlug(t)}`}>#{t}</Link>
                                 </li>
                             ))}
                         </ul>
                     </section>
                 )}
             </main>
-        </div>
+        </>
     );
 }
