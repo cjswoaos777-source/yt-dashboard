@@ -205,7 +205,7 @@ export default function AboutPage() {
                             </p>
                             <p>
                                 평소 안 다루던 프론트엔드는 AI(Claude, Cursor) 도움을 많이 받았습니다.
-                                현재 <strong>4개월째 매시간 자동</strong>으로 돌아가고 있습니다.
+                                <strong> 2026년 5월부터 매시간 자동</strong>으로 돌아가고 있습니다.
                             </p>
                             <p>광고 없이 계속 무료로 운영할 생각입니다.</p>
                         </div>
@@ -232,10 +232,11 @@ export default function AboutPage() {
                     </div>
                 </section>
 
-                {/* ── 응원하기 ─────────────────────────────────── */}
-                <section className="mb-12">
+                {/* ── 후원하기 ─────────────────────────────────── */}
+                {/* 머리 메뉴·바닥글·리포트 끝의 '후원하기'가 여기(#support)로 온다. 결제 수단(QR·링크)은 이 페이지에만 둔다. */}
+                <section id="support" className="mb-12 scroll-mt-6">
                     <h2 className="mb-2 font-serif text-2xl font-bold text-[#1A1A1A] md:text-3xl">
-                        ☕ 응원하기
+                        ☕ 후원하기
                     </h2>
                     <p className="mb-8 text-sm text-[#555555]">
                         서버 비용에 보탬이 됩니다.

@@ -45,6 +45,8 @@ export function SiteFooter({ className = "" }: { className?: string }) {
                     <span aria-hidden>·</span>
                     <a href={GOOGLE_PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="hover:text-neutral-700">Google 개인정보처리방침</a>
                     <span aria-hidden>·</span>
+                    <Link href="/about#support" className="font-semibold text-orange-600 hover:text-orange-700">☕ 후원하기</Link>
+                    <span aria-hidden>·</span>
                     <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-neutral-700">문의: {CONTACT_EMAIL}</a>
                 </nav>
             </div>

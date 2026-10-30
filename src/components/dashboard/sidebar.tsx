@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Menu, X, Info, Megaphone, ListOrdered, Hash, Users, Lightbulb, FileText, Sparkles } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Menu, X, Info, Megaphone, ListOrdered, Hash, Users, Lightbulb, FileText, Sparkles, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -18,6 +18,21 @@ const menuItems = [
   { title: "공지사항", href: "/notice", icon: Megaphone },
   { title: "소개", href: "/about", icon: Info },
 ];
+
+// 후원 안내 (10-30). 광고가 아니라 이 서비스를 돕는 자발적 후원이라, 결제 수단은 소개 페이지(#support)에만 둔다.
+function SupportLink({ onClick }: { onClick?: () => void }) {
+  return (
+    <Link
+      href="/about#support"
+      onClick={onClick}
+      className="mx-1 mb-2 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5 text-[13px] font-semibold text-orange-700 transition-colors hover:bg-orange-100"
+    >
+      <Coffee className="h-4 w-4" />
+      후원하기
+      <span className="ml-auto text-[11px] font-medium text-orange-500">모든 기능 무료</span>
+    </Link>
+  );
+}
 
 // ─── Desktop Sidebar ───────────────────────────────────────────────────────────
 
@@ -59,6 +74,8 @@ function DesktopSidebar() {
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        <SupportLink />
 
         {/* 약관·개인정보 (YouTube API 정책 III.A). 예전 RapidAPI 링크 자리 —
             YouTube 데이터를 API 로 되파는 것은 정책상 금지(III.G.1, III.I.15)라 뺐다. */}
@@ -163,6 +180,8 @@ function MobileNav() {
           </nav>
 
           <div className="flex-1" />
+
+          <SupportLink onClick={() => setOpen(false)} />
 
           {/* 약관·개인정보 (YouTube API 정책 III.A). 예전 RapidAPI 링크 자리. */}
           <div className="flex gap-3 px-3 py-2 text-[11px] text-neutral-400">

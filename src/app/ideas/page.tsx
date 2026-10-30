@@ -5,6 +5,7 @@ import { getIdeas, watchUrl, fmtKr, type IdeaReport, type IdeaVideo, type Catego
 import { CATEGORY_META, CATEGORY_SLUGS } from "@/lib/categories";
 import { SubscribeForm } from "@/components/subscribe-form";
 import { MetricsDisclosure } from "@/components/legal";
+import { SupportBox } from "@/components/support-box";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -187,6 +188,7 @@ function Report({ r }: { r: IdeaReport }) {
                 </ul>
                 <MetricsDisclosure className="mt-3" />
             </Section>
+            <SupportBox className="mt-10" />
         </>
     );
 }
