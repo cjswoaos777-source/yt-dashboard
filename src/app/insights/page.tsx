@@ -38,65 +38,49 @@ export default async function InsightsIndexPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
             />
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/dashboard"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */}
+            <main className="vh-main vh-article">
+                <Link href="/dashboard" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     대시보드로
                 </Link>
 
-                <header className="mb-8">
-                    <h1
-                        className="mb-2 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        유튜브 데이터 인사이트
-                    </h1>
-                    <p className="text-[13px] leading-relaxed text-neutral-500">
+                <header className="vh-phead">
+                    <h1>유튜브 데이터 인사이트</h1>
+                    <p className="vh-lead">
                         &ldquo;몇 시에 올려야 한다&rdquo;, &ldquo;숏츠가 유리하다&rdquo; 같은 이야기를
                         실제 수집 데이터로 확인해봤습니다.
                         {data && (
                             <>
                                 {" "}
                                 이 서비스가 수집한 국내 영상{" "}
-                                <strong className="font-semibold text-neutral-700">
-                                    {data.sample_size.toLocaleString()}건
-                                </strong>
+                                <strong>{data.sample_size.toLocaleString()}건</strong>
                                 (최근 {data.window_days}일) 기준입니다.
                             </>
                         )}
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
-                <ul className="space-y-3">
+                <ul className="vh-replist">
                     {INSIGHT_REPORTS.map((r) => (
                         <li key={r.slug}>
-                            <Link
-                                href={`/insights/${r.slug}`}
-                                className="block rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:bg-neutral-50/60"
-                            >
-                                <h2 className="mb-1.5 text-[15px] font-bold text-[#1A1A1A]">
-                                    {r.title}
-                                </h2>
-                                <p className="text-[13px] leading-relaxed text-[#555555]">
-                                    {r.summary}
-                                </p>
+                            <Link href={`/insights/${r.slug}`}>
+                                <h2 className="vh-replist-t">{r.title}</h2>
+                                <p>{r.summary}</p>
                             </Link>
                         </li>
                     ))}
                 </ul>
 
                 {data && (
-                    <p className="mt-8 text-[12px] leading-relaxed text-neutral-400">
+                    <p className="vh-note">
                         ※ 한국 유튜브 전체가 아닙니다. 매일 카테고리별로 조회수 상위 영상을
                         수집한 범위(채널 약 33,000개) 안의 표본이라, 이미 어느 정도 성과가 난
                         영상들의 비교로 읽어야 합니다. 각 리포트 상단에 수집 방식과 한계를
@@ -104,6 +88,6 @@ export default async function InsightsIndexPage() {
                     </p>
                 )}
             </main>
-        </div>
+        </>
     );
 }

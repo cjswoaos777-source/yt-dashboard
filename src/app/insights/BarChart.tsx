@@ -26,7 +26,7 @@ export function BarChart({
     const max = Math.max(...rows.map((r) => r.value), 1);
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+        <div className="vh-barchart">
             <table className="w-full text-left text-[13px]">
                 <caption className="sr-only">{caption}</caption>
                 <tbody>
@@ -39,11 +39,9 @@ export function BarChart({
                                 {r.label}
                             </th>
                             <td className="py-2 pr-2">
-                                <div className="h-5 w-full rounded-full bg-neutral-100">
+                                <div className="vh-bar-track">
                                     <div
-                                        className={`h-5 rounded-full ${
-                                            r.highlight ? "bg-[#FF6B35]" : "bg-neutral-800"
-                                        }`}
+                                        className={r.highlight ? "vh-bar vh-bar-hi" : "vh-bar"}
                                         style={{ width: `${Math.max((r.value / max) * 100, 2)}%` }}
                                     />
                                 </div>

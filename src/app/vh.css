@@ -590,3 +590,16 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 /* ════ 태그 (2026-10-30) ════ */
 .vh-tagcloud a { font-weight: 700; }
 .vh-tagcloud small { font-variant-numeric: tabular-nums; }
+
+/* ════ 인사이트 (2026-10-30) ════ */
+.vh-ins-how-body { display: grid; gap: 10px; margin-top: 14px; color: var(--vh-ink-2); font-size: 14px; line-height: 1.75; }
+.vh-ins-how-body strong { color: var(--vh-ink); }
+.vh-ins-how-body ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; list-style: disc; }
+.vh-main .vh-insight > div { margin: 0 0 1.4em; }
+.vh-main .vh-insight table { font-size: 13.5px; }
+.vh-barchart { overflow: hidden; border-radius: 14px; background: #F7F8FA; }
+.vh-barchart table { width: 100%; border-collapse: collapse; }
+.vh-barchart tr + tr { border-top: 1px solid #EEF0F3; }
+.vh-bar-track { height: 12px; width: 100%; overflow: hidden; border-radius: 99px; background: #E5E8EB; }
+.vh-bar { height: 12px; border-radius: 99px; background: #8B95A1; }
+.vh-bar-hi { background: var(--vh-brand); }

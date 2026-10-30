@@ -294,41 +294,34 @@ export default async function InsightReportPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/insights"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크는 그대로다. */}
+            <main className="vh-main vh-article">
+                <Link href="/insights" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     인사이트 목록
                 </Link>
 
-                <header className="mb-8">
-                    <h1
-                        className="mb-3 font-serif text-3xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl"
-                        style={{ fontFamily: "var(--font-playfair), serif" }}
-                    >
-                        {meta.title}
-                    </h1>
-                    <p className="text-[12px] text-neutral-400">
+                <header className="vh-phead">
+                    <h1>{meta.title}</h1>
+                    <p className="vh-art-meta">
                         수집된 국내 영상 {data.sample_size.toLocaleString()}건 · 최근{" "}
                         {data.window_days}일 · {data.generated_at} 집계 · 매일 1회 갱신
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure />
                 </header>
 
                 {/* 집계 기준을 먼저 밝힌다. "국내 영상 N건"만 쓰면 한국 유튜브 전수로
                     읽히는데, 실제로는 이 서비스가 수집한 범위 안의 표본이다. */}
-                <details className="mb-8 rounded-2xl border border-neutral-200 bg-white p-5">
-                    <summary className="cursor-pointer text-[13px] font-semibold text-[#1A1A1A]">
+                <details className="vh-card vh-defs vh-ins-how">
+                    <summary>
                         이 숫자는 무엇을 집계한 것인가요?
                     </summary>
-                    <div className="mt-4 space-y-3 text-[13px] leading-relaxed text-[#555555]">
+                    <div className="vh-ins-how-body">
                         <p>
                             <strong className="text-[#1A1A1A]">한국 유튜브 전체가 아닙니다.</strong>{" "}
                             이 서비스가 매일 수집한 영상 중 국내로 분류된 최근 {data.window_days}일치{" "}
@@ -376,21 +369,18 @@ export default async function InsightReportPage({
                     </div>
                 </details>
 
-                <article className="prose-insight space-y-5 text-[15px] leading-[1.85] text-[#333333] [&_h2]:mb-3 [&_h2]:mt-10 [&_h2]:font-serif [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#1A1A1A] [&_strong]:font-semibold [&_strong]:text-[#1A1A1A]">
+                <article className="vh-md vh-insight">
                     {renderReport(slug, data)}
                 </article>
 
-                <section className="mt-14 border-t border-neutral-100 pt-8">
-                    <h2 className="mb-4 text-[14px] font-bold text-[#1A1A1A]">다른 리포트</h2>
-                    <ul className="space-y-2">
+                <section className="vh-sec">
+                    <h2 className="vh-sec-h">다른 리포트</h2>
+                    <ul className="vh-replist">
                         {others.map((r) => (
                             <li key={r.slug}>
-                                <Link
-                                    href={`/insights/${r.slug}`}
-                                    className="block rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50"
-                                >
-                                    <p className="text-[14px] font-medium text-[#1A1A1A]">{r.title}</p>
-                                    <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+                                <Link href={`/insights/${r.slug}`}>
+                                    <p className="vh-replist-t">{r.title}</p>
+                                    <p>
                                         {r.summary}
                                     </p>
                                 </Link>
@@ -399,6 +389,6 @@ export default async function InsightReportPage({
                     </ul>
                 </section>
             </main>
-        </div>
+        </>
     );
 }
