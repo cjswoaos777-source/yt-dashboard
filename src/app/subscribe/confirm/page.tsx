@@ -29,21 +29,19 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
     const ok = result === "confirmed" || result === "already";
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
-            <main className="mx-auto max-w-xl px-4 py-16 sm:px-6">
-                <h1 className="mb-3 text-2xl font-bold text-[#1A1A1A]">{m.title}</h1>
-                <p className="mb-8 text-[14px] leading-relaxed text-neutral-600">{m.body}</p>
-                <div className="flex flex-wrap gap-2">
-                    <Link href="/ideas" className="rounded-full bg-neutral-900 px-4 py-2 text-[13px] font-medium text-white">
+        <main className="vh-main vh-small">
+            <h1>{m.title}</h1>
+            <p className="vh-lead">{m.body}</p>
+            <div className="vh-about-btns">
+                <Link href="/ideas" className="vh-cta">
                         지금 만들 만한 영상 보기
                     </Link>
                     {ok && (
-                        <Link href={`/subscribe/manage?t=${t}`} className="rounded-full border border-neutral-300 px-4 py-2 text-[13px] text-neutral-700">
+                        <Link href={`/subscribe/manage?t=${t}`} className="vh-btn-line">
                             받는 횟수 바꾸기
                         </Link>
                     )}
-                </div>
-            </main>
-        </div>
+            </div>
+        </main>
     );
 }

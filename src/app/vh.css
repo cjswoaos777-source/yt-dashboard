@@ -655,3 +655,13 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-metrics dt { margin-bottom: 6px; color: var(--vh-ink); font-size: 16px; font-weight: 800; }
 .vh-metrics dd { margin: 0; color: var(--vh-ink-2); font-size: 14.5px; line-height: 1.8; }
 .vh-card .vh-btn-line { border: 1px solid var(--vh-line); }
+
+/* ════ 약관·개인정보, 구독 확인/설정 (2026-10-30) ════ */
+.vh-main .vh-legal { font-size: 15px; line-height: 1.8; }
+.vh-main .vh-legal h1 { margin: 0.2em 0 0.3em; font-size: clamp(24px, 3.4vw, 30px); font-weight: 800; }
+.vh-main .vh-legal h2 { margin: 1.7em 0 0.5em; font-size: 18px; }
+.vh-main .vh-legal ul { list-style: disc; }
+.vh-main .vh-legal a { text-decoration-color: var(--vh-ink-3); }
+.vh-small { max-width: 640px; padding-top: 48px; padding-bottom: 48px; }
+.vh-small h1 { font-size: clamp(24px, 3.4vw, 30px); font-weight: 800; }
+.vh-small-body { display: grid; gap: 18px; justify-items: start; color: var(--vh-ink-2); font-size: 14.5px; line-height: 1.75; }
