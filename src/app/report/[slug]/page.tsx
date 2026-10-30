@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getAllReportSlugs, getReport, type ReportRow } from "@/lib/reports";
 import { MetricsDisclosure } from "@/components/legal";
+import { SupportBox } from "@/components/support-box";
 import { SITE } from "@/lib/site";
 
 export async function generateStaticParams() {
@@ -231,6 +232,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
                         데이터 생성: {data.generated_at}
                         <MetricsDisclosure className="mt-2" />
                     </div>
+                    <SupportBox className="mt-8" />
                 </article>
             </main>
         </div>

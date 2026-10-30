@@ -51,9 +51,9 @@ export default function LandingPage() {
           ref={subCopyRef}
           className="max-w-xl font-sans text-lg leading-relaxed text-[#555555] mb-10"
         >
-          최근 48시간 동안 수집된 80,000개 영상 중<br />
+          올라온 지 7일 안 된 영상 50만여 개를 매시간 다시 재서<br />
           지금 이 순간 가장 빠르게 오르고 있는 영상과<br />
-          7일간 눈에 띄게 성장한 채널을 찾아드립니다.
+          최근 7일 동안 눈에 띄게 성장한 채널을 찾아드립니다.
         </p>
 
         {/* CTA */}
@@ -79,9 +79,9 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
           {[
             {
-              number: "80,000+",
-              label: "최근 48시간 수집된 영상",
-              sub: "2일 이내 업로드된 영상만 추적",
+              number: "50만+",
+              label: "매시간 다시 재는 영상",
+              sub: "올라온 지 7일이 될 때까지 따라갑니다",
             },
             {
               number: "8,000+",
@@ -112,7 +112,7 @@ export default function LandingPage() {
         </div>
 
         <p className="font-sans text-lg text-[#555555] leading-relaxed">
-          80,000개 영상 중 지금 이 순간<br className="hidden sm:block" />
+          50만여 개 영상 중 지금 이 순간<br className="hidden sm:block" />
           가장 빠르게 오르고 있는 영상을 찾아드립니다
         </p>
       </section>
@@ -234,7 +234,7 @@ export default function LandingPage() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
-            { href: "/dashboard", title: "실시간 급상승 순위", desc: "업로드 2일 안 된 영상을 시간당 조회수 증가로 줄 세운 TOP 1,000. 숏츠·롱폼, 카테고리, 구독자 구간별로 고를 수 있습니다." },
+            { href: "/dashboard", title: "실시간 급상승 순위", desc: "올라온 지 7일 안 된 영상을 최근 1시간 조회수로 줄 세운 TOP 1,000. 숏츠·롱폼, 카테고리, 구독자 구간별로 고를 수 있습니다." },
             { href: "/category", title: "카테고리별 급상승 유튜버", desc: "게임, 예능, 교육 등 11개 카테고리마다 이번 주 가장 빠르게 크는 채널을 모았습니다." },
             { href: "/dashboard/benchmarking", title: "성장 채널 분석", desc: "구독자 대비 조회수가 잘 나오는 채널을 체급별로 비교합니다. 개설 90일 안 된 신규 채널도 따로 볼 수 있습니다." },
             { href: "/ideas", title: "지금 만들 만한 영상", desc: "지금 반응을 보고 만들어 볼 만한 주제와 형식을 매시간 골라 드립니다. 메일로도 받을 수 있어요." },
@@ -267,12 +267,14 @@ export default function LandingPage() {
             채널 주인만 보는 통계는 쓰지 않습니다.
           </li>
           <li>
-            <strong>수집 범위</strong>: 매일 15개 카테고리에서 한국 지역 검색 기준으로 업로드 2일 안 된 영상을 찾고,
-            4분 미만 영상은 조회수 3만 회, 4분 이상은 1만 회를 넘은 것만 모읍니다. 한국 유튜브 전체가 아니라
-            이미 반응이 오기 시작한 영상의 표본입니다.
+            <strong>수집 범위</strong>: 매일 오후 5시에 15개 카테고리에서 한국 지역 검색 기준으로 업로드 2일 안 된 영상을 찾고,
+            4분 미만 영상은 조회수 3만 회, 4분 이상은 1만 회를 넘은 것만 모읍니다. 매시간 최근 3시간 안에 올라온 영상도
+            같은 기준으로 더 찾습니다. 한국 유튜브 전체가 아니라 이미 반응이 오기 시작한 영상의 표본입니다.
           </li>
           <li>
-            <strong>갱신 주기</strong>: 영상 조회수는 매시간 다시 재서 순위를 갱신하고, 채널 8,000여 곳의 구독자·조회수는 하루 한 번 추적합니다.
+            <strong>갱신 주기</strong>: 찾은 영상은 올라온 지 7일이 될 때까지 따라갑니다. 국내 영상은 매시간, 해외 영상은 잘 오르는
+            12만 개만 매시간 다시 재고 나머지는 6시간마다 잽니다. 최근 7일 안에 수집에 걸린 채널의 구독자·조회수는 매일 오후 5시
+            수집 뒤 한 번 받습니다.
           </li>
           <li>
             <strong>보관 기간</strong>: YouTube API 정책에 따라 영상·채널 수치는 30일이 지나면 지우거나 다시 받습니다. 그래서 오래전 기록은 남기지 않습니다.
