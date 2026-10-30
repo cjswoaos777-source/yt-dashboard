@@ -67,25 +67,25 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
     const totalSubs = sorted.reduce((a, p) => a + (p.sub_increase ?? 0), 0);
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+        <div className="vh-spark">
             {/* 차트 */}
-            <div className="border-b border-neutral-100 p-4">
-                <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                    <span className="text-[12px] text-neutral-400">
+            <div className="vh-spark-chart">
+                <div className="vh-spark-sum">
+                    <span>
                         측정된 {sorted.length}일 조회수 증가 합계{" "}
-                        <strong className="font-semibold text-neutral-700">
+                        <strong>
                             {fmtKr(totalViews)}회
                         </strong>
                     </span>
-                    <span className="text-[12px] text-neutral-400">
+                    <span>
                         구독자 증가 합계{" "}
-                        <strong className="font-semibold text-neutral-700">
+                        <strong>
                             {fmtKr(totalSubs)}명
                         </strong>
                     </span>
                 </div>
                 {gapCount > 0 && (
-                    <p className="mb-3 text-[11px] text-amber-700">
+                    <p className="vh-spark-gap">
                         수집되지 않은 날이 있어 그래프 선이 {gapCount}곳 끊겨 있습니다.
                         측정된 날만 표시합니다.
                     </p>
@@ -93,31 +93,41 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
 
                 <svg
                     viewBox={`0 0 ${W} ${H}`}
-                    className="h-40 w-full"
+                    className="vh-spark-svg"
                     role="img"
                     aria-label={`최근 ${sorted.length}일간 일별 조회수 증가 추이. 합계 ${fmtKr(totalViews)}회.`}
                     preserveAspectRatio="none"
                 >
+                    {segments.map((seg, si) =>
+                        seg.length > 1 ? (
+                            <polygon
+                                key={`area-${si}`}
+                                points={`${seg[0].x.toFixed(1)},${H} ${seg.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ")} ${seg[seg.length - 1].x.toFixed(1)},${H}`}
+                                fill="#FF5A1F"
+                                fillOpacity="0.08"
+                            />
+                        ) : null,
+                    )}
                     {segments.map((seg, si) => (
                         <polyline
                             key={`seg-${si}`}
                             points={seg.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ")}
                             fill="none"
-                            stroke="#1A1A1A"
+                            stroke="#191F28"
                             strokeWidth="2"
                             strokeLinejoin="round"
                             strokeLinecap="round"
                             vectorEffect="non-scaling-stroke"
                         />
                     ))}
-                    {coords.map((c) => (
+                    {coords.map((c, i) => (
                         <circle
                             key={c.point.date}
                             cx={c.x}
                             cy={c.y}
                             r="3"
-                            fill="#FDFDFC"
-                            stroke="#1A1A1A"
+                            fill={i === coords.length - 1 ? "#FF5A1F" : "#FFFFFF"}
+                            stroke={i === coords.length - 1 ? "#FF5A1F" : "#191F28"}
                             strokeWidth="2"
                             vectorEffect="non-scaling-stroke"
                         />
@@ -126,32 +136,32 @@ export function SparklineChart({ points }: { points: SparklinePoint[] }) {
             </div>
 
             {/* 표 — 크롤러가 읽는 실제 수치 + 스크린리더 접근성 */}
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-[420px] text-left text-[12px]">
+            <div className="vh-spark-table">
+                <table>
                     <caption className="sr-only">일별 구독자 및 조회수 증가 추이</caption>
                     <thead>
-                        <tr className="border-b border-neutral-100 text-neutral-400">
-                            <th scope="col" className="px-4 py-2 font-medium">날짜</th>
-                            <th scope="col" className="px-4 py-2 text-right font-medium">조회수 증가</th>
-                            <th scope="col" className="px-4 py-2 text-right font-medium">구독자 증가</th>
-                            <th scope="col" className="px-4 py-2 text-right font-medium">누적 구독자</th>
+                        <tr>
+                            <th scope="col">날짜</th>
+                            <th scope="col">조회수 증가</th>
+                            <th scope="col">구독자 증가</th>
+                            <th scope="col">누적 구독자</th>
                         </tr>
                     </thead>
                     <tbody>
                         {[...sorted].reverse().map((p) => (
-                            <tr key={p.date} className="border-b border-neutral-50 last:border-0">
-                                <th scope="row" className="px-4 py-2 font-medium text-neutral-600">
+                            <tr key={p.date}>
+                                <th scope="row">
                                     {fmtDate(p.date)}
                                 </th>
-                                <td className="px-4 py-2 text-right tabular-nums text-neutral-700">
+                                <td>
                                     {(p.view_increase ?? 0) > 0 ? "+" : ""}
                                     {(p.view_increase ?? 0).toLocaleString()}
                                 </td>
-                                <td className="px-4 py-2 text-right tabular-nums text-neutral-700">
+                                <td>
                                     {(p.sub_increase ?? 0) > 0 ? "+" : ""}
                                     {(p.sub_increase ?? 0).toLocaleString()}
                                 </td>
-                                <td className="px-4 py-2 text-right tabular-nums text-neutral-500">
+                                <td>
                                     {(p.total_subscribers ?? 0).toLocaleString()}
                                 </td>
                             </tr>

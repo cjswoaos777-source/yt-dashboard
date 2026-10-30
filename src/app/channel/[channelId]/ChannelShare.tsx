@@ -57,13 +57,12 @@ export function ChannelShare({
     }
 
     const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(pageUrl)}`;
-    const btn =
-        "inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-[12.5px] font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-50";
+    const btn = "vh-btn-ghost";
 
     return (
-        <section className="mb-12 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50/70 to-violet-50/40 p-5">
-            <h2 className="text-[15px] font-bold text-[#1A1A1A]">📣 이 채널 성과 공유하기</h2>
-            <p className="mt-1 text-[12.5px] leading-relaxed text-neutral-500">
+        <section className="vh-card vh-share">
+            <h2>📣 이 채널 성과 공유하기</h2>
+            <p className="vh-share-lead">
                 채널 주인이라면 시청자에게, 팬이라면 친구에게 자랑해 보세요. 링크를 붙이면 아래 카드가 미리보기로 떠요.
             </p>
 
@@ -75,10 +74,10 @@ export function ChannelShare({
                 width={1200}
                 height={630}
                 loading="lazy"
-                className="mt-4 w-full max-w-[560px] rounded-xl border border-neutral-200 bg-white"
+                className="vh-share-img"
             />
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="vh-share-btns">
                 <button type="button" onClick={nativeShare} className={btn}>
                     📲 공유하기
                 </button>
@@ -106,7 +105,7 @@ export function ChannelShare({
                     {copied === "badge" ? "✅ 배지 코드 복사됨" : "🧩 블로그 배지 코드 복사"}
                 </button>
             </div>
-            <p className="mt-2 text-[11px] text-neutral-400">
+            <p className="vh-share-note">
                 블로그 배지 코드는 HTML을 붙일 수 있는 블로그(티스토리 등)에 넣으면 카드 이미지가 이 페이지 링크와 함께 보입니다.
             </p>
         </section>

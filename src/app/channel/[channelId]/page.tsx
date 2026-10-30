@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, TrendingUp, Users, Eye, Video } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getChannel, isAwaitingBaseline, isIndexableChannel, isGoogleIndexableChannel, daysSinceKst } from "@/lib/channels";
 import { SITE } from "@/lib/site";
@@ -33,6 +33,18 @@ function fmtKr(n: number, unit = ""): string {
     if (n >= 10_000) return `${(n / 10_000).toFixed(1)}만${unit}`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}천${unit}`;
     return `${n.toLocaleString()}${unit}`;
+}
+
+/** "12.3만명" 같은 값에서 단위만 작게 그린다. 글자는 그대로다. */
+function Num({ t }: { t: string }) {
+    const m = t.match(/^([+-]?[\d.,]+)(.*)$/);
+    if (!m) return <>{t}</>;
+    return (
+        <>
+            {m[1]}
+            {m[2] && <span className="vh-u">{m[2]}</span>}
+        </>
+    );
 }
 
 export async function generateMetadata({
@@ -188,7 +200,6 @@ export default async function ChannelDetailPage({
 
     const stats = [
         {
-            icon: Users,
             label: "구독자",
             value: fmtKr(channel.subscriber_count, "명"),
             sub: channel.avg_daily_sub_increase
@@ -196,7 +207,6 @@ export default async function ChannelDetailPage({
                 : null,
         },
         {
-            icon: Eye,
             label: "누적 조회수",
             value: fmtKr(channel.total_view_count, "회"),
             sub: channel.avg_daily_view_increase
@@ -206,13 +216,11 @@ export default async function ChannelDetailPage({
                   : null,
         },
         {
-            icon: Video,
             label: "영상 수",
             value: channel.video_count ? `${channel.video_count.toLocaleString()}개` : "—",
             sub: channel.top_video_views ? `최고 ${fmtKr(channel.top_video_views, "회")}` : null,
         },
         {
-            icon: TrendingUp,
             label: "성장 지수",
             value: channel.damped_score ? channel.damped_score.toFixed(1) : "—",
             // 기록 모드에선 순위가 0 이라 "전체 0위 / 0개"가 찍혔다. 현재일 때만 보인다.
@@ -265,7 +273,7 @@ export default async function ChannelDetailPage({
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
+        <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -275,12 +283,10 @@ export default async function ChannelDetailPage({
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
             />
 
-            <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-10">
-                <Link
-                    href="/dashboard/benchmarking"
-                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
+            {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크·순서는 그대로다 (색인 중인 페이지라). */}
+            <main className="vh-main vh-chd">
+                <Link href="/dashboard/benchmarking" className="vh-back">
+                    <ArrowLeft aria-hidden="true" />
                     채널 분석으로
                 </Link>
 
@@ -288,105 +294,72 @@ export default async function ChannelDetailPage({
                 {/* 순위에서 빠진 채널 — 이 페이지가 '기록'임을 가장 먼저 알린다.
                     숫자를 먼저 보고 현재로 오해하는 일이 없도록 헤더 위에 둔다. */}
                 {!isCurrent && (
-                    <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-[13px] leading-relaxed text-amber-900">
-                        <strong className="font-semibold">지금은 급상승 순위에 없는 채널입니다.</strong>{" "}
+                    <div className="vh-alert">
+                        <strong>지금은 급상승 순위에 없는 채널입니다.</strong>{" "}
                         {firstSeen && lastSeen && (
                             <>
                                 {firstSeen} ~ {lastSeen} 사이 {daysSeen}일 순위에 올랐고,
                                 {daysAgo !== null && ` 마지막 수집은 ${daysAgo}일 전입니다.`}
                             </>
                         )}{" "}
-                        아래 수치는 <strong className="font-semibold">마지막 수집 시점</strong> 기준이며 현재 값과 다를 수 있습니다.
+                        아래 수치는 <strong>마지막 수집 시점</strong> 기준이며 현재 값과 다를 수 있습니다.
                     </div>
                 )}
 
-                <header className="mb-10">
-                    <div className="mb-5 flex flex-wrap items-center gap-2">
-                        {!isCurrent && (
-                            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
-                                기록
-                            </span>
-                        )}
-                        <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600">
-                            {TIER_LABEL[channel.tier] ?? `Tier ${channel.tier}`}
-                        </span>
-                        <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600">
-                            {channel.main_category}
-                        </span>
-                        {channel.league_group && (
-                            <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600">
-                                {LEAGUE_LABEL[channel.league_group] ?? channel.league_group}
-                            </span>
-                        )}
-                        {channel.origin_type === "DOMESTIC" && (
-                            <span className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600">
-                                국내
-                            </span>
-                        )}
-                        {channel.is_new_channel && (
-                            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                                신규
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                        {channel.video_thumbnail && (
-                            <Image
-                                src={channel.video_thumbnail}
-                                alt={`${channel.channel_title} 대표 영상 썸네일`}
-                                width={120}
-                                height={90}
-                                className="shrink-0 rounded-xl border border-neutral-200 object-cover"
-                                unoptimized
-                            />
-                        )}
-                        <div className="min-w-0">
-                            <h1
-                                className="mb-2 font-serif text-2xl font-bold leading-tight tracking-tight text-[#1A1A1A] md:text-3xl"
-                                style={{ fontFamily: "var(--font-playfair), serif" }}
-                            >
-                                {channel.channel_title}
-                            </h1>
-                            {/* '순위'가 한국 유튜브 전체 순위로 오해되지 않도록,
-                                추적 대상 안에서의 상대 위치임을 문장에 드러낸다. */}
-                            {/* 기록 모드에선 순위가 0 이라 "0개 중 0번째"가 찍혔다. 대신 등장 이력을 쓴다. */}
-                            {isCurrent ? (
-                                <p className="text-[13px] leading-relaxed text-neutral-500">
-                                    추적 중인 {channel.main_category} 채널{" "}
-                                    {categoryTotal.toLocaleString()}개 중 구독자{" "}
-                                    <strong className="font-semibold text-neutral-700">
-                                        {categoryRank.toLocaleString()}번째
-                                    </strong>
-                                </p>
-                            ) : (
-                                <p className="text-[13px] leading-relaxed text-neutral-500">
-                                    {channel.main_category} 카테고리 · 급상승 순위{" "}
-                                    <strong className="font-semibold text-neutral-700">{daysSeen}일</strong> 등장
-                                    {lastSeen && ` (마지막 ${lastSeen})`}
-                                </p>
+                <header className="vh-chd-head">
+                    {channel.video_thumbnail && (
+                        <Image
+                            src={channel.video_thumbnail}
+                            alt={`${channel.channel_title} 대표 영상 썸네일`}
+                            width={320}
+                            height={180}
+                            className="vh-chd-cover"
+                            unoptimized
+                            priority
+                        />
+                    )}
+                    <div className="vh-chd-id">
+                        <div className="vh-badges">
+                            {!isCurrent && <span className="vh-badge vh-badge-warn">기록</span>}
+                            <span className="vh-badge">{TIER_LABEL[channel.tier] ?? `Tier ${channel.tier}`}</span>
+                            <span className="vh-badge">{channel.main_category}</span>
+                            {channel.league_group && (
+                                <span className="vh-badge">{LEAGUE_LABEL[channel.league_group] ?? channel.league_group}</span>
                             )}
+                            {channel.origin_type === "DOMESTIC" && <span className="vh-badge">국내</span>}
+                            {channel.is_new_channel && <span className="vh-badge vh-badge-new">신규</span>}
                         </div>
+                        <h1>{channel.channel_title}</h1>
+                        {/* '순위'가 한국 유튜브 전체 순위로 오해되지 않도록,
+                            추적 대상 안에서의 상대 위치임을 문장에 드러낸다. */}
+                        {/* 기록 모드에선 순위가 0 이라 "0개 중 0번째"가 찍혔다. 대신 등장 이력을 쓴다. */}
+                        {isCurrent ? (
+                            <p className="vh-chd-rank">
+                                추적 중인 {channel.main_category} 채널{" "}
+                                {categoryTotal.toLocaleString()}개 중 구독자{" "}
+                                <strong>{categoryRank.toLocaleString()}번째</strong>
+                            </p>
+                        ) : (
+                            <p className="vh-chd-rank">
+                                {channel.main_category} 카테고리 · 급상승 순위{" "}
+                                <strong>{daysSeen}일</strong> 등장
+                                {lastSeen && ` (마지막 ${lastSeen})`}
+                            </p>
+                        )}
                     </div>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-3" />
+                    <MetricsDisclosure className="vh-chd-disc" />
                 </header>
 
                 {/* 지표 카드 */}
-                <section className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <section className="vh-kpis" aria-label="채널 지표">
                     {stats.map((s) => (
-                        <div
-                            key={s.label}
-                            className="rounded-2xl border border-neutral-200 bg-white p-4"
-                        >
-                            <div className="mb-2 flex items-center gap-1.5 text-neutral-400">
-                                <s.icon className="h-3.5 w-3.5" />
-                                <span className="text-[11px] font-medium">{s.label}</span>
-                            </div>
-                            <div className="text-[17px] font-bold text-[#1A1A1A]">{s.value}</div>
-                            {s.sub && (
-                                <div className="mt-0.5 text-[11px] text-neutral-400">{s.sub}</div>
-                            )}
+                        <div key={s.label} className="vh-kpi">
+                            <small>{s.label}</small>
+                            <strong>
+                                <Num t={s.value} />
+                            </strong>
+                            {s.sub && <span>{s.sub}</span>}
                         </div>
                     ))}
                 </section>
@@ -405,32 +378,24 @@ export default async function ChannelDetailPage({
 
                 {/* 채널 분석 — 비슷한 채널과 비교한 해석. 페이지마다 다른 문장이 나오는 중심 내용이다. */}
                 {insight && insight.sentences.length > 0 && (
-                    <section className="mb-8">
-                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">
-                            {channel.channel_title} 채널 분석
-                        </h2>
-                        <p className="mb-3 text-[12px] text-neutral-400">
-                            최근 30일 Viral Hunter 수집 데이터로 비슷한 규모의 채널과 비교했습니다.
-                        </p>
-                        <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5">
+                    <section className="vh-sec">
+                        <div className="vh-sec-title">
+                            <h2>{channel.channel_title} 채널 분석</h2>
+                            <p className="vh-sec-note">
+                                최근 30일 Viral Hunter 수집 데이터로 비슷한 규모의 채널과 비교했습니다.
+                            </p>
+                        </div>
+                        <div className="vh-card">
                             {insight.tags.length > 0 && (
-                                <div className="mb-3 flex flex-wrap gap-1.5">
+                                <div className="vh-tags">
                                     {insight.tags.map((t) => (
-                                        <span
-                                            key={t}
-                                            className="rounded-full border border-violet-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-violet-700"
-                                        >
-                                            {t}
-                                        </span>
+                                        <span key={t}>{t}</span>
                                     ))}
                                 </div>
                             )}
-                            <ul className="space-y-2 text-[13.5px] leading-[1.8] text-[#333333]">
+                            <ul className="vh-bullets">
                                 {insight.sentences.map((t) => (
-                                    <li key={t} className="flex gap-2">
-                                        <span className="mt-[0.7em] h-1 w-1 shrink-0 rounded-full bg-violet-400" />
-                                        <span>{t}</span>
-                                    </li>
+                                    <li key={t}>{t}</li>
                                 ))}
                             </ul>
                         </div>
@@ -439,24 +404,17 @@ export default async function ChannelDetailPage({
 
                 {/* 채널 고유 정보 — SEO 실험군만 (seo-experiment.ts) */}
                 {extraView && extraView.sentences.length > 0 && (
-                    <section className="mb-8">
-                        <h2 className="mb-3 text-[15px] font-bold text-[#1A1A1A]">
-                            {channel.channel_title}이(가) 다루는 주제와 업로드 습관
-                        </h2>
-                        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+                    <section className="vh-sec">
+                        <h2 className="vh-sec-h">{channel.channel_title}이(가) 다루는 주제와 업로드 습관</h2>
+                        <div className="vh-card">
                             {extraView.topics.length > 0 && (
-                                <div className="mb-3 flex flex-wrap gap-1.5">
+                                <div className="vh-tags vh-tags-plain">
                                     {extraView.topics.map((t) => (
-                                        <span
-                                            key={t}
-                                            className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[12px] font-medium text-neutral-700"
-                                        >
-                                            #{t}
-                                        </span>
+                                        <span key={t}>#{t}</span>
                                     ))}
                                 </div>
                             )}
-                            <ul className="space-y-1.5 text-[13.5px] leading-[1.8] text-[#333333]">
+                            <ul className="vh-lines">
                                 {extraView.sentences.map((s) => (
                                     <li key={s}>{s}</li>
                                 ))}
@@ -468,28 +426,24 @@ export default async function ChannelDetailPage({
                 {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다.
                     SEO 실험군은 모든 페이지에 똑같이 붙던 이 설명을 /about/metrics 링크로 줄인다. */}
                 {seoTreatment ? (
-                    <p className="mb-12 text-[12.5px] text-neutral-500">
+                    <p className="vh-chd-note">
                         일평균 증가·성장 지수·순위를 어떻게 계산하는지는{" "}
-                        <Link href="/about/metrics" className="font-medium text-neutral-700 underline underline-offset-2">
-                            지표 설명
-                        </Link>
+                        <Link href="/about/metrics">지표 설명</Link>
                         에서 볼 수 있습니다.
                     </p>
                 ) : (
-                <details className="mb-12 rounded-2xl border border-neutral-200 bg-white p-5">
-                    <summary className="cursor-pointer text-[13px] font-semibold text-[#1A1A1A]">
-                        각 지표는 무슨 뜻인가요?
-                    </summary>
-                    <dl className="mt-4 space-y-3 text-[13px] leading-relaxed text-[#555555]">
+                <details className="vh-card vh-defs">
+                    <summary>각 지표는 무슨 뜻인가요?</summary>
+                    <dl>
                         <div>
-                            <dt className="font-medium text-[#1A1A1A]">일평균 증가</dt>
+                            <dt>일평균 증가</dt>
                             <dd>
                                 최근 측정된 기간의 증가량을 <strong>실제 경과 일수</strong>로 나눈
                                 값입니다. 최대 7일치를 봅니다.
                             </dd>
                         </div>
                         <div>
-                            <dt className="font-medium text-[#1A1A1A]">성장 지수</dt>
+                            <dt>성장 지수</dt>
                             <dd>
                                 <strong>최근 7일 평균 조회수 ÷ 구독자 수</strong>로 계산합니다
                                 (숏츠 채널은 분모에 3,000, 롱폼은 1,000을 더해 소형 채널의 거품을
@@ -499,14 +453,14 @@ export default async function ChannelDetailPage({
                             </dd>
                         </div>
                         <div>
-                            <dt className="font-medium text-[#1A1A1A]">순위</dt>
+                            <dt>순위</dt>
                             <dd>
                                 한국 유튜브 전체가 아니라, 이 서비스가 추적 중인 채널
                                 {isCurrent ? ` ${overallTotal.toLocaleString()}개` : ""} 안에서의 상대 위치입니다.
                             </dd>
                         </div>
                         <div>
-                            <dt className="font-medium text-[#1A1A1A]">갱신 주기</dt>
+                            <dt>갱신 주기</dt>
                             <dd>채널 지표는 매일 저녁 1회 갱신됩니다.</dd>
                         </div>
                     </dl>
@@ -514,48 +468,40 @@ export default async function ChannelDetailPage({
                 )}
 
                 {/* 요약 */}
-                <section className="mb-12">
-                    <h2 className="mb-3 text-[15px] font-bold text-[#1A1A1A]">채널 요약</h2>
-                    <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-                        <p className="text-[13.5px] leading-[1.9] text-[#333333]">
-                            {summarySentences.join(" ")}
-                        </p>
+                <section className="vh-sec">
+                    <h2 className="vh-sec-h">채널 요약</h2>
+                    <div className="vh-card">
+                        <p className="vh-prose">{summarySentences.join(" ")}</p>
                     </div>
                 </section>
 
                 {/* 추이 차트 */}
-                <section className="mb-12">
-                    <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">최근 성장 추이</h2>
-                    <p className="mb-4 text-[12px] text-neutral-400">
-                        실제로 측정된 날의 구독자·조회수 증가량만 표시합니다.
-                    </p>
+                <section className="vh-sec">
+                    <div className="vh-sec-title">
+                        <h2>최근 성장 추이</h2>
+                        <p className="vh-sec-note">실제로 측정된 날의 구독자·조회수 증가량만 표시합니다.</p>
+                    </div>
                     {sparkline.length >= 3 ? (
                         <SparklineChart points={sparkline} />
                     ) : (
-                        <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-[13px] text-neutral-400">
+                        <div className="vh-card vh-empty">
                             {!isCurrent ? (
                                 <>
                                     순위에서 빠진 채널은 일별 추이를 보관하지 않습니다.
                                     <br />
-                                    <span className="text-[12px] text-neutral-400">
-                                        다시 급상승 순위에 오르면 추이가 표시됩니다.
-                                    </span>
+                                    <span>다시 급상승 순위에 오르면 추이가 표시됩니다.</span>
                                 </>
                             ) : awaitingBaseline ? (
                                 <>
                                     이 채널은 추적을 막 시작해 비교할 이전 측정값이 없습니다.
                                     <br />
-                                    <span className="text-[12px] text-neutral-400">
-                                        하루가 지나 두 번째 측정이 쌓이면 일평균과 추이가 표시됩니다.
-                                    </span>
+                                    <span>하루가 지나 두 번째 측정이 쌓이면 일평균과 추이가 표시됩니다.</span>
                                 </>
                             ) : (
                                 <>
                                     측정된 날이 {sparkline.length}일뿐이라 추이를 표시하지 않습니다.
                                     <br />
-                                    <span className="text-[12px] text-neutral-400">
-                                        데이터가 더 쌓이면 자동으로 그래프가 나타납니다.
-                                    </span>
+                                    <span>데이터가 더 쌓이면 자동으로 그래프가 나타납니다.</span>
                                 </>
                             )}
                         </div>
@@ -564,32 +510,37 @@ export default async function ChannelDetailPage({
 
                 {/* 최근 30일 포착 영상 — 채널마다 다른 제목 목록이라 페이지 고유 내용의 중심이다. */}
                 {recentVideos.length > 0 && (
-                    <section className="mb-12">
-                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">
-                            최근 30일 포착 영상
-                        </h2>
-                        <p className="mb-4 text-[12px] text-neutral-400">
-                            Viral Hunter가 급상승 후보로 수집한 이 채널의 영상 {recent!.videos_30d}개 중 조회수 상위입니다.
-                            조회수는 수집 시점(업로드 후 약 2일 이내) 기준입니다.
-                        </p>
-                        <ol className="divide-y divide-neutral-100 rounded-2xl border border-neutral-200 bg-white">
+                    <section className="vh-sec">
+                        <div className="vh-sec-title">
+                            <h2>최근 30일 포착 영상</h2>
+                            <p className="vh-sec-note">
+                                Viral Hunter가 급상승 후보로 수집한 이 채널의 영상 {recent!.videos_30d}개 중 조회수 상위입니다.
+                                조회수는 수집 시점(업로드 후 약 2일 이내) 기준입니다.
+                            </p>
+                        </div>
+                        <ol className="vh-vgrid">
                             {recentVideos.map((v, i) => (
-                                <li key={v.id} className="flex items-start gap-3 px-4 py-3">
-                                    <span className="w-5 shrink-0 pt-0.5 text-right text-[12px] font-semibold text-neutral-400">
-                                        {i + 1}
-                                    </span>
-                                    <div className="min-w-0 flex-1">
-                                        <a
-                                            href={`https://www.youtube.com/watch?v=${v.id}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer nofollow"
-                                            className="block text-[13.5px] font-medium leading-snug text-[#1A1A1A] hover:underline"
-                                        >
-                                            {v.t}
-                                        </a>
-                                        <div className="mt-1 text-[11.5px] text-neutral-400">
-                                            {v.d} 업로드 · {v.s ? "숏츠" : "롱폼"} · 조회수 {fmtKr(v.v, "회")}
-                                        </div>
+                                <li key={v.id} className="vh-vcard">
+                                    {/* 순서 숫자는 썸네일 위에 얹는다. 링크 글자(제목)는 그대로 둔다. */}
+                                    <span className="vh-vcard-rk">{i + 1}</span>
+                                    <a
+                                        href={`https://www.youtube.com/watch?v=${v.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer nofollow"
+                                    >
+                                        <span className="vh-vcard-th">
+                                            <Image
+                                                src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`}
+                                                alt=""
+                                                fill
+                                                sizes="(max-width: 640px) 50vw, 240px"
+                                                unoptimized
+                                            />
+                                        </span>
+                                        <span className="vh-vcard-t">{v.t}</span>
+                                    </a>
+                                    <div className="vh-vcard-m">
+                                        {v.d} 업로드 · {v.s ? "숏츠" : "롱폼"} · 조회수 {fmtKr(v.v, "회")}
                                     </div>
                                 </li>
                             ))}
@@ -600,22 +551,17 @@ export default async function ChannelDetailPage({
                 {/* 비슷한 채널 — 같은 카테고리·비슷한 구독자 규모. 채널 페이지끼리의 내부 링크다
                     (구글이 링크를 타고 아직 방문하지 않은 채널 페이지로 넘어가도록). */}
                 {related.length > 0 && (
-                    <section className="mb-10">
-                        <h2 className="mb-1 text-[15px] font-bold text-[#1A1A1A]">
-                            비슷한 규모의 {channel.main_category} 채널
-                        </h2>
-                        <p className="mb-4 text-[12px] text-neutral-400">
-                            같은 카테고리에서 구독자 수가 가장 가까운 채널입니다.
-                        </p>
-                        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <section className="vh-sec">
+                        <div className="vh-sec-title">
+                            <h2>비슷한 규모의 {channel.main_category} 채널</h2>
+                            <p className="vh-sec-note">같은 카테고리에서 구독자 수가 가장 가까운 채널입니다.</p>
+                        </div>
+                        <ul className="vh-related">
                             {related.map((r) => (
                                 <li key={r.channel_id}>
-                                    <Link
-                                        href={`/channel/${r.channel_id}`}
-                                        className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 bg-white px-4 py-3 text-[13px] transition-colors hover:border-neutral-300"
-                                    >
-                                        <span className="truncate font-medium text-[#1A1A1A]">{r.channel_title}</span>
-                                        <span className="shrink-0 text-neutral-400">구독자 {fmtKr(r.subscriber_count, "명")}</span>
+                                    <Link href={`/channel/${r.channel_id}`}>
+                                        <b>{r.channel_title}</b>
+                                        <span>구독자 {fmtKr(r.subscriber_count, "명")}</span>
                                     </Link>
                                 </li>
                             ))}
@@ -624,29 +570,27 @@ export default async function ChannelDetailPage({
                 )}
 
                 {/* 외부 링크 */}
-                <section className="border-t border-neutral-100 pt-8">
-                    <div className="flex flex-wrap gap-2">
+                <section className="vh-chd-out">
+                    <a
+                        href={`https://www.youtube.com/channel/${channel.channel_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="vh-cta"
+                    >
+                        유튜브에서 채널 보기
+                    </a>
+                    {channel.representative_video_id && (
                         <a
-                            href={`https://www.youtube.com/channel/${channel.channel_id}`}
+                            href={`https://www.youtube.com/watch?v=${channel.representative_video_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-full bg-black px-5 py-2 text-[13px] font-medium text-white transition-all hover:scale-[0.97]"
+                            className="vh-btn-line"
                         >
-                            유튜브에서 채널 보기
+                            대표 영상 보기
                         </a>
-                        {channel.representative_video_id && (
-                            <a
-                                href={`https://www.youtube.com/watch?v=${channel.representative_video_id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-5 py-2 text-[13px] font-medium text-neutral-700 transition-all hover:bg-neutral-50"
-                            >
-                                대표 영상 보기
-                            </a>
-                        )}
-                    </div>
+                    )}
                 </section>
             </main>
-        </div>
+        </>
     );
 }
