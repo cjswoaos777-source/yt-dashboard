@@ -728,3 +728,6 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-cta svg { width: 16px; height: 16px; }
 .vh-links h3 { display: flex; align-items: center; gap: 4px; }
 .vh-links h3 svg { flex: none; width: 15px; height: 15px; color: var(--vh-ink-3); }
+/* 칩 안 ✓ 표시: Tailwind 기본값(svg 는 block) 때문에 줄이 갈리던 것 */
+.vh-chip { display: inline-flex; align-items: center; }
+.vh-chip svg { display: inline-block; flex: none; }
