@@ -99,7 +99,7 @@ function BenchmarkingInfoPanel() {
             <button
                 onClick={() => setOpen((v) => !v)}
                 aria-expanded={open}
-                className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[12px] font-medium text-violet-600 shadow-sm transition-all hover:bg-violet-100 hover:shadow"
+                className="vh-btn-ghost"
             >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
                     <circle cx="6.5" cy="6.5" r="6" stroke="currentColor" strokeWidth="1.2" />
@@ -115,7 +115,7 @@ function BenchmarkingInfoPanel() {
             </button>
 
             {open && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-[min(520px,92vw)] rounded-2xl border border-neutral-100 bg-white p-6 shadow-xl">
+                <div className="vh-pop vh-pop-wide">
 
                     {/* 제목 */}
                     <h3 className="mb-3 text-[15px] font-black tracking-tight text-neutral-900">
@@ -127,7 +127,7 @@ function BenchmarkingInfoPanel() {
                         우연히 영상 하나가 터진 &lsquo;원히트원더&rsquo;를 걸러내고, 기획력이 튼튼해서 꾸준히 우상향하는
                         <strong className="text-neutral-800"> 꿀통 채널만</strong> 찾아냅니다.
                         최근 7일간 업로드된 신규 영상들의 성과를 바탕으로
-                        자체적인 <strong className="text-violet-600">&lsquo;바이럴 점수(Viral Score)&rsquo;</strong>를
+                        자체적인 <strong className="text-[#C2410C]">&lsquo;바이럴 점수(Viral Score)&rsquo;</strong>를
                         계산하여 순위를 매깁니다.
                     </p>
 
@@ -154,17 +154,17 @@ function BenchmarkingInfoPanel() {
                     {/* 소제목 2
                         [2026-10-30] 채널 등급 추적(1~375위 1시간·376~1,000위 6시간·그 아래 하루)을 끄고,
                         최근 7일 안에 수집된 채널의 숫자를 매일 오후 5시 수집 뒤 한 번 받는 방식으로 바꿨다. */}
-                    <div className="rounded-xl bg-violet-50 p-4">
-                        <h4 className="mb-2 text-[13px] font-bold text-violet-800">
+                    <div className="rounded-xl bg-[#FFF4EE] p-4">
+                        <h4 className="mb-2 text-[13px] font-bold text-[#7A2E0B]">
                             🔍 채널 숫자는 하루 한 번 새로 받아요
                         </h4>
-                        <p className="mb-3 text-[12px] leading-relaxed text-violet-700">
+                        <p className="mb-3 text-[12px] leading-relaxed text-[#8A3A12]">
                             국내 숏츠·국내 롱폼·해외 숏츠·해외 롱폼 네 리그에서 각각 상위 2,000개(총 8,000개)를 고릅니다.
                             순위와 상관없이, 최근 7일 안에 수집에 걸린 채널은 모두 매일 오후 5시 수집 뒤 구독자·조회수를 한 번 새로 받습니다.
                         </p>
-                        <ul className="space-y-2 text-[12px] text-violet-700">
+                        <ul className="space-y-2 text-[12px] text-[#8A3A12]">
                             <li className="flex items-center gap-2">
-                                <span className="shrink-0 rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-800">8,000개 전부</span>
+                                <span className="shrink-0 rounded-full bg-[#FFDCC8] px-2 py-0.5 text-[10px] font-bold text-[#7A2E0B]">8,000개 전부</span>
                                 <span>하루 1번 갱신 (오후 5시 수집 뒤)</span>
                             </li>
                         </ul>
@@ -221,7 +221,7 @@ function ShareButton() {
         <button
             onClick={handleCopy}
             title="현재 필터 URL 복사"
-            className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[12px] font-medium text-violet-600 shadow-sm transition-all hover:bg-violet-100 hover:shadow"
+            className="vh-btn-ghost"
         >
             {copied ? (
                 <>
@@ -386,57 +386,32 @@ export function BenchmarkingDashboardClient({
     const channels = useMemo(() => matched.slice(0, visibleCount), [matched, visibleCount]);
 
     return (
-        <div className="min-h-screen bg-[#FDFDFC]">
-            <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
+        /* [2026-10-30] 새 디자인: 머리·필터·안내의 모양만 바꿨다. 글·로직·카드는 그대로다. */
+        <main className="vh-main">
 
                 {/* ── Header ─────────────────────────────────────────────── */}
-                <div className="mb-10">
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="inline-flex h-2 w-2 rounded-full bg-violet-500" />
-                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                            매일 오후 5시 수집분 기준 · {formatTargetDate(targetDate)} 집계
-                        </span>
-                    </div>
-                    <h1 className="flex flex-col leading-none">
-                        <span
-                            className="text-[clamp(3.5rem,10vw,8rem)] leading-[0.9] tracking-tight"
-                            style={{
-                                fontFamily: "var(--font-bebas), sans-serif",
-                                background: "linear-gradient(135deg, #7C3AED 0%, #3B82F6 45%, #1A1A1A 75%, #000000 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text",
-                            }}
-                        >
-                            BENCHMARKING
-                        </span>
-                        <span
-                            className="text-[clamp(1.2rem,4vw,2.8rem)] font-black tracking-tight leading-snug -mt-1"
-                            style={{
-                                fontFamily: "var(--font-noto), 'Noto Sans KR', sans-serif",
-                                background: "linear-gradient(135deg, #2A2A2A 0%, #555555 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text",
-                            }}
-                        >
-                            유튜브 급성장 채널 순위
-                        </span>
+                <div className="vh-rhead">
+                    <p className="vh-eyebrow">
+                        매일 오후 5시 수집분 기준 · {formatTargetDate(targetDate)} 집계
+                    </p>
+                    <h1>
+                        <span className="vh-top1000 vh-bench-word">BENCHMARKING</span>
+                        <span className="vh-h1-sub">유튜브 급성장 채널 순위</span>
                         {/* [2026-10-16] 화면에 안 보이는 키워드 묶음(sr-only)을 h1 에서 뺐다.
                             검색엔진이 '숨긴 텍스트'로 볼 수 있어 득보다 위험이 크다.
                             검색어는 보이는 제목·설명문에 담는다. */}
                     </h1>
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <p className="text-base text-[#555555]">구독자 대비 조회수가 잘 나오는 유튜브 채널을 찾아 바이럴 화력과 일평균 성과를 비교합니다</p>
+                    <div className="vh-tools">
+                        <p className="vh-lead">구독자 대비 조회수가 잘 나오는 유튜브 채널을 찾아 바이럴 화력과 일평균 성과를 비교합니다</p>
                         <BenchmarkingInfoPanel />
                         <ShareButton />
                     </div>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
-                    <MetricsDisclosure className="mt-2" />
+                    <MetricsDisclosure />
 
                     {/* [2026-10-14] 이 목록이 '무엇의 순위인지'를 펼치지 않아도 보이게 한다.
                         방문이 많은 페이지인데 기준이 팝오버 안에만 있어 오해가 생겼다. */}
-                    <ol className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <ol className="vh-steps">
                         {[
                             {
                                 step: "1",
@@ -454,13 +429,11 @@ export function BenchmarkingDashboardClient({
                                 body: "조회수가 늘지 않는 채널은 뺍니다. 형식·지역·카테고리·구독자 규모·채널 나이로 나와 비슷한 채널을 골라 보세요.",
                             },
                         ].map((s) => (
-                            <li key={s.step} className="flex gap-3 rounded-2xl border border-violet-100 bg-violet-50/50 px-4 py-3">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[12px] font-bold text-white">
-                                    {s.step}
-                                </span>
-                                <div className="min-w-0">
-                                    <p className="text-[13px] font-bold text-neutral-800">{s.title}</p>
-                                    <p className="mt-0.5 text-[12px] leading-relaxed text-neutral-500">{s.body}</p>
+                            <li key={s.step}>
+                                <span className="vh-steps-n">{s.step}</span>
+                                <div>
+                                    <p className="vh-steps-t">{s.title}</p>
+                                    <p className="vh-steps-b">{s.body}</p>
                                 </div>
                             </li>
                         ))}
@@ -468,7 +441,7 @@ export function BenchmarkingDashboardClient({
                 </div>
 
                 {/* ── Filter Bar ──────────────────────────────────────────── */}
-                <div className="mb-8 space-y-3.5 rounded-2xl border border-neutral-100 bg-white px-5 py-4 shadow-sm">
+                <div className="vh-card vh-bench-filters">
 
                     {/* Row 1: Sort */}
                     <div className="flex flex-wrap items-center gap-2">
@@ -555,7 +528,7 @@ export function BenchmarkingDashboardClient({
 
                 {/* ── Error UI ──────────────────────────────────────────────── */}
                 {error && !loading && (
-                    <div className="mb-6 flex flex-col items-center gap-3 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
                         <span className="text-3xl">🚨</span>
                         <div>
                             <p className="text-sm font-semibold text-red-700">데이터를 불러오지 못했습니다</p>
@@ -572,8 +545,8 @@ export function BenchmarkingDashboardClient({
 
                 {/* ── Status ──────────────────────────────────────────────── */}
                 {!error && !loading && (
-                    <div className="mb-5">
-                        <p className="text-xs font-medium text-neutral-400">
+                    <div>
+                        <p className="vh-sec-note">
                             조건에 맞는 채널 {matched.length.toLocaleString()}개 중 {channels.length.toLocaleString()}개 표시 중
                         </p>
                     </div>
@@ -605,24 +578,22 @@ export function BenchmarkingDashboardClient({
 
                         {/* 더 보기 — 데이터는 이미 받아둔 상태라 클릭 즉시 펼쳐진다(추가 요청 없음). */}
                         {matched.length > channels.length && (
-                            <div className="mt-10 flex flex-col items-center gap-2">
+                            <div className="vh-loadmore vh-bench-more">
                                 <button
                                     type="button"
                                     onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
-                                    className="rounded-full border border-neutral-200 bg-white px-6 py-2.5 text-[13px] font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-50"
                                 >
                                     더 보기 (+{Math.min(PAGE_SIZE, matched.length - channels.length)})
                                 </button>
-                                <p className="text-[11px] text-neutral-400">
+                                <small>
                                     {(matched.length - channels.length).toLocaleString()}개 더 있습니다
-                                </p>
+                                </small>
                             </div>
                         )}
                     </>
                 ) : null}
 
 
-            </main>
-        </div>
+        </main>
     );
 }

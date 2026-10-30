@@ -665,3 +665,15 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-small { max-width: 640px; padding-top: 48px; padding-bottom: 48px; }
 .vh-small h1 { font-size: clamp(24px, 3.4vw, 30px); font-weight: 800; }
 .vh-small-body { display: grid; gap: 18px; justify-items: start; color: var(--vh-ink-2); font-size: 14.5px; line-height: 1.75; }
+
+/* ════ 벤치마킹 (2026-10-30) ════ */
+.vh-bench-word { font-size: clamp(52px, 8.4vw, 96px); }
+.vh-pop-wide { width: min(520px, 92vw); }
+.vh-steps { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.vh-steps li { display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--vh-radius-sm); background: var(--vh-surface); }
+.vh-steps-n { display: grid; flex: none; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--vh-ink); color: #FFFFFF; font: 400 16px/1 var(--vh-font-rank); }
+.vh-steps-t { color: var(--vh-ink); font-size: 14px; font-weight: 700; }
+.vh-steps .vh-steps-b { margin-top: 2px; color: var(--vh-ink-2); font-size: 13px; line-height: 1.6; }
+.vh-bench-filters { display: grid; gap: 14px; }
+.vh-bench-filters > .h-px { margin: 0; }
+.vh-bench-more { margin-top: 10px; }
