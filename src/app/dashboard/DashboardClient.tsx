@@ -516,15 +516,13 @@ export function DashboardClient({
             <div className="vh-rhead">
                 <p className="vh-live">
                     <span className="vh-live-dot" />
-                    {/* '기준'만 쓰면 그 시각의 실시간 값으로 오해하기 쉽다.
-                        수집이 매시 정각에 시작해 N시 데이터는 조금 뒤에야 화면에 나타난다.
-                        그 사실을 문구에 드러낸다. [2026-10-31] 채널 등급 추적을 끈 뒤로
-                        적재가 25분경 → 4~5분경으로 당겨졌다(10-30 23:04, 10-31 00:04 실측). */}
+                    {/* '기준'만 쓰면 그 시각의 실시간 값으로 오해하기 쉬워 'N시 집계'로 쓴다.
+                        [2026-10-31] 옆에 붙어 있던 '매시 25분경 갱신'은 사용자 요청으로 뺐다
+                        (채널 등급 추적을 끈 뒤 적재가 4~5분경으로 당겨져 틀린 말이 됐다). */}
                     {/* 지역 범위는 아래 필터 pill 이 활성 상태로 이미 보여주므로
                         여기 중복 표기하지 않는다. */}
                     <span>
                         Live · {liveUpdatedAt ? parseUpdatedHour(liveUpdatedAt) : "-"} 집계
-                        <span className="hidden sm:inline"> · 매시 5분경 갱신</span>
                     </span>
                 </p>
                 {/* [2026-10-16] 이 페이지에 h1 이 하나도 없었다(div+span). 검색엔진이
