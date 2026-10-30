@@ -35,7 +35,7 @@ const ITEMS: { term: string; body: React.ReactNode }[] = [
     },
     {
         term: "순위",
-        body: <>한국 유튜브 전체가 아니라, Viral Hunter가 <strong>추적 중인 채널·영상 안에서의 상대 위치</strong>입니다. 추적 대상은 매일 유튜브 검색으로 새로 올라온 영상을 모으며 넓혀 갑니다.</>,
+        body: <>한국 유튜브 전체가 아니라, Viral Hunter가 <strong>추적 중인 채널·영상 안에서의 상대 위치</strong>입니다. 추적 대상은 매일 오후 5시와 매시간 유튜브 검색으로 새로 올라온 영상을 찾아 넓혀 갑니다.</>,
     },
     {
         term: "채널 분석 문장",

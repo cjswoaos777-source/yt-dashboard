@@ -325,21 +325,25 @@ export default async function InsightReportPage({
                         <p>
                             <strong className="text-[#1A1A1A]">한국 유튜브 전체가 아닙니다.</strong>{" "}
                             이 서비스가 매일 수집한 영상 중 국내로 분류된 최근 {data.window_days}일치{" "}
-                            {data.sample_size.toLocaleString()}건(채널 약 33,000개)을 집계했습니다.
+                            {data.sample_size.toLocaleString()}건(채널 약 4만 개)을 집계했습니다.
                         </p>
+                        {/* [2026-10-31] 실제 수집기(utube_rank agents/collector.py)에 맞춤: 15개 카테고리(CATEGORY_SPECS),
+                            그 전 이틀(COLLECT_DAYS=2) + 매시간 최근 3시간, 조각마다 최대 500개, 하한은 검색의 영상 길이
+                            구분(4분 미만 3만·4분 이상 1만). 채널 수는 국내 30일 표본 실측 40,089곳. */}
                         <p className="font-medium text-[#1A1A1A]">수집 방식</p>
                         <ul className="list-disc space-y-1 pl-5">
                             <li>
-                                매일 전날 하루치를 대상으로, 17개 카테고리 × 영상 길이 × 시간 구간을
-                                나눠 유튜브 검색 API를 호출합니다(지역 한국, 언어 한국어).
+                                매일 오후 5시에 그 전 이틀 동안 올라온 영상을 대상으로, 15개 카테고리 × 영상 길이 × 시간 구간을
+                                나눠 유튜브 검색 API를 호출합니다(지역 한국, 언어 한국어). 매시간 최근 3시간 안에 올라온 영상도
+                                같은 방식으로 더 찾습니다.
                             </li>
                             <li>
                                 각 구간에서 <strong className="text-[#1A1A1A]">조회수가 높은
-                                순</strong>으로 최대 50개씩 가져옵니다.
+                                순</strong>으로 최대 500개까지 가져옵니다.
                             </li>
                             <li>
                                 수집 시점에 조회수 하한이 걸립니다 —{" "}
-                                <strong className="text-[#1A1A1A]">숏츠 3만 회, 롱폼 1만 회</strong>.
+                                <strong className="text-[#1A1A1A]">4분 미만 영상 3만 회, 4분 이상 1만 회</strong>.
                             </li>
                         </ul>
                         <p className="font-medium text-[#1A1A1A]">그래서 이렇게 읽어야 합니다</p>
