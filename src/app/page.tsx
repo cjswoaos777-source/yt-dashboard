@@ -62,9 +62,9 @@ export default function LandingPage() {
                             sub: "매시간 다시 재서 순위에 반영",
                         },
                         {
-                            number: "8,000+",
-                            label: "성장 채널 데이터베이스",
-                            sub: "최근 7일 눈에 띄는 채널만 선별",
+                            number: "30만+",
+                            label: "채널 데이터베이스",
+                            sub: "최근 7일 수집 채널 전부 매일 갱신",
                         },
                         {
                             number: "매시간",
