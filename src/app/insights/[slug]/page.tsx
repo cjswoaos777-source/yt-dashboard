@@ -5,24 +5,19 @@ import type { Metadata } from "next";
 import {
     getInsights,
     isInsightSlug,
+    insightSummary,
     INSIGHT_REPORTS,
     DOW_LABEL,
     DURATION_LABEL,
     AGE_LABEL,
     type Insights,
 } from "@/lib/insights";
+import { uploadTimeText, formatText, channelAgeText } from "@/lib/insight-text";
 import { BarChart, type BarRow } from "../BarChart";
 import { SITE } from "@/lib/site";
 import { MetricsDisclosure } from "@/components/legal";
 
 export const dynamic = "force-dynamic";
-
-function fmtKr(n: number, unit = ""): string {
-    if (n >= 100_000_000) return `${(n / 100_000_000).toFixed(1)}억${unit}`;
-    if (n >= 10_000) return `${(n / 10_000).toFixed(1)}만${unit}`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}천${unit}`;
-    return `${n.toLocaleString()}${unit}`;
-}
 
 export async function generateMetadata({
     params,
@@ -36,7 +31,7 @@ export async function generateMetadata({
 
     // "국내 유튜브 영상 N건"만 쓰면 전수 조사로 읽히므로 수집 범위임을 밝힌다.
     const desc = data
-        ? `${meta.summary} 수집된 국내 영상 ${data.sample_size.toLocaleString()}건(최근 ${data.window_days}일) 기준입니다.`
+        ? `${insightSummary(slug, data)} 수집된 국내 영상 ${data.sample_size.toLocaleString()}건(최근 ${data.window_days}일) 기준입니다.`
         : meta.summary;
 
     return {
@@ -52,14 +47,21 @@ export async function generateMetadata({
     };
 }
 
-/** 리포트별 본문. 데이터에서 직접 문장을 만들어 수치와 글이 어긋나지 않게 한다. */
+/** insight-text 문장의 **…** 를 굵게 보여 준다. */
+function Rich({ text }: { text: string }) {
+    return <>{text.split("**").map((t, i) => (i % 2 ? <strong key={i}>{t}</strong> : t))}</>;
+}
+
+/**
+ * 리포트별 본문. 데이터에서 직접 문장을 만들어 수치와 글이 어긋나지 않게 한다.
+ * [2026-10-31] 숫자만 데이터에서 넣고 결론('정반대', '가장 낮았다')은 글로 박아 둬서 표본이 바뀌자 틀렸다.
+ * 결론 문장도 insight-text.ts 가 그날 숫자를 보고 고른다.
+ */
 function renderReport(slug: string, d: Insights) {
     if (slug === "upload-time") {
-        const hours = [...d.upload_hour].sort((a, b) => b.median_views - a.median_views);
-        const best = hours[0];
-        const worst = hours[hours.length - 1];
-        const busiest = [...d.upload_hour].sort((a, b) => b.videos - a.videos)[0];
+        const best = [...d.upload_hour].sort((a, b) => b.median_views - a.median_views)[0];
         const dows = [...d.day_of_week].sort((a, b) => b.median_views - a.median_views);
+        const t = uploadTimeText(d);
 
         const hourRows: BarRow[] = [...d.upload_hour]
             .sort((a, b) => a.hour - b.hour)
@@ -78,33 +80,12 @@ function renderReport(slug: string, d: Insights) {
 
         return (
             <>
-                <p>
-                    가장 성과가 좋은 시간대는 <strong>{best.hour}시</strong>로 중위 조회수{" "}
-                    {fmtKr(best.median_views, "회")}였고, 가장 낮은 {worst.hour}시(
-                    {fmtKr(worst.median_views, "회")})와{" "}
-                    <strong>{(best.median_views / worst.median_views).toFixed(2)}배</strong> 차이가
-                    났습니다.
-                </p>
-                <p>
-                    흥미로운 건 <strong>많이 올리는 시간과 잘 되는 시간이 다르다</strong>는
-                    점입니다. 업로드가 가장 몰리는 시간은 {busiest.hour}시(
-                    {busiest.videos.toLocaleString()}건)인데, 중위 조회수는{" "}
-                    {fmtKr(busiest.median_views, "회")}로 {best.hour}시보다 낮았습니다. 경쟁이
-                    몰리는 시간대를 피하는 것도 방법입니다.
-                </p>
+                <p><Rich text={t.p1} /></p>
+                <p><Rich text={t.p2} /></p>
                 <h2>시간대별 중위 조회수</h2>
                 <BarChart rows={hourRows} caption="시간대별 중위 조회수" />
-                <h2>요일은 생각보다 중요하지 않습니다</h2>
-                <p>
-                    요일별 격차는{" "}
-                    <strong>
-                        {(dows[0].median_views / dows[dows.length - 1].median_views).toFixed(2)}배
-                    </strong>
-                    에 그쳤습니다. 가장 높은 {DOW_LABEL[dows[0].dow]}요일과 가장 낮은{" "}
-                    {DOW_LABEL[dows[dows.length - 1].dow]}요일의 차이가 크지 않다는 뜻입니다.
-                    시간대에 비하면 영향이 훨씬 작으니, 요일을 맞추느라 업로드를 미루는 것보다
-                    시간대를 지키는 편이 낫습니다.
-                </p>
+                <h2>{t.dowTitle}</h2>
+                <p><Rich text={t.p3} /></p>
                 <BarChart rows={dowRows} caption="요일별 중위 조회수" />
             </>
         );
@@ -114,33 +95,20 @@ function renderReport(slug: string, d: Insights) {
         const s = d.format.find((f) => f.format === "shorts");
         const l = d.format.find((f) => f.format === "longform");
         if (!s || !l) return <p>데이터를 불러오지 못했습니다.</p>;
+        const t = formatText(s, l, d.duration);
 
         const durRows: BarRow[] = d.duration.map((r) => ({
             label: DURATION_LABEL[r.bucket] ?? r.bucket,
             value: r.median_views,
             note: `${r.videos.toLocaleString()}건`,
-            highlight: r.bucket === "a_under5",
+            highlight: r.bucket === t.durationBest,
         }));
 
         return (
             <>
-                <p>
-                    조회수만 보면 숏츠가 압도적입니다. 중위 조회수가{" "}
-                    <strong>{fmtKr(s.median_views, "회")}</strong>로 롱폼(
-                    {fmtKr(l.median_views, "회")})의{" "}
-                    <strong>{(s.median_views / l.median_views).toFixed(1)}배</strong>입니다.
-                </p>
-                <p>
-                    그런데 <strong>반응의 깊이는 정반대</strong>입니다. 좋아요 비율은 롱폼이{" "}
-                    {l.like_rate}%로 숏츠({s.like_rate}%)의{" "}
-                    <strong>{(l.like_rate / s.like_rate).toFixed(1)}배</strong>, 댓글 비율은{" "}
-                    {l.comment_rate}%로 숏츠({s.comment_rate}%)의{" "}
-                    <strong>{(l.comment_rate / s.comment_rate).toFixed(1)}배</strong>였습니다.
-                </p>
-                <p>
-                    숏츠는 <strong>넓게 퍼지고</strong>, 롱폼은 <strong>깊게 남습니다</strong>.
-                    구독 전환이나 팬덤을 원한다면 조회수 숫자만 보고 판단하면 안 됩니다.
-                </p>
+                <p><Rich text={t.p1} /></p>
+                <p><Rich text={t.p2} /></p>
+                {t.p3 && <p><Rich text={t.p3} /></p>}
                 <h2>형식별 지표</h2>
                 <div className="not-prose overflow-x-auto">
                     <table className="w-full min-w-[420px] border-collapse text-left text-[13px]">
@@ -180,12 +148,7 @@ function renderReport(slug: string, d: Insights) {
                     </table>
                 </div>
                 <h2>롱폼은 길이가 길수록 유리할까</h2>
-                <p>
-                    아닙니다. <strong>5분 미만</strong>이 중위{" "}
-                    {fmtKr(d.duration.find((x) => x.bucket === "a_under5")?.median_views ?? 0, "회")}
-                    로 가장 높았고, 5분을 넘기면 길이에 따른 차이가 거의 사라집니다. 20분짜리를
-                    만든다고 20분만큼 보상받지는 않는다는 뜻입니다.
-                </p>
+                <p><Rich text={t.p4} /></p>
                 <BarChart rows={durRows} caption="롱폼 길이별 중위 조회수" />
             </>
         );
@@ -193,36 +156,21 @@ function renderReport(slug: string, d: Insights) {
 
     // channel-age
     const ages = d.channel_age;
-    const best = [...ages].sort((a, b) => b.avg_daily_views - a.avg_daily_views)[0];
-    const oldest = ages.find((a) => a.bucket === "d_over3y");
+    const t = channelAgeText(ages);
     const rows: BarRow[] = ages.map((r) => ({
         label: AGE_LABEL[r.bucket] ?? r.bucket,
         value: r.avg_daily_views,
         note: `${r.channels.toLocaleString()}개`,
-        highlight: r.bucket === best.bucket,
+        highlight: r.bucket === t.best.bucket,
     }));
 
     return (
         <>
-            <p>
-                &ldquo;지금 시작하면 늦었다&rdquo;는 말을 자주 듣습니다. 데이터는 반대였습니다.
-                일평균 조회수가 가장 높은 구간은{" "}
-                <strong>{AGE_LABEL[best.bucket]}</strong> 채널로{" "}
-                {fmtKr(best.avg_daily_views, "회")}였습니다.
-            </p>
-            {oldest && (
-                <p>
-                    반면 <strong>3년 이상</strong> 된 채널은 {fmtKr(oldest.avg_daily_views, "회")}로
-                    가장 낮았습니다. {AGE_LABEL[best.bucket]} 구간이{" "}
-                    <strong>
-                        약 {(best.avg_daily_views / oldest.avg_daily_views).toFixed(1)}배
-                    </strong>{" "}
-                    높은 셈입니다. 구독자는 오래된 채널이 더 많은데도 그렇습니다.
-                </p>
-            )}
+            <p><Rich text={t.p1} /></p>
+            {t.p2 && <p><Rich text={t.p2} /></p>}
             <h2>채널 나이별 일평균 조회수</h2>
             <BarChart rows={rows} caption="채널 나이별 일평균 조회수" />
-            <h2>구독자가 많다고 조회수가 따라오지 않습니다</h2>
+            <h2>{t.tableTitle}</h2>
             <div className="not-prose overflow-x-auto">
                 <table className="w-full min-w-[380px] border-collapse text-left text-[13px]">
                     <thead>
@@ -253,10 +201,7 @@ function renderReport(slug: string, d: Insights) {
                     </tbody>
                 </table>
             </div>
-            <p>
-                오래된 채널일수록 중위 구독자는 많지만 일평균 조회수는 낮습니다. 알고리즘이
-                채널의 연차가 아니라 <strong>지금 이 영상의 반응</strong>을 본다는 뜻으로 읽힙니다.
-            </p>
+            <p><Rich text={t.p3} /></p>
         </>
     );
 }
@@ -274,12 +219,14 @@ export default async function InsightReportPage({
     if (!data) notFound();
 
     const others = INSIGHT_REPORTS.filter((r) => r.slug !== slug);
+    // 아래 '이렇게 읽어야 합니다'의 예시 시각. 예전엔 21시로 박혀 있어 가장 잘 된 시간처럼 읽혔다.
+    const bestHour = [...data.upload_hour].sort((a, b) => b.median_views - a.median_views)[0]?.hour ?? 21;
 
     const articleLd = {
         "@context": "https://schema.org",
         "@type": "Article",
         headline: meta.title,
-        description: meta.summary,
+        description: insightSummary(slug, data),
         author: { "@type": "Organization", name: SITE.name },
         publisher: { "@type": "Organization", name: SITE.name },
         mainEntityOfPage: `${SITE.url}/insights/${slug}`,
@@ -350,8 +297,8 @@ export default async function InsightReportPage({
                         <p>
                             무작위 표본이 아니라{" "}
                             <strong className="text-[#1A1A1A]">이미 어느 정도 조회수가 나온
-                            영상들</strong>의 모음입니다. 예를 들어 &ldquo;21시에 올리면 잘
-                            된다&rdquo;가 아니라, &ldquo;성과가 난 영상들 중에서는 21시 업로드의
+                            영상들</strong>의 모음입니다. 예를 들어 &ldquo;{bestHour}시에 올리면 잘
+                            된다&rdquo;가 아니라, &ldquo;성과가 난 영상들 중에서는 {bestHour}시 업로드의
                             중위 조회수가 높았다&rdquo;가 정확한 표현입니다. 묻히는 영상은 애초에
                             표본에 들어오지 않으므로 생존 편향이 있습니다.
                         </p>
@@ -385,7 +332,7 @@ export default async function InsightReportPage({
                                 <Link href={`/insights/${r.slug}`}>
                                     <p className="vh-replist-t">{r.title}</p>
                                     <p>
-                                        {r.summary}
+                                        {insightSummary(r.slug, data)}
                                     </p>
                                 </Link>
                             </li>

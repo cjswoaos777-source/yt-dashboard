@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { INSIGHTS_URL, getCdnVersion } from "@/lib/cdn";
 import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
+import { reportSummary } from "@/lib/insight-text";
 
 /**
  * 인사이트 리포트 데이터.
@@ -40,21 +41,8 @@ export interface Insights {
     channel_age: ChannelAgeRow[];
 }
 
-export const DOW_LABEL = ["", "일", "월", "화", "수", "목", "금", "토"];
-
-export const DURATION_LABEL: Record<string, string> = {
-    a_under5: "5분 미만",
-    b_5to10: "5~10분",
-    c_10to20: "10~20분",
-    d_over20: "20분 이상",
-};
-
-export const AGE_LABEL: Record<string, string> = {
-    a_under3m: "3개월 미만",
-    b_under1y: "3개월 ~ 1년",
-    c_under3y: "1년 ~ 3년",
-    d_over3y: "3년 이상",
-};
+// 라벨은 결론 문장을 만드는 insight-text.ts 로 옮겼다 (그쪽은 순수 함수만 둔다).
+export { DOW_LABEL, DURATION_LABEL, AGE_LABEL } from "@/lib/insight-text";
 
 async function fetchInsights(): Promise<Insights> {
     const res = await fetch(INSIGHTS_URL, { cache: "no-store" });
@@ -111,23 +99,33 @@ export async function getInsights(): Promise<Insights | null> {
     }
 }
 
+/**
+ * summary 는 데이터를 못 받았을 때만 쓰는 문장이다. 보통은 insightSummary 가 그날 숫자로 만든다.
+ * [2026-10-31] 예전 요약('1.4배', '3.5배', '1년 미만이 가장 높다')은 표본이 바뀌어 틀린 말이 돼서 숫자 없는 말로 바꿨다.
+ */
 export const INSIGHT_REPORTS = [
     {
         slug: "upload-time",
         title: "유튜브 몇 시에 올려야 잘 될까",
-        summary: "업로드 시간대에 따라 중위 조회수가 1.4배까지 갈립니다. 요일은 거의 영향이 없습니다.",
+        summary: "업로드 시간대와 요일에 따라 중위 조회수가 얼마나 달라지는지 봅니다.",
     },
     {
         slug: "shorts-vs-longform",
         title: "숏츠와 롱폼, 무엇이 유리한가",
-        summary: "숏츠는 조회수가 3.5배 많지만, 좋아요·댓글 비율은 롱폼이 훨씬 높습니다.",
+        summary: "숏츠와 롱폼의 조회수, 좋아요·댓글 비율을 비교합니다.",
     },
     {
         slug: "channel-age",
         title: "채널이 오래될수록 유리할까",
-        summary: "오히려 1년 미만 채널의 일평균 조회수가 가장 높았습니다.",
+        summary: "채널 나이에 따라 일평균 조회수가 어떻게 다른지 봅니다.",
     },
 ] as const;
+
+/** 목록·검색 결과용 한 줄 요약. 데이터가 있으면 그날 숫자로 만든다. */
+export function insightSummary(slug: InsightSlug, data: Insights | null): string {
+    const fallback = INSIGHT_REPORTS.find((r) => r.slug === slug)!.summary;
+    return (data && reportSummary(slug, data)) || fallback;
+}
 
 export type InsightSlug = (typeof INSIGHT_REPORTS)[number]["slug"];
 

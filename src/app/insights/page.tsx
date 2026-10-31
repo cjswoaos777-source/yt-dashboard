@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import { getInsights, INSIGHT_REPORTS } from "@/lib/insights";
+import { getInsights, insightSummary, INSIGHT_REPORTS } from "@/lib/insights";
 import { SITE } from "@/lib/site";
 import { MetricsDisclosure } from "@/components/legal";
 
@@ -73,7 +73,7 @@ export default async function InsightsIndexPage() {
                         <li key={r.slug}>
                             <Link href={`/insights/${r.slug}`}>
                                 <h2 className="vh-replist-t">{r.title}</h2>
-                                <p>{r.summary}</p>
+                                <p>{insightSummary(r.slug, data)}</p>
                             </Link>
                         </li>
                     ))}

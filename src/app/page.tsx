@@ -13,6 +13,9 @@ import { ArrowRight } from "lucide-react";
  * [2026-10-31] 파이프라인 1단계(채널 등급 추적 끔·채널 7일 롤링 매일·영상 7일 기록·매시간 최근 3시간 수집)에
  * 맞춰 틀린 사실만 고쳤다: 영상 수(80,000 → 15만, 0티어 추적 대상 실측 15.3~15.5만), '2일 이내만 추적',
  * 수집 범위(매시간 수집), 갱신 주기(채널 8,000 → 7일 롤링 31만). 순위 대상이 7일로 바뀌는 문구는 2단계에.
+ * 같은 날 다시 고침: 15만은 수집이 유난히 많았던 10-30 하루 값이었다. 0티어 = 그날 17시 수집에서 처음 찾은 영상
+ * + 24시간 안 매시간 수집이고, 17시 수집이 날마다 9.3만~14.4만(10-25~30)이라 0티어는 대략 10만~16만을 오간다.
+ * 그래서 '10만+'(10만 개가 넘는)로 둔다.
  */
 export default function LandingPage() {
     return (
@@ -35,7 +38,7 @@ export default function LandingPage() {
 
                     {/* Sub copy */}
                     <p className="vh-lead">
-                        최근 48시간 동안 수집된 15만여 개 영상 중<br />
+                        최근 48시간 동안 수집된 10만 개가 넘는 영상 중<br />
                         지금 이 순간 가장 빠르게 오르고 있는 영상과<br />
                         7일간 눈에 띄게 성장한 채널을 찾아드립니다.
                     </p>
@@ -57,7 +60,7 @@ export default function LandingPage() {
                 <div className="vh-stats">
                     {[
                         {
-                            number: "15만+",
+                            number: "10만+",
                             label: "최근 48시간 수집된 영상",
                             sub: "매시간 다시 재서 순위에 반영",
                         },
@@ -87,7 +90,7 @@ export default function LandingPage() {
                 </div>
 
                 <p className="vh-lead">
-                    15만여 개 영상 중 지금 이 순간<br className="hidden sm:block" />
+                    10만 개가 넘는 영상 중 지금 이 순간<br className="hidden sm:block" />
                     가장 빠르게 오르고 있는 영상을 찾아드립니다
                 </p>
             </section>
