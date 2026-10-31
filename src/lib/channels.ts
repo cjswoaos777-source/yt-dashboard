@@ -99,31 +99,6 @@ async function fetchAllChannels(): Promise<TierChannel[]> {
     return Array.isArray(raw) ? (raw as TierChannel[]) : [];
 }
 
-/** 목록 허브 페이지의 한 페이지 크기 */
-export const CHANNEL_LIST_PAGE_SIZE = 100;
-
-export interface ChannelListItem {
-    channel_id: string;
-    channel_title: string;
-    main_category: string;
-    subscriber_count: number;
-    total_view_count: number;
-    avg_daily_view_increase: number;
-    tier: number;
-}
-
-function toListItem(c: TierChannel): ChannelListItem {
-    return {
-        channel_id: c.channel_id,
-        channel_title: c.channel_title,
-        main_category: c.main_category,
-        subscriber_count: c.subscriber_count ?? 0,
-        total_view_count: c.total_view_count ?? 0,
-        avg_daily_view_increase: c.avg_daily_view_increase ?? 0,
-        tier: c.tier,
-    };
-}
-
 /**
  * 추적을 막 시작해 일평균을 아직 계산할 수 없는 채널인지 판정한다.
  *
@@ -139,152 +114,13 @@ export function isAwaitingBaseline(c: {
     return Boolean(c.is_new_channel) && (c.avg_daily_view_increase ?? 0) === 0;
 }
 
-/**
- * 목록 허브용 요약 데이터 (구독자 많은 순).
- * 상세 필드를 다 담으면 캐시가 커지므로 목록 표시에 필요한 것만 추린다.
- */
-const getChannelListPageCached = (version: string) => unstable_cache(
-    async (
-        page: number,
-    ): Promise<{ items: ChannelListItem[]; total: number; totalPages: number }> => {
-        const all = await fetchAllChannels();
-        // 정렬은 일평균 조회수 증가 기준.
-        // 이 집합은 '구독자 대비 조회수가 터지는 채널'을 뽑은 것이라 구독자순으로
-        // 세우면 집합의 성격과 맞지 않고, 성장지수(damped_score)는 분모가 구독자라
-        // 상위가 소형 채널로만 채워져 순위로 읽기 어렵다. 일평균 조회수는 절대량이라
-        // 사용자가 바로 이해할 수 있다.
-        // 성장이 멈춘 채널은 이 목록의 취지에 맞지 않으므로 제외한다.
-        const eligible = all
-            .filter(
-                (c) =>
-                    (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS &&
-                    (c.avg_daily_view_increase ?? 0) > 0,
-            )
-            .sort(
-                (a, b) =>
-                    (b.avg_daily_view_increase ?? 0) - (a.avg_daily_view_increase ?? 0),
-            );
-
-        const totalPages = Math.max(1, Math.ceil(eligible.length / CHANNEL_LIST_PAGE_SIZE));
-        const safePage = Math.min(Math.max(1, page), totalPages);
-        const start = (safePage - 1) * CHANNEL_LIST_PAGE_SIZE;
-
-        return {
-            items: eligible.slice(start, start + CHANNEL_LIST_PAGE_SIZE).map(toListItem),
-            total: eligible.length,
-            totalPages,
-        };
-    },
-    // -v4 + version: 가공 로직이 바뀌면 접미사를 올려야 옛 결과가 남지 않는다.
-    ["channel-list-page-v4", version],
-    { revalidate: 3600 },
-);
-
 // ─── Supabase 경로 ───────────────────────────────────────────────────────────
 //
-// GitHub 경로는 함수마다 1.3MB gzip 을 받아 풀고 8,000개를 파싱한 뒤 걸러낸다.
-// 여기서는 조건을 쿼리로 넘겨 필요한 행만 받는다. 파이프라인이 매시간
-// TRUNCATE + COPY 로 통째로 갈아끼우므로 30분 캐시면 늦어도 한 시간 안에 반영된다.
+// [2026-10-31] 목록 허브(구독자 1만+ 채널을 일평균 조회수 순으로 100곳씩)는 '지금 뜨는 채널'
+// 필터 보드(channel-board-server.ts)로 바뀌어 여기서 지웠다. 남은 것은 채널 상세다.
 
+/** 보드·아카이브는 하루 한 번(저녁) 바뀐다. 30분 캐시면 늦어도 한 시간 안에 반영된다. */
 const SB_REVALIDATE = 1800;
-
-/** 목록 표시에 필요한 컬럼만. sparkline 같은 큰 필드는 받지 않는다. */
-const LIST_COLUMNS =
-    "channel_id,channel_title,main_category,subscriber_count," +
-    "total_view_count,avg_daily_view_increase,tier";
-
-const sbListPage = unstable_cache(
-    async (
-        page: number,
-    ): Promise<{ items: ChannelListItem[]; total: number; totalPages: number }> => {
-        const sb = supabase();
-
-        // 기준: 구독자 1만 이상 + 성장이 멈추지 않은 채널. GitHub 경로와 같다.
-        // 전체 건수는 head:true 로 행 없이 개수만 받는다.
-        const { count, error: cErr } = await sb
-            .from("channel_ranking")
-            .select("channel_id", { count: "exact", head: true })
-            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
-            .gt("avg_daily_view_increase", 0);
-        if (cErr) throw new Error(`Supabase 채널 수 조회 실패: ${cErr.message}`);
-        const total = count ?? 0;
-
-        const totalPages = Math.max(1, Math.ceil(total / CHANNEL_LIST_PAGE_SIZE));
-        const safePage = Math.min(Math.max(1, page), totalPages);
-        const start = (safePage - 1) * CHANNEL_LIST_PAGE_SIZE;
-
-        const { data, error } = await sb
-            .from("channel_ranking")
-            .select(LIST_COLUMNS)
-            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
-            .gt("avg_daily_view_increase", 0)
-            .order("avg_daily_view_increase", { ascending: false })
-            .range(start, start + CHANNEL_LIST_PAGE_SIZE - 1);
-        if (error) throw new Error(`Supabase 채널 목록 조회 실패: ${error.message}`);
-
-        return {
-            items: ((data ?? []) as unknown as TierChannel[]).map(toListItem),
-            total,
-            totalPages,
-        };
-    },
-    ["sb-channel-list-v1"],
-    { revalidate: SB_REVALIDATE },
-);
-
-/** 목록 허브 한 페이지. 출처 스위치에 따라 GitHub 파일 또는 Supabase 를 읽는다. */
-export async function getChannelListPage(page: number) {
-    if (isSupabase) return sbListPage(page);
-    const version = await getCdnVersion(CHANNELS_URL);
-    return getChannelListPageCached(version)(page);
-}
-
-/**
- * 추적 시작 단계 채널 목록 (구독자 많은 순).
- *
- * 일평균이 0 이라 순위 목록에서는 빠지는데, 상세 페이지와 sitemap 에는 남아 있다.
- * 그대로 두면 사이트 안에서 그 페이지로 갈 경로가 없어 크롤러가 발견하지 못하므로,
- * 허브 하단에 별도 구역으로 노출한다. 순위와 섞으면 계산 불가 값으로 줄을 세우는
- * 셈이 되므로 반드시 분리한다.
- */
-const getNewlyTrackedCached = (version: string) => unstable_cache(
-    async (): Promise<ChannelListItem[]> => {
-        const all = await fetchAllChannels();
-        return all
-            .filter(
-                (c) =>
-                    (c.subscriber_count ?? 0) >= CHANNEL_PAGE_MIN_SUBSCRIBERS &&
-                    isAwaitingBaseline(c),
-            )
-            .sort((a, b) => (b.subscriber_count ?? 0) - (a.subscriber_count ?? 0))
-            .map(toListItem);
-    },
-    ["newly-tracked-channels-v1", version],
-    { revalidate: 3600 },
-)();
-
-const sbNewlyTracked = unstable_cache(
-    async (): Promise<ChannelListItem[]> => {
-        // isAwaitingBaseline() 과 같은 조건을 쿼리로 옮긴 것:
-        // is_new_channel 이고 일평균이 0 (= 두 번째 측정 전이라 계산 불가)
-        const { data, error } = await supabase()
-            .from("channel_ranking")
-            .select(LIST_COLUMNS)
-            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
-            .eq("is_new_channel", true)
-            .eq("avg_daily_view_increase", 0)
-            .order("subscriber_count", { ascending: false });
-        if (error) throw new Error(`Supabase 신규 채널 조회 실패: ${error.message}`);
-        return ((data ?? []) as unknown as TierChannel[]).map(toListItem);
-    },
-    ["sb-newly-tracked-v1"],
-    { revalidate: SB_REVALIDATE },
-);
-
-export async function getNewlyTrackedChannels(): Promise<ChannelListItem[]> {
-    if (isSupabase) return sbNewlyTracked();
-    return getNewlyTrackedCached(await getCdnVersion(CHANNELS_URL));
-}
 
 /**
  * 단일 채널 조회.
@@ -296,7 +132,7 @@ export async function getNewlyTrackedChannels(): Promise<ChannelListItem[]> {
 export interface ChannelDetail {
     channel: TierChannel;
     sparkline: SparklinePoint[];
-    /** 상세 페이지 대상 채널 전체에서의 구독자 순위 */
+    /** 보드(최근 7일 안에 수집된 국내 채널 전부)에서의 구독자 순위 */
     overallRank: number;
     overallTotal: number;
     /** 같은 카테고리 내에서의 구독자 순위 */
@@ -304,10 +140,13 @@ export interface ChannelDetail {
     categoryTotal: number;
     /** 같은 카테고리 채널들의 구독자 중위값 — 비교 문장 생성용 */
     categoryMedianSubscribers: number;
+    /** 떠오르는 순 순위 (/channel 첫 화면과 같은 순서). 순위에 들지 않으면 0 */
+    risingRank: number;
+    risingTotal: number;
 
     // ── 아카이브 이력 (Supabase 경로에서만 채워진다) ──
     /**
-     * 오늘 순위에 있는가. false 면 아래 값들은 '마지막 수집 시점'의 기록이고,
+     * 오늘 '지금 뜨는 채널' 보드에 있는가. false 면 아래 값들은 '마지막 수집 시점'의 기록이고,
      * 순위(overallRank 등)는 0 이다. 화면은 이 값으로 현재/기록을 구분해 보여준다.
      */
     isCurrent: boolean;
@@ -320,6 +159,11 @@ export interface ChannelDetail {
      * 구글이 '내용 없는 페이지'로 볼 수 있으므로 noindex 로 둔다.
      */
     daysSeen: number;
+    /**
+     * 다음·빙·네이버에 내보내는 채널인가 (channel_archive.search_open, 2026-10-31).
+     * 보드로 바꾸며 페이지가 크게 늘어 노출 목록을 따로 둔다 (isIndexableChannel 주석).
+     */
+    searchOpen: boolean;
     /** 같은 카테고리·비슷한 규모의 채널 (내부 링크용). GitHub 경로는 없음 */
     related?: RelatedChannel[];
     /** 최근 30일 포착 영상·구독자 변화 (channel_recent). 없으면 null */
@@ -425,10 +269,17 @@ export const ARCHIVE_INDEX_MIN_RECENT_VIDEOS = 5;
  * [2026-10-12] 해외 채널(IMPORTED)도 뺀다. 한국어 사이트에 외국 소형 채널 페이지가
  * 섞여 있으면 사이트 평가를 끌어내린다. '색인 안 함' 목록에서 해외 채널 비중(23%)이
  * 사이트맵 안 비중(16%)보다 높았다. 페이지는 그대로 열리고 검색에만 안 나온다.
+ *
+ * [2026-10-31] 노출 목록(searchOpen)을 먼저 본다. '지금 순위에 있음'이 8,000곳 선별에서
+ * 7일 수집 국내 채널 전체(보드)로 넓어지고 페이지도 4천여 곳에서 1만 5천 곳으로 늘어, 아래 기준만
+ * 두면 색인 대상이 한 번에 몇 배가 된다. 배포하는 날 기존 기준의 결과를 목록에 한 번 고정했고
+ * (utube_rank/sql/steps/21), 그 뒤로는 묶음으로만 연다(SEO 운영안: 노출은 한 번에 늘리지 않는다).
+ * 목록 안의 채널도 아래 기준(얇은 페이지·오래된 기록)을 계속 지켜야 한다.
  */
 export function isIndexableChannel(
-    d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen" | "recent"> & { channel: Pick<TierChannel, "origin_type"> },
+    d: Pick<ChannelDetail, "isCurrent" | "daysSeen" | "lastSeen" | "recent" | "searchOpen"> & { channel: Pick<TierChannel, "origin_type"> },
 ): boolean {
+    if (!d.searchOpen) return false;
     if (d.channel.origin_type !== "DOMESTIC") return false;
     if (d.daysSeen < CHANNEL_INDEX_MIN_DAYS) return false;
     if (isFreshChannel(d)) return true;
@@ -489,37 +340,19 @@ function getChannelCached(channelId: string, version: string) {
                 categoryRank: sameCategory.findIndex((c) => c.channel_id === channelId) + 1,
                 categoryTotal: sameCategory.length,
                 categoryMedianSubscribers,
+                risingRank: 0,
+                risingTotal: 0,
                 // GitHub 파일에는 이력이 없다. 순위 파일에 있으면 곧 '현재'다.
                 isCurrent: true,
                 firstSeen: null,
                 lastSeen: null,
                 daysSeen: 0,
+                searchOpen: false,
             };
         },
         ["channel-detail-v3", channelId, version],
         { revalidate: 3600 },
     )();
-}
-
-/**
- * 순위 계산에 필요한 최소 정보.
- *
- * GitHub 경로의 진짜 비용은 여기 있었다 — 채널 1건의 순위를 내려고 8,000개를
- * 통째로 파싱했고, 캐시 키에 channel_id 가 들어 있어 채널마다 그 일을 따로 했다.
- * (실측 124ms/건. 크롤러가 훑을 때 이 비용이 Vercel CPU 를 잠식했다)
- *
- * 순위의 기준이 되는 집합(구독자 1만 이상, 구독자순)은 모든 채널이 같다.
- * 그러니 한 번만 받아 캐시하고 채널마다 공유한다. 세 컬럼뿐이라 868행이어도
- * 수십 KB 다.
- *
- * PostgREST 는 요청당 1,000행이 상한인데 대상이 868개라 한 번에 들어온다.
- * 1,000을 넘기면 range 로 나눠 받아야 한다 — 그때를 대비해 개수를 확인한다.
- */
-interface RankRow {
-    channel_id: string;
-    subscriber_count: number;
-    main_category: string;
-    channel_title: string;
 }
 
 /** 채널 페이지 하단 '비슷한 채널' 한 줄 */
@@ -538,50 +371,93 @@ const RELATED_LIMIT = 6;
  * [2026-10-06] 채널 상세끼리 서로 링크가 하나도 없어 구글이 사이트맵으로만
  * 발견했다. 서치콘솔에서 3,215개가 '발견됨 - 현재 색인이 생성되지 않음'(방문
  * 대기)이라, 이미 방문한 페이지에서 링크를 타고 넘어가도록 내부 링크를 단다.
- * 이미 캐시해 둔 순위 기준 집합(sbRankContext)에서 고르므로 DB 조회가 늘지 않는다.
  * '규모가 가깝다'는 구독자 수의 로그 거리로 본다 (1만↔2만이 100만↔101만보다 멀다).
+ *
+ * [2026-10-31] 후보는 보드에서 페이지가 있는 채널이다. 위·아래로 몇 개씩만 받아 고른다.
  */
-function pickRelated(ctx: RankRow[], selfId: string, category: string, subs: number): RelatedChannel[] {
+function pickRelated(rows: RelatedChannel[], selfId: string, subs: number): RelatedChannel[] {
     const base = Math.log10(Math.max(subs, 1));
-    return ctx
-        .filter((c) => c.channel_id !== selfId && c.main_category === category && c.channel_title)
+    return rows
+        .filter((c) => c.channel_id !== selfId && c.channel_title)
         .map((c) => ({ c, d: Math.abs(Math.log10(Math.max(c.subscriber_count, 1)) - base) }))
         .sort((a, b) => a.d - b.d)
         .slice(0, RELATED_LIMIT)
-        .map(({ c }) => ({ channel_id: c.channel_id, channel_title: c.channel_title, subscriber_count: c.subscriber_count }));
+        .map(({ c }) => c);
 }
 
-const sbRankContext = unstable_cache(
-    async (): Promise<RankRow[]> => {
-        const { data, error, count } = await supabase()
-            .from("channel_ranking")
-            .select("channel_id,subscriber_count,main_category,channel_title", { count: "exact" })
-            .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
-            .order("subscriber_count", { ascending: false })
-            .range(0, 999);
-        if (error) throw new Error(`Supabase 순위 기준 조회 실패: ${error.message}`);
-        const rows = (data ?? []) as RankRow[];
-        if ((count ?? 0) > rows.length) {
-            // 상한에 걸려 잘렸다. 순위가 틀리는 것보다 알아채는 게 낫다.
-            console.warn(
-                `[channels] 순위 기준 집합이 ${count}개인데 ${rows.length}개만 받았습니다. ` +
-                `range 분할이 필요합니다.`,
-            );
-        }
-        return rows;
+async function sbRelated(selfId: string, category: string, subs: number): Promise<RelatedChannel[]> {
+    const near = (above: boolean) => {
+        const q = supabase()
+            .from("channel_board")
+            .select("channel_id,channel_title,subscriber_count")
+            .eq("main_category", category)
+            .eq("has_page", true)
+            .neq("channel_id", selfId);
+        return (above ? q.gte("subscriber_count", subs) : q.lt("subscriber_count", subs))
+            .order("subscriber_count", { ascending: above })
+            .limit(RELATED_LIMIT);
+    };
+    const [up, down] = await Promise.all([near(true), near(false)]);
+    // 비슷한 채널은 덤이다. 실패해도 페이지는 그린다.
+    if (up.error || down.error) return [];
+    return pickRelated([...(up.data ?? []), ...(down.data ?? [])] as RelatedChannel[], selfId, subs);
+}
+
+/**
+ * 보드 전체·카테고리별 채널 수와 구독자 중위값 (구체화 뷰 channel_board_category_stats, 16행).
+ * 모든 채널 페이지가 같은 값을 쓰므로 한 번만 받아 나눠 쓴다.
+ */
+interface BoardTotals {
+    overall: number;
+    ranked: number;
+    byCategory: Record<string, { tracked: number; median: number }>;
+}
+
+const sbBoardTotals = unstable_cache(
+    async (): Promise<BoardTotals> => {
+        const { data, error } = await supabase()
+            .from("channel_board_category_stats")
+            .select("main_category,tracked,ranked,median_subscribers");
+        if (error) throw new Error(`Supabase 보드 숫자 조회 실패: ${error.message}`);
+        const rows = (data ?? []) as { main_category: string; tracked: number; ranked: number; median_subscribers: number | null }[];
+        if (rows.length === 0) throw new Error("보드 숫자가 비어 있습니다.");
+        return {
+            overall: rows.reduce((n, r) => n + r.tracked, 0),
+            ranked: rows.reduce((n, r) => n + r.ranked, 0),
+            byCategory: Object.fromEntries(
+                rows.map((r) => [r.main_category, { tracked: r.tracked, median: r.median_subscribers ?? 0 }]),
+            ),
+        };
     },
-    ["sb-channel-rank-context-v2"],
+    ["sb-board-totals-v1"],
     { revalidate: SB_REVALIDATE },
 );
+
+/** 채널 상세가 보드에서 읽는 칸 (channel_board, utube_rank/sql/steps/19·21) */
+const BOARD_DETAIL_COLUMNS =
+    "channel_id,channel_title,target_date,main_category,league_group,channel_created_at," +
+    "subscriber_count,total_view_count,video_count,avg_daily_view_increase,avg_daily_sub_increase," +
+    "damped_score,representative_video_id,video_thumbnail,top_video_views,is_new_channel," +
+    "subs_rank,category_subs_rank,rising_rank,sparkline_data";
+
+interface BoardDetailRow {
+    subs_rank: number | null;
+    category_subs_rank: number | null;
+    rising_rank: number | null;
+    sparkline_data: TierChannel["sparkline_data"];
+}
 
 /**
  * 채널 상세 — 아카이브 기반.
  *
  * 출처가 두 개다.
  *   channel_archive   한 번 순위에 오른 채널의 영구 기록. 여기 있으면 페이지가 있다.
- *   channel_ranking   오늘 순위. 여기 있으면 '현재'이고 순위·추이를 붙인다.
+ *   channel_board     오늘 '지금 뜨는 채널' 보드(최근 7일 안에 수집된 국내 채널 전부).
+ *                     여기 있으면 '현재'이고 순위·추이를 붙인다.
+ *                     [2026-10-31] 전에는 8,000곳 선별 순위(channel_ranking)였다. 보드 1위 채널이
+ *                     상세에서는 '순위에 없는 채널'로 보이는 일이 없도록 같은 표를 본다.
  *
- * 순위에서 빠진 채널은 아카이브의 마지막 값으로 그리되 isCurrent=false 로 표시해
+ * 보드에 없는 채널은 아카이브의 마지막 값으로 그리되 isCurrent=false 로 표시해
  * 화면이 "N일 전 기록"임을 밝힌다. 이렇게 해야 URL 이 사라지지 않아 색인이
  * 유지되고, 채널 이름으로 검색해 들어온 사람이 404 대신 정보를 본다.
  */
@@ -599,35 +475,39 @@ function sbChannelCached(channelId: string) {
             if (aErr) throw new Error(`Supabase 아카이브 조회 실패: ${aErr.message}`);
             if (!arc) return null;
 
-            // ② 오늘 순위 — 있으면 현재 값과 추이를 쓴다.
+            // ② 오늘 보드 — 있으면 현재 값과 추이를 쓴다.
             const { data: cur, error: cErr } = await sb
-                .from("channel_ranking")
-                .select("*")
+                .from("channel_board")
+                .select(BOARD_DETAIL_COLUMNS)
                 .eq("channel_id", channelId)
                 .maybeSingle();
             if (cErr) throw new Error(`Supabase 채널 조회 실패: ${cErr.message}`);
 
             const isCurrent = Boolean(cur);
+            const board = cur as unknown as BoardDetailRow | null;
             // 현재 값이 있으면 그걸, 없으면 아카이브의 마지막 값을 쓴다.
-            const channel = (cur ?? arc) as unknown as TierChannel;
+            // 보드에 없는 칸(tier·country_code)은 아카이브 값을 두고, 보드는 국내 채널만 싣는다.
+            const channel = (cur
+                ? { ...(arc as object), ...(cur as object), origin_type: "DOMESTIC" }
+                : arc) as unknown as TierChannel;
             if ((channel.subscriber_count ?? 0) < CHANNEL_PAGE_MIN_SUBSCRIBERS) return null;
 
-            // 순위는 오늘 순위에 있을 때만 의미가 있다.
+            // 순위는 오늘 보드에 있을 때만 의미가 있다. 순위 값은 보드를 적재할 때 미리 계산해 둔다.
             let overallRank = 0, overallTotal = 0, categoryRank = 0, categoryTotal = 0;
-            let categoryMedianSubscribers = 0;
-            // 순위 기준 집합은 '비슷한 채널' 링크에도 쓰므로 기록 모드에서도 읽는다 (캐시라 비용 없음).
-            const ctx = await sbRankContext();
-            const related = pickRelated(ctx, channelId, channel.main_category, channel.subscriber_count ?? 0);
-            if (isCurrent) {
-                const sameCategory = ctx.filter((c) => c.main_category === channel.main_category);
-                const catSubs = sameCategory.map((c) => c.subscriber_count).sort((a, b) => a - b);
-                overallRank = ctx.findIndex((c) => c.channel_id === channelId) + 1;
-                overallTotal = ctx.length;
-                categoryRank = sameCategory.findIndex((c) => c.channel_id === channelId) + 1;
-                categoryTotal = sameCategory.length;
-                categoryMedianSubscribers = catSubs.length
-                    ? catSubs[Math.floor(catSubs.length / 2)]
-                    : 0;
+            let risingRank = 0, risingTotal = 0;
+            const [totals, related] = await Promise.all([
+                sbBoardTotals(),
+                sbRelated(channelId, channel.main_category, channel.subscriber_count ?? 0),
+            ]);
+            const cat = totals.byCategory[channel.main_category];
+            const categoryMedianSubscribers = isCurrent ? cat?.median ?? 0 : 0;
+            if (isCurrent && board) {
+                overallRank = board.subs_rank ?? 0;
+                overallTotal = totals.overall;
+                categoryRank = board.category_subs_rank ?? 0;
+                categoryTotal = cat?.tracked ?? 0;
+                risingRank = board.rising_rank ?? 0;
+                risingTotal = totals.ranked;
             }
 
             // ③ 최근 30일 기록 — 없어도 페이지는 그린다 (실패해도 본문만 빠진다).
@@ -644,22 +524,24 @@ function sbChannelCached(channelId: string) {
                 .eq("channel_id", channelId)
                 .maybeSingle();
 
-            const a = arc as { first_seen: string; last_seen: string; days_seen: number };
+            const a = arc as { first_seen: string; last_seen: string; days_seen: number; search_open?: boolean };
             return {
                 channel,
-                // 추이는 오늘 순위에 있을 때만 있다 (아카이브엔 sparkline 을 넣지 않는다).
-                sparkline: isCurrent ? cleanSparkline(parseSparkline(channel.sparkline_data)) : [],
+                // 추이는 오늘 보드에 있을 때만 있다 (아카이브엔 sparkline 을 넣지 않는다).
+                sparkline: board ? cleanSparkline(parseSparkline(board.sparkline_data)) : [],
                 overallRank, overallTotal, categoryRank, categoryTotal, categoryMedianSubscribers,
+                risingRank, risingTotal,
                 isCurrent,
                 firstSeen: a.first_seen ?? null,
                 lastSeen: a.last_seen ?? null,
                 daysSeen: a.days_seen ?? 0,
+                searchOpen: Boolean(a.search_open),
                 related,
                 recent: (rec as ChannelRecent | null) ?? null,
                 extra: (extra as ChannelExtra | null) ?? null,
             };
         },
-        ["sb-channel-detail-v6", channelId],
+        ["sb-channel-detail-v7", channelId],
         { revalidate: SB_REVALIDATE },
     )();
 }

@@ -90,8 +90,8 @@ export async function generateMetadata({
     return {
         title: `${meta.label} 유튜버 순위 TOP ${n} - 요즘 뜨는 채널${month && ` (${month})`}`,
         description:
-            `국내 ${meta.label} 유튜브 채널 ${(snap?.tracked ?? 0).toLocaleString()}개 중 ` +
-            `최근 하루 평균 조회수가 가장 많이 늘어난 채널 ${n}곳.` +
+            `국내 ${meta.label} 유튜브 채널 ${(snap?.tracked ?? 0).toLocaleString()}곳 중 ` +
+            `구독자에 비해 조회수가 가장 빠르게 느는 채널 ${n}곳.` +
             (first ? ` 1위 ${first.channel_title}(구독자 ${fmtKr(first.subscriber_count, "명")}).` : "") +
             ` 구독자가 빨리 느는 채널과 새로 생긴 채널도 함께 정리했습니다.`,
         alternates: { canonical: `/category/${slug}` },
@@ -175,13 +175,13 @@ export default async function CategoryPage({
                     <p className="vh-lead">{meta.description}</p>
                     {/* 숫자로 만든 요약. 카테고리마다 값이 달라 페이지마다 다른 문장이 된다. */}
                     <p className="vh-lead vh-lead-sm">
-                        국내 {meta.label} 채널{" "}
-                        <strong>{snap.tracked.toLocaleString()}개</strong>를
-                        추적해 최근 하루 평균 조회수가 많이 늘어난 순으로 세웠습니다. 1위는{" "}
+                        최근 7일 안에 영상이 수집된 국내 {meta.label} 채널{" "}
+                        <strong>{snap.tracked.toLocaleString()}곳</strong>을 구독자에 비해 하루 조회수가 빠르게 느는
+                        순(떠오르는 순)으로 세웠습니다. 1위는{" "}
                         <strong>{first.channel_title}</strong>
                         (구독자 {fmtKr(first.subscriber_count, "명")})로 하루 평균 조회수가{" "}
                         <strong>{fmtKr(first.avg_daily_view_increase, "회")}</strong>씩
-                        늘고 있습니다. 상위 {snap.top.length}개 중 {smallInTop}개는 구독자 1만 명 미만 채널입니다.
+                        늘고 있습니다. 상위 {snap.top.length}곳 중 {smallInTop}곳은 구독자 1만 명 미만 채널입니다.
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
                     <MetricsDisclosure />
@@ -189,10 +189,10 @@ export default async function CategoryPage({
 
                 <dl className="vh-kpis">
                     {[
-                        { k: "추적 채널", v: `${snap.tracked.toLocaleString()}개` },
+                        { k: "국내 채널", v: `${snap.tracked.toLocaleString()}곳` },
                         { k: "숏츠 중심 채널", v: `${pct(snap.shorts, snap.ranked)}%` },
                         { k: "구독자 중위값", v: fmtKr(snap.medianSubscribers, "명") },
-                        { k: "3개월 안에 생긴 채널", v: `${snap.newChannels.toLocaleString()}개` },
+                        { k: "3개월 안에 생긴 채널", v: `${snap.newChannels.toLocaleString()}곳` },
                     ].map((s) => (
                         <div key={s.k} className="vh-kpi">
                             <dt>{s.k}</dt>
@@ -204,9 +204,10 @@ export default async function CategoryPage({
                 </dl>
 
                 <section className="vh-sec">
-                    <h2 className="vh-sec-h">
-                        하루 평균 조회수가 많이 느는 채널 TOP {snap.top.length}
-                    </h2>
+                    <div className="vh-sec-title">
+                        <h2>떠오르는 채널 TOP {snap.top.length}</h2>
+                        <p className="vh-sec-note">구독자에 비해 하루 조회수가 빠르게 느는 순</p>
+                    </div>
                     <div className="vh-table-card">
                         {/* 휴대폰에서는 한 줄을 두 줄 카드로 바꿔 옆으로 밀지 않아도 다 보이게 한다 (형식·일평균 구독자는 둘째 줄). */}
                         <table className="vh-table vh-cattop">
@@ -262,7 +263,7 @@ export default async function CategoryPage({
                     <section className="vh-sec">
                         <div className="vh-sec-title">
                             <h2>최근 3개월 안에 생긴 채널</h2>
-                            <p className="vh-sec-note">개설 90일 이내 채널의 하루 평균 조회수 증가 순</p>
+                            <p className="vh-sec-note">개설 90일 이내 채널의 떠오르는 순</p>
                         </div>
                         {snap.newest.length > 0 ? (
                             <ol className="vh-mlist">
@@ -288,9 +289,9 @@ export default async function CategoryPage({
                 {/* 이 순위가 무엇이고 무엇이 아닌지 밝힌다. '유튜버 순위'를 전체 구독자 순위로 읽으면 오해가 된다. */}
                 <div className="vh-note vh-note-stack">
                     <p>
-                        이 순위는 Viral Hunter가 <strong>구독자 수 대비 조회 성과가 높은 채널</strong>을
-                        골라 추적한 결과입니다. 구독자가 매우 많은 대형 채널은 선별 기준상 들어 있지 않아, 한국 유튜브 전체
-                        구독자 순위와는 다릅니다.
+                        이 순위는 최근 7일 안에 영상이 수집된 국내 채널 전부를 매일 다시 재서 세웁니다. 구독자 수가
+                        아니라 <strong>구독자에 비해 조회수가 얼마나 빠르게 느는지</strong>가 기준이라, 큰 채널보다 지금
+                        막 뜨는 채널이 위에 옵니다. 한국 유튜브 전체 구독자 순위와는 다릅니다.
                     </p>
                     <p>
                         일평균 조회수·구독자는 최근 최대 7일 동안 채널 전체 조회수·구독자가 하루 평균 늘어난 양입니다.
@@ -298,7 +299,10 @@ export default async function CategoryPage({
                         <Link href="/about/metrics">지표 설명</Link>
                     </p>
                     <p>
-                        구독자 1만 명 이상 채널은 Viral Hunter 채널 분석 페이지로, 그보다 작은 채널은 유튜브 채널로 연결됩니다.
+                        Viral Hunter 채널 분석 페이지가 있는 채널은 그 페이지로, 없는 채널은 유튜브 채널로 연결됩니다.{" "}
+                        {meta.label} 채널을 쇼츠·롱폼, 구독자 규모, 조회수·구독자 증가순으로 나눠 보려면{" "}
+                        <Link href={`/channel?category=${encodeURIComponent(meta.category)}`}>지금 뜨는 채널</Link>에서
+                        이어 볼 수 있습니다 (최대 1,000곳).
                     </p>
                 </div>
 

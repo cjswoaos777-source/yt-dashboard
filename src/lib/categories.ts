@@ -1,5 +1,4 @@
 import { unstable_cache } from "next/cache";
-import { hasChannelPage } from "@/lib/channel-constants";
 import { isSupabase } from "@/lib/datasource";
 import { supabase } from "@/lib/supabase";
 import { channelAgeDays, NEW_CHANNEL_DAYS } from "@/lib/tier-channel-types";
@@ -9,19 +8,20 @@ import { channelAgeDays, NEW_CHANNEL_DAYS } from "@/lib/tier-channel-types";
  *
  * "게임 유튜버 순위" 같은 검색어에 대응하도록 카테고리마다 고유 URL 을 준다.
  *
- * 채널 순위(channel_ranking)는 구독자 대비 조회수가 터지는 채널을 골라 추적한 집합이다.
- * 국내 4,000개 중 구독자 10만 이상이 10개, 100만 이상은 0개라 구독자순으로 세우면
- * '유튜버 순위'로 읽히지 않는다. 그래서 일평균 조회수 증가 순으로 세우고, 페이지에서
- * 전체 구독자 순위가 아님을 밝힌다.
+ * [2026-10-31] 원본을 channel_ranking(바이럴 점수로 미리 고른 8,000곳)에서 channel_board(최근 7일 안에
+ * 수집된 국내 채널 전부)로 바꿨다. 지금 뜨는 채널(/channel)과 같은 표다. 줄 세우는 기준도 같은
+ * 떠오르는 순(일평균 조회수 증가 ÷ (구독자 + 1만))이다 (사용자 결정: 기본은 어디서나 떠오르는 순).
+ * 큰 채널도 들어 있으므로 조회수 증가 순으로 세우면 구독자 수백만 채널이 위를 채운다.
  *
- * 상위권은 구독자 1만 미만 채널이 많아(게임 상위 8개 중 6개) 1만 미만도 함께 싣는다.
- * 그런 채널은 우리 상세 페이지가 없으므로(CHANNEL_PAGE_MIN_SUBSCRIBERS) 유튜브 채널로 링크한다.
+ * 보드는 2만 4천 행이라 통째로 받지 않는다. 카테고리별 숫자와 상위 목록은 보드를 바꿀 때 DB 가 미리
+ * 계산해 둔다 (구체화 뷰, utube_rank/sql/steps/20_channel_board_category.sql · channel_board_sync.py).
  *
  * 싣지 않는 카테고리
  *   News & Politics          정치 주제는 다루지 않는다
  *   Nonprofits & Activism    5개뿐이다
  *   Overall                  영상이 없어 분류를 정하지 못한 채널 (tracker.py 폴백)
- *   Science & Technology, Autos & Vehicles   순위 채널이 20~30개라 아직 얇다
+ *   Science & Technology, Autos & Vehicles   순위 채널이 20~30개라 얇았다. 보드로 바꾼 뒤에는
+ *                            250~280곳이라 새 페이지로 열 수 있다 (새 주소라 SEO 결정이 필요해 아직 안 열었다)
  */
 
 /** URL 에 쓰는 이름. 순서는 목록 페이지에 보이는 순서다. */
@@ -115,12 +115,14 @@ export interface CategoryChannel {
     league_group: string;
     /** 개설 후 지난 일수. 개설일을 모르면 null */
     ageDays: number | null;
+    /** 우리 채널 분석 페이지가 있다 (channel_board.has_page) */
+    hasPage: boolean;
 }
 
 export interface CategorySnapshot {
-    /** 이 카테고리에서 추적 중인 국내 채널 수 */
+    /** 이 카테고리의 국내 채널 수 (최근 7일 안에 수집된 채널) */
     tracked: number;
-    /** 순위에 오른 채널 수 (일평균 조회수 증가가 0 보다 큰 채널) */
+    /** 순위에 오른 채널 수 (일평균을 낼 만큼 숫자가 쌓였고 조회수가 는 채널) */
     ranked: number;
     /** 순위 채널의 형식별 수 (league_group) */
     shorts: number;
@@ -130,11 +132,11 @@ export interface CategorySnapshot {
     newChannels: number;
     /** 순위 채널 구독자 중위값 */
     medianSubscribers: number;
-    /** 일평균 조회수 증가 순 */
+    /** 떠오르는 순 (일평균 조회수 증가 ÷ (구독자 + 1만)) */
     top: CategoryChannel[];
     /** 일평균 구독자 증가 순 */
     topSubs: CategoryChannel[];
-    /** 개설 NEW_CHANNEL_DAYS 일 이내 채널의 일평균 조회수 증가 순 */
+    /** 개설 NEW_CHANNEL_DAYS 일 이내 채널의 떠오르는 순 */
     newest: CategoryChannel[];
 }
 
@@ -149,76 +151,59 @@ export function isNewChannel(c: Pick<CategoryChannel, "ageDays">): boolean {
     return c.ageDays !== null && c.ageDays <= NEW_CHANNEL_DAYS;
 }
 
-/** 우리 상세 페이지가 있으면 그리로, 없으면(구독자 1만 미만) 유튜브 채널로 */
+/** 우리 채널 분석 페이지가 있으면 그리로, 없으면 유튜브 채널로 */
 export function channelLink(
-    c: Pick<CategoryChannel, "channel_id" | "subscriber_count">,
+    c: Pick<CategoryChannel, "channel_id" | "hasPage">,
 ): { href: string; external: boolean } {
-    return hasChannelPage(c.subscriber_count)
+    return c.hasPage
         ? { href: `/channel/${c.channel_id}`, external: false }
         : { href: `https://www.youtube.com/channel/${c.channel_id}`, external: true };
 }
 
 // ─── Supabase 경로 ───────────────────────────────────────────────────────────
 //
-// 11개 카테고리의 국내 채널(약 3,500행)을 한 번에 받아 모든 페이지의 값을 함께 만든다.
+// 구체화 뷰 두 개를 한 번씩 읽어 모든 페이지의 값을 함께 만든다 (숫자 11행 + 목록 최대 550행).
 // 목록 페이지와 카테고리 페이지가 이 결과 하나를 나눠 쓰므로 캐시 항목도 하나다 (약 80KB).
 // GitHub 파일 경로는 두지 않는다 — 2026-09-13 부터 Supabase 만 갱신된다.
 
-/** channels.ts 와 같다. 파이프라인이 매시간 통째로 갈아끼우므로 30분이면 늦어도 한 시간 안에 반영된다. */
+/** 보드는 하루 한 번(저녁) 바뀐다. 30분이면 늦어도 한 시간 안에 반영된다. */
 const SB_REVALIDATE = 1800;
 
-/** PostgREST 는 요청당 1,000행이 상한이라 나눠 받는다. */
-const PAGE = 1000;
+const STATS_COLUMNS =
+    "main_category,target_date,tracked,ranked,shorts,long,hybrid,new_channels,median_subscribers";
 
-const COLUMNS =
-    "channel_id,channel_title,main_category,subscriber_count,avg_daily_view_increase," +
-    "avg_daily_sub_increase,league_group,channel_created_at,target_date";
+const TOP_COLUMNS =
+    "list,rk,channel_id,channel_title,main_category,league_group,channel_created_at," +
+    "subscriber_count,avg_daily_view_increase,avg_daily_sub_increase,has_page";
 
-interface Row {
+interface StatsRow {
+    main_category: string;
+    target_date: string | null;
+    tracked: number;
+    ranked: number;
+    shorts: number;
+    long: number;
+    hybrid: number;
+    new_channels: number;
+    median_subscribers: number | null;
+}
+
+/** 뷰의 list: rising 떠오르는 순 30 · subs 구독자 증가 순 10 · new 개설 90일 이내 떠오르는 순 10 */
+interface TopRow {
+    list: "rising" | "subs" | "new";
+    rk: number;
     channel_id: string;
     channel_title: string;
     main_category: string;
+    league_group: string | null;
+    channel_created_at: string | null;
     subscriber_count: number | null;
     avg_daily_view_increase: number | null;
     avg_daily_sub_increase: number | null;
-    league_group: string | null;
-    channel_created_at: string | null;
-    target_date: string | null;
+    has_page: boolean | null;
 }
 
-async function fetchRows(): Promise<Row[]> {
-    const categories = CATEGORY_SLUGS.map((s) => CATEGORY_META[s].category);
-    const query = (count: boolean) =>
-        supabase()
-            .from("channel_ranking")
-            .select(COLUMNS, count ? { count: "exact" } : undefined)
-            .eq("origin_type", "DOMESTIC")
-            .in("main_category", categories)
-            .order("channel_id");
-
-    const first = await query(true).range(0, PAGE - 1);
-    if (first.error) throw new Error(`Supabase 카테고리 채널 조회 실패: ${first.error.message}`);
-    const total = first.count ?? 0;
-    const rest = await Promise.all(
-        Array.from({ length: Math.max(0, Math.ceil(total / PAGE) - 1) }, (_, i) =>
-            query(false).range((i + 1) * PAGE, (i + 2) * PAGE - 1),
-        ),
-    );
-
-    // 받는 사이에 표가 갈아끼워지면 같은 채널이 두 번 올 수 있어 channel_id 로 하나만 남긴다.
-    const byId = new Map<string, Row>();
-    for (const r of [first, ...rest]) {
-        if (r.error) throw new Error(`Supabase 카테고리 채널 조회 실패: ${r.error.message}`);
-        for (const row of (r.data ?? []) as unknown as Row[]) byId.set(row.channel_id, row);
-    }
-    // 갈아끼우는 중에 읽으면 비거나 모자랄 수 있다. 실패로 돌려야 그 결과가 캐시에 남지 않는다.
-    if (byId.size === 0 || byId.size < total * 0.95) {
-        throw new Error(`카테고리 채널이 ${total}개인데 ${byId.size}개만 받았습니다.`);
-    }
-    return [...byId.values()];
-}
-
-function toChannel(r: Row): CategoryChannel {
+function toChannel(r: TopRow): CategoryChannel {
     return {
         channel_id: r.channel_id,
         channel_title: r.channel_title,
@@ -228,54 +213,66 @@ function toChannel(r: Row): CategoryChannel {
         avg_daily_sub_increase: Math.round(r.avg_daily_sub_increase ?? 0),
         league_group: r.league_group ?? "",
         ageDays: channelAgeDays(r),
-    };
-}
-
-function toSnapshot(rows: Row[]): CategorySnapshot {
-    // 추적 첫날은 비교할 값이 없어 일평균이 0 이다(isAwaitingBaseline). 성장이 0 이 아니라
-    // 계산 불가이므로 순위에서 뺀다. 성장이 멈춘 채널도 빠진다 (/channel 목록과 같은 기준).
-    const ranked = rows
-        .filter((r) => (r.avg_daily_view_increase ?? 0) > 0)
-        .map(toChannel)
-        .sort((a, b) => b.avg_daily_view_increase - a.avg_daily_view_increase);
-    const subs = ranked.map((c) => c.subscriber_count).sort((a, b) => a - b);
-
-    return {
-        tracked: rows.length,
-        ranked: ranked.length,
-        shorts: ranked.filter((c) => c.league_group === "SHORTS").length,
-        long: ranked.filter((c) => c.league_group === "LONG").length,
-        hybrid: ranked.filter((c) => c.league_group === "HYBRID").length,
-        newChannels: ranked.filter(isNewChannel).length,
-        medianSubscribers: subs.length ? subs[Math.floor(subs.length / 2)] : 0,
-        top: ranked.slice(0, TOP_LIMIT),
-        topSubs: ranked
-            .filter((c) => c.avg_daily_sub_increase > 0)
-            .sort((a, b) => b.avg_daily_sub_increase - a.avg_daily_sub_increase)
-            .slice(0, SIDE_LIMIT),
-        newest: ranked.filter(isNewChannel).slice(0, SIDE_LIMIT),
+        hasPage: Boolean(r.has_page),
     };
 }
 
 const sbCategoryOverview = unstable_cache(
     async (): Promise<CategoryOverview> => {
-        const rows = await fetchRows();
-        const byCategory = new Map<string, Row[]>();
-        for (const r of rows) {
-            const list = byCategory.get(r.main_category) ?? [];
-            list.push(r);
-            byCategory.set(r.main_category, list);
+        const categories = CATEGORY_SLUGS.map((s) => CATEGORY_META[s].category);
+        const sb = supabase();
+        const [stats, top] = await Promise.all([
+            sb.from("channel_board_category_stats").select(STATS_COLUMNS).in("main_category", categories),
+            sb
+                .from("channel_board_category_top")
+                .select(TOP_COLUMNS)
+                .in("main_category", categories)
+                .order("main_category")
+                .order("list")
+                .order("rk"),
+        ]);
+        if (stats.error) throw new Error(`Supabase 카테고리 숫자 조회 실패: ${stats.error.message}`);
+        if (top.error) throw new Error(`Supabase 카테고리 목록 조회 실패: ${top.error.message}`);
+        const statRows = (stats.data ?? []) as unknown as StatsRow[];
+        const topRows = (top.data ?? []) as unknown as TopRow[];
+        // 비어 있으면 실패로 돌려야 그 결과가 캐시에 남지 않는다.
+        if (statRows.length === 0 || topRows.length === 0) {
+            throw new Error(`카테고리 보드가 비어 있습니다 (숫자 ${statRows.length}행, 목록 ${topRows.length}행).`);
         }
-        const categories = Object.fromEntries(
-            CATEGORY_SLUGS.map((s) => [s, toSnapshot(byCategory.get(CATEGORY_META[s].category) ?? [])]),
+
+        const lists = new Map<string, Record<TopRow["list"], CategoryChannel[]>>();
+        for (const r of topRows) {
+            const l = lists.get(r.main_category) ?? { rising: [], subs: [], new: [] };
+            l[r.list]?.push(toChannel(r));
+            lists.set(r.main_category, l);
+        }
+        const statsBy = new Map(statRows.map((r) => [r.main_category, r]));
+        const snapshot = (category: string): CategorySnapshot => {
+            const st = statsBy.get(category);
+            const l = lists.get(category);
+            return {
+                tracked: st?.tracked ?? 0,
+                ranked: st?.ranked ?? 0,
+                shorts: st?.shorts ?? 0,
+                long: st?.long ?? 0,
+                hybrid: st?.hybrid ?? 0,
+                newChannels: st?.new_channels ?? 0,
+                medianSubscribers: st?.median_subscribers ?? 0,
+                top: (l?.rising ?? []).slice(0, TOP_LIMIT),
+                topSubs: (l?.subs ?? []).slice(0, SIDE_LIMIT),
+                newest: (l?.new ?? []).slice(0, SIDE_LIMIT),
+            };
+        };
+        const byCategory = Object.fromEntries(
+            CATEGORY_SLUGS.map((s) => [s, snapshot(CATEGORY_META[s].category)]),
         ) as Record<CategorySlug, CategorySnapshot>;
-        const targetDate = rows.reduce(
+        const targetDate = statRows.reduce(
             (m, r) => (r.target_date && r.target_date > m ? r.target_date : m),
             "",
         );
-        return { targetDate, categories };
+        return { targetDate, categories: byCategory };
     },
-    ["sb-category-overview-v1"],
+    ["sb-category-overview-v2"],
     { revalidate: SB_REVALIDATE },
 );
 

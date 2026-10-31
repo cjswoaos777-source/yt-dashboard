@@ -13,7 +13,7 @@ export function SiteFooterNew() {
                     <div>
                         <b>순위</b>
                         <Link href="/dashboard">지금 뜨는 영상</Link>
-                        <Link href="/channel">떠오르는 채널</Link>
+                        <Link href="/channel">지금 뜨는 채널</Link>
                         <Link href="/category">카테고리별 순위</Link>
                         <Link href="/tier">구독자 구간별 순위</Link>
                     </div>
@@ -21,7 +21,6 @@ export function SiteFooterNew() {
                         <b>분석</b>
                         <Link href="/ideas">지금 만들 만한 영상</Link>
                         <Link href="/report">주간 리포트</Link>
-                        <Link href="/dashboard/benchmarking">벤치마킹</Link>
                         <Link href="/tag">태그</Link>
                         <Link href="/insights">인사이트</Link>
                     </div>

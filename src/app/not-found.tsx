@@ -18,7 +18,7 @@ export default function NotFound() {
                     지금 뜨는 영상 보기
                 </Link>
                 <Link href="/channel" className="vh-btn-line">
-                    떠오르는 채널
+                    지금 뜨는 채널
                 </Link>
                 <Link href="/" className="vh-btn-line">
                     처음으로

@@ -25,11 +25,11 @@ export const metadata: Metadata = {
     title: "카테고리별 유튜버 순위 - 게임·음악·스포츠 요즘 뜨는 채널",
     description:
         `게임·엔터테인먼트·스포츠·교육·음악 등 ${CATEGORY_SLUGS.length}개 카테고리에서 ` +
-        "최근 하루 평균 조회수가 가장 빠르게 늘고 있는 국내 유튜브 채널 순위를 매일 정리합니다.",
+        "구독자에 비해 조회수가 가장 빠르게 느는 국내 유튜브 채널 순위를 매일 정리합니다.",
     alternates: { canonical: "/category" },
     openGraph: {
         title: "카테고리별 급상승 유튜버 순위 | Viral Hunter",
-        description: "카테고리마다 요즘 조회수가 가장 빠르게 느는 국내 유튜브 채널.",
+        description: "카테고리마다 구독자에 비해 조회수가 가장 빠르게 느는 국내 유튜브 채널.",
         url: `${SITE.url}/category`,
         type: "website",
     },
@@ -71,15 +71,15 @@ export default async function CategoryIndexPage() {
                     <p className="vh-eyebrow">{dayLabel(overview.targetDate)} 기준</p>
                     <h1>카테고리별 급상승 유튜버 순위</h1>
                     <p className="vh-lead">
-                        {CATEGORY_SLUGS.length}개 카테고리에서 최근 하루 평균 조회수가 가장 빠르게 늘고 있는
-                        국내 유튜브 채널을 매일 정리합니다. 카테고리를 고르면 상위 30개 채널과 구독자가 빨리 느는 채널,
+                        {CATEGORY_SLUGS.length}개 카테고리에서 구독자에 비해 하루 조회수가 가장 빠르게 느는
+                        국내 유튜브 채널을 매일 정리합니다. 카테고리를 고르면 떠오르는 채널 30곳과 구독자가 빨리 느는 채널,
                         새로 생긴 채널을 볼 수 있습니다.
                     </p>
                     {/* /channel 목록과 같은 이유로 무엇이 아닌지도 밝힌다. */}
                     <p className="vh-note">
-                        이 순위는 <strong>구독자 수 대비 조회 성과가 높은 채널</strong>을
-                        골라 추적한 결과입니다. 구독자가 매우 많은 대형 채널은 선별 기준상 들어 있지 않아, 한국 유튜브
-                        전체 구독자 순위와는 다릅니다.
+                        최근 7일 안에 영상이 수집된 국내 채널 전부를 매일 다시 재서 줄을 세웁니다. 구독자 수가 아니라{" "}
+                        <strong>구독자에 비해 조회수가 얼마나 빠르게 느는지</strong>가 기준이라, 한국 유튜브 전체
+                        구독자 순위와는 다릅니다.
                     </p>
                     {/* YouTube API 정책 III.E.4.h: 자체 계산 지표 고지 */}
                     <MetricsDisclosure />
@@ -95,7 +95,7 @@ export default async function CategoryIndexPage() {
                                 <Link href={`/category/${s}`}>
                                     <h2>{meta.label} 유튜버 순위</h2>
                                     <p className="vh-catgrid-desc">{meta.description}</p>
-                                    <p className="vh-catgrid-n">추적 채널 {snap.tracked.toLocaleString()}개</p>
+                                    <p className="vh-catgrid-n">국내 채널 {snap.tracked.toLocaleString()}곳</p>
                                     {first && (
                                         <p className="vh-catgrid-first">
                                             <span className="vh-catgrid-rk">1위</span>{" "}

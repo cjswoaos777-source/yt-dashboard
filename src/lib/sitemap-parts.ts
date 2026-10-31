@@ -99,9 +99,9 @@ export function pagesUrls(): SitemapUrl[] {
     const staticUrls: SitemapUrl[] = [
         { loc: b, changefreq: "daily", priority: 1 },
         { loc: `${b}/dashboard`, changefreq: "hourly", priority: 0.9 },
-        { loc: `${b}/dashboard/benchmarking`, changefreq: "hourly", priority: 0.8 },
         // [2026-10-29] 지금 만들 만한 영상 — 11-03 부터 작은 채널에서 터진 영상을 카테고리별로 (매시간 새로 고른다)
         { loc: `${b}/ideas`, changefreq: "hourly", priority: 0.9 },
+        // [2026-10-31] 벤치마킹(/dashboard/benchmarking)을 합친 '지금 뜨는 채널'. 벤치마킹 주소는 여기로 보낸다.
         { loc: `${b}/channel`, changefreq: "daily", priority: 0.8 },
         { loc: `${b}/tag`, changefreq: "hourly", priority: 0.8 },
         { loc: `${b}/tier`, changefreq: "daily", priority: 0.7 },
@@ -192,7 +192,10 @@ export const SITEMAP_CHANNEL_MIN_DAYS = CHANNEL_INDEX_MIN_DAYS;
  */
 type ArchiveRow = { channel_id: string; last_seen: string };
 
-/** 국내·구독자 1만 이상 기록 채널을 1,000행씩 나눠 받는다 (등장 일수·마지막 등장일 조건). */
+/**
+ * 국내·구독자 1만 이상 기록 채널을 1,000행씩 나눠 받는다 (등장 일수·마지막 등장일 조건).
+ * [2026-10-31] 노출 목록(search_open)에 있는 채널만 싣는다. 페이지 meta robots(isIndexableChannel)와 같다.
+ */
 async function fetchArchiveRows(minDays: number, lastSeen: { gte?: string; lt?: string }): Promise<ArchiveRow[]> {
     const sb = supabase();
     const rows: ArchiveRow[] = [];
@@ -201,6 +204,7 @@ async function fetchArchiveRows(minDays: number, lastSeen: { gte?: string; lt?: 
         let q = sb
             .from("channel_archive")
             .select("channel_id,last_seen")
+            .eq("search_open", true)
             .eq("origin_type", "DOMESTIC")
             .gte("subscriber_count", CHANNEL_PAGE_MIN_SUBSCRIBERS)
             .gte("days_seen", minDays);
@@ -261,7 +265,7 @@ const channelUrlsCached = unstable_cache(
             priority: 0.5,
         }));
     },
-    ["sitemap-channels-v6", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS),
+    ["sitemap-channels-v7", String(SITEMAP_CHANNEL_MIN_DAYS), String(CHANNEL_INDEX_MAX_STALE_DAYS),
         String(ARCHIVE_INDEX_MIN_DAYS), String(ARCHIVE_INDEX_MIN_RECENT_VIDEOS)],
     { revalidate: 3600 },
 );

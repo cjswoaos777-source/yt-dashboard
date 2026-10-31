@@ -741,3 +741,8 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 /* 칩 안 ✓ 표시: Tailwind 기본값(svg 는 block) 때문에 줄이 갈리던 것 */
 .vh-chip { display: inline-flex; align-items: center; }
 .vh-chip svg { display: inline-block; flex: none; }
+
+/* ════ 지금 뜨는 채널 (2026-10-31): 영상 순위와 같은 줄·칩을 쓰고 이것만 더한다 ════ */
+.vh-pop-list { display: grid; gap: 8px; margin: 10px 0; padding: 0; list-style: none; color: var(--vh-ink-2); font-size: 13px; line-height: 1.6; }
+.vh-pop-list strong { margin-right: 4px; }
+.vh-dim { opacity: 0.55; transition: opacity 0.15s; }

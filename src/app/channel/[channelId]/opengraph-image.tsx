@@ -54,9 +54,9 @@ export default async function Image({ params }: { params: Promise<{ channelId: s
         ? "유튜브 급상승 채널 분석"
         : data.isCurrent && data.categoryRank > 0
           ? `${category} 구독자 ${data.categoryRank}위`
-          : `급상승 순위 ${data.daysSeen}일 등장`;
+          : `채널 순위 ${data.daysSeen}일 등장`;
     const headlineSub = data?.isCurrent && data.categoryRank > 0
-        ? `추적 중인 ${category} 채널 ${data.categoryTotal.toLocaleString()}개 중`
+        ? `국내 ${category} 채널 ${data.categoryTotal.toLocaleString()}곳 중`
         : data?.lastSeen ? `마지막 등장 ${data.lastSeen}` : "";
 
     const r = data?.recent;

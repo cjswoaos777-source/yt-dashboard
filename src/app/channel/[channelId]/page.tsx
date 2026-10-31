@@ -17,12 +17,6 @@ import { Num } from "@/components/site/rank";
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
 export const dynamic = "force-dynamic";
 
-const TIER_LABEL: Record<number, string> = {
-    1: "Tier 1",
-    2: "Tier 2",
-    3: "Tier 3",
-};
-
 const LEAGUE_LABEL: Record<string, string> = {
     SHORTS: "숏츠 중심",
     LONG: "롱폼 중심",
@@ -48,8 +42,8 @@ export async function generateMetadata({
     const { channel, categoryRank, categoryTotal, isCurrent, lastSeen } = data;
     const title = `${channel.channel_title} 채널 분석 — 구독자·조회수 추이`;
     const rankSentence = isCurrent
-        ? `${channel.main_category} 카테고리 ${categoryRank}위 (총 ${categoryTotal}개 채널). `
-        : `${channel.main_category} 카테고리. ${lastSeen ?? ""}까지 급상승 순위에 올랐던 채널. `;
+        ? `${channel.main_category} 카테고리 국내 채널 ${categoryTotal.toLocaleString()}곳 중 구독자 ${categoryRank.toLocaleString()}위. `
+        : `${channel.main_category} 카테고리. ${lastSeen ?? ""}까지 Viral Hunter 채널 순위에 올랐던 채널. `;
     // 검색 결과 설명문도 채널마다 달라지도록, 최근 포착 영상이 있으면 그 제목을 넣는다.
     const topVideo = data.recent?.videos?.[0];
     const description =
@@ -115,6 +109,8 @@ export default async function ChannelDetailPage({
         categoryRank,
         categoryTotal,
         categoryMedianSubscribers,
+        risingRank,
+        risingTotal,
         isCurrent,
         firstSeen,
         lastSeen,
@@ -147,15 +143,15 @@ export default async function ChannelDetailPage({
         `${channel.channel_title}은(는) ${channel.main_category} 카테고리에 속한 ` +
             (channel.league_group ? `${LEAGUE_LABEL[channel.league_group] ?? channel.league_group} 채널로, ` : "채널로, ") +
             `구독자 ${fmtKr(channel.subscriber_count, "명")}을 보유하고 있습니다.`,
-        // 순위 비교 문장은 오늘 순위에 있을 때만. 기록 모드에서는 이력 문장으로 대체한다.
+        // 순위 비교 문장은 오늘 보드에 있을 때만. 기록 모드에서는 이력 문장으로 대체한다.
         !isCurrent
-            ? `${firstSeen ?? "?"}부터 ${lastSeen ?? "?"}까지 총 ${daysSeen}일 급상승 순위에 올랐으며, ` +
-              `현재는 순위에 없습니다. 아래 수치는 ${lastSeen ?? "마지막 수집일"} 기준입니다.`
+            ? `${firstSeen ?? "?"}부터 ${lastSeen ?? "?"}까지 총 ${daysSeen}일 Viral Hunter 채널 순위에 올랐으며, ` +
+              `지금은 지금 뜨는 채널에 없습니다. 아래 수치는 ${lastSeen ?? "마지막 수집일"} 기준입니다.`
             : subMultiple >= 1.1
               ? `같은 카테고리 채널의 구독자 중위값(${fmtKr(categoryMedianSubscribers, "명")}) 대비 ` +
-                `약 ${subMultiple.toFixed(1)}배 규모로, 카테고리 ${categoryRank}위에 해당합니다.`
+                `약 ${subMultiple.toFixed(1)}배 규모로, 카테고리 구독자 ${categoryRank.toLocaleString()}위에 해당합니다.`
               : `같은 카테고리 채널의 구독자 중위값은 ${fmtKr(categoryMedianSubscribers, "명")}이며, ` +
-                `이 채널은 카테고리 ${categoryRank}위(총 ${categoryTotal.toLocaleString()}개)입니다.`,
+                `이 채널은 카테고리 구독자 ${categoryRank.toLocaleString()}위(총 ${categoryTotal.toLocaleString()}곳)입니다.`,
         channel.avg_daily_view_increase > 0
             ? `${isCurrent ? "최근" : "마지막 수집 시점"} 일평균 조회수는 ${fmtKr(channel.avg_daily_view_increase, "회")}씩 증가${isCurrent ? "하고 있으며" : "했으며"}, ` +
               `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`
@@ -165,11 +161,15 @@ export default async function ChannelDetailPage({
               : `누적 조회수는 ${fmtKr(channel.total_view_count, "회")}입니다.`,
         !isCurrent
             ? (daysSeen >= 7
-                ? `${daysSeen}일간 순위를 유지했던 채널이라 당시 흐름을 참고할 만합니다.`
+                ? `${daysSeen}일간 순위에 올랐던 채널이라 당시 흐름을 참고할 만합니다.`
                 : `짧게 순위에 올랐던 채널이라 참고 데이터가 제한적입니다.`)
-            : channel.is_new_channel
-              ? `최근 새로 편입된 채널로, 성장 추이를 지켜볼 만합니다.`
-              : `전체 분석 대상 ${overallTotal.toLocaleString()}개 채널 중 구독자 ${overallRank.toLocaleString()}위입니다.`,
+            : risingRank > 0
+              ? `최근 7일 안에 영상이 수집된 국내 채널 중 떠오르는 순 ${risingRank.toLocaleString()}위` +
+                `(${risingTotal.toLocaleString()}곳 중), 구독자 ${overallRank.toLocaleString()}위` +
+                `(${overallTotal.toLocaleString()}곳 중)입니다.`
+              : channel.is_new_channel
+                ? `숫자를 받기 시작한 지 얼마 안 된 채널이라, 성장 추이를 지켜볼 만합니다.`
+                : `최근 7일 안에 영상이 수집된 국내 채널 ${overallTotal.toLocaleString()}곳 중 구독자 ${overallRank.toLocaleString()}위입니다.`,
         // 최근 30일 기록 — 이 채널에만 있는 내용(영상 제목, 실제 구독자 변화)이다.
         recentVideos.length > 0
             ? `최근 30일 동안 영상 ${recent!.videos_30d}개가 급상승 후보로 포착됐고` +
@@ -212,8 +212,10 @@ export default async function ChannelDetailPage({
         {
             label: "성장 지수",
             value: channel.damped_score ? channel.damped_score.toFixed(1) : "—",
-            // 기록 모드에선 순위가 0 이라 "전체 0위 / 0개"가 찍혔다. 현재일 때만 보인다.
-            sub: isCurrent ? `전체 ${overallRank.toLocaleString()}위 / ${overallTotal.toLocaleString()}개` : null,
+            // 떠오르는 순 순위 (/channel 첫 화면과 같은 순서). 순위에 없거나 기록 모드면 숨긴다.
+            sub: isCurrent && risingRank > 0
+                ? `떠오르는 순 ${risingRank.toLocaleString()}위 / ${risingTotal.toLocaleString()}곳`
+                : null,
         },
     ];
 
@@ -249,8 +251,8 @@ export default async function ChannelDetailPage({
             {
                 "@type": "ListItem",
                 position: 2,
-                name: "채널 분석",
-                item: `${SITE.url}/dashboard/benchmarking`,
+                name: "지금 뜨는 채널",
+                item: `${SITE.url}/channel`,
             },
             {
                 "@type": "ListItem",
@@ -274,9 +276,9 @@ export default async function ChannelDetailPage({
 
             {/* [2026-10-30] 새 디자인: 모양만 바꿨다. 글·링크·순서는 그대로다 (색인 중인 페이지라). */}
             <main className="vh-main vh-chd">
-                <Link href="/dashboard/benchmarking" className="vh-back">
+                <Link href="/channel" className="vh-back">
                     <ArrowLeft aria-hidden="true" />
-                    채널 분석으로
+                    지금 뜨는 채널로
                 </Link>
 
                 {/* 헤더 */}
@@ -284,7 +286,7 @@ export default async function ChannelDetailPage({
                     숫자를 먼저 보고 현재로 오해하는 일이 없도록 헤더 위에 둔다. */}
                 {!isCurrent && (
                     <div className="vh-alert">
-                        <strong>지금은 급상승 순위에 없는 채널입니다.</strong>{" "}
+                        <strong>지금은 지금 뜨는 채널(최근 7일 안에 영상이 수집된 국내 채널)에 없는 채널입니다.</strong>{" "}
                         {firstSeen && lastSeen && (
                             <>
                                 {firstSeen} ~ {lastSeen} 사이 {daysSeen}일 순위에 올랐고,
@@ -310,7 +312,7 @@ export default async function ChannelDetailPage({
                     <div className="vh-chd-id">
                         <div className="vh-badges">
                             {!isCurrent && <span className="vh-badge vh-badge-warn">기록</span>}
-                            <span className="vh-badge">{TIER_LABEL[channel.tier] ?? `Tier ${channel.tier}`}</span>
+                            {/* [2026-10-31] 등급(Tier) 배지는 뺐다. 8,000곳 선별 순위의 등급이라 보드에는 없다. */}
                             <span className="vh-badge">{channel.main_category}</span>
                             {channel.league_group && (
                                 <span className="vh-badge">{LEAGUE_LABEL[channel.league_group] ?? channel.league_group}</span>
@@ -324,13 +326,19 @@ export default async function ChannelDetailPage({
                         {/* 기록 모드에선 순위가 0 이라 "0개 중 0번째"가 찍혔다. 대신 등장 이력을 쓴다. */}
                         {isCurrent ? (
                             <p className="vh-chd-rank">
-                                추적 중인 {channel.main_category} 채널{" "}
-                                {categoryTotal.toLocaleString()}개 중 구독자{" "}
+                                최근 7일 안에 수집된 국내 {channel.main_category} 채널{" "}
+                                {categoryTotal.toLocaleString()}곳 중 구독자{" "}
                                 <strong>{categoryRank.toLocaleString()}번째</strong>
+                                {risingRank > 0 && (
+                                    <>
+                                        {" "}· <Link href="/channel">떠오르는 순</Link>{" "}
+                                        <strong>{risingRank.toLocaleString()}위</strong>
+                                    </>
+                                )}
                             </p>
                         ) : (
                             <p className="vh-chd-rank">
-                                {channel.main_category} 카테고리 · 급상승 순위{" "}
+                                {channel.main_category} 카테고리 · Viral Hunter 채널 순위{" "}
                                 <strong>{daysSeen}일</strong> 등장
                                 {lastSeen && ` (마지막 ${lastSeen})`}
                             </p>
@@ -361,7 +369,7 @@ export default async function ChannelDetailPage({
                     shareText={
                         isCurrent && categoryRank > 0
                             ? `📈 ${channel.channel_title} · ${channel.main_category} 구독자 ${categoryRank}위 | Viral Hunter`
-                            : `📈 ${channel.channel_title} · 급상승 순위 ${daysSeen}일 등장 | Viral Hunter`
+                            : `📈 ${channel.channel_title} · 채널 순위 ${daysSeen}일 등장 | Viral Hunter`
                     }
                 />
 
@@ -444,8 +452,10 @@ export default async function ChannelDetailPage({
                         <div>
                             <dt>순위</dt>
                             <dd>
-                                한국 유튜브 전체가 아니라, 이 서비스가 추적 중인 채널
-                                {isCurrent ? ` ${overallTotal.toLocaleString()}개` : ""} 안에서의 상대 위치입니다.
+                                한국 유튜브 전체가 아니라, 최근 7일 안에 영상이 수집된 국내 채널
+                                {isCurrent ? ` ${overallTotal.toLocaleString()}곳` : ""} 안에서의 상대 위치입니다.
+                                떠오르는 순은 하루 조회수 증가를 구독자 수(가상의 구독자 1만 명을 더한 값)로 나눈 값의
+                                순서라, 구독자에 비해 조회수가 빠르게 느는 채널이 앞에 옵니다.
                             </dd>
                         </div>
                         <div>
@@ -476,9 +486,9 @@ export default async function ChannelDetailPage({
                         <div className="vh-card vh-empty">
                             {!isCurrent ? (
                                 <>
-                                    순위에서 빠진 채널은 일별 추이를 보관하지 않습니다.
+                                    지금 뜨는 채널에 없는 채널은 일별 추이를 보관하지 않습니다.
                                     <br />
-                                    <span>다시 급상승 순위에 오르면 추이가 표시됩니다.</span>
+                                    <span>새 영상이 다시 수집되어 목록에 오르면 추이가 표시됩니다.</span>
                                 </>
                             ) : awaitingBaseline ? (
                                 <>
