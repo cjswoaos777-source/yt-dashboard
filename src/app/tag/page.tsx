@@ -40,6 +40,9 @@ export async function generateMetadata({
             `국내 유튜브에서 지금 조회수가 오르고 있는 영상들의 태그 ${total.toLocaleString()}개를 ` +
             `급상승 규모 순으로 정리했습니다. 태그별로 어떤 영상이 뜨고 있는지 확인하세요.`,
         alternates: { canonical: page > 1 ? `/tag?page=${page}` : "/tag" },
+        // [2026-10-31] 구글 대청소 마무리: 2쪽부터는 구글에만 내보내지 않는다. 태그 상세가 전부 noindex 라
+        //   구글에는 noindex 페이지로만 가는 얇은 목록 96쪽이 남아 있었다. 다음·빙·네이버와 1쪽(/tag)은 그대로다.
+        ...(page > 1 && { robots: { index: true, follow: true, googleBot: { index: false, follow: true } } }),
     };
 }
 
