@@ -241,8 +241,8 @@ function RankingMethod() {
         </dl>
         <p>
           계산 방법은 <Link href="/about/metrics">지표 설명</Link>, 지난주 흐름은 <Link href="/report">주간 트렌드 리포트</Link>,
-          카테고리별로 뜨는 유튜버는 <Link href="/category">카테고리 순위</Link>에서 볼 수 있습니다. 이 순위로 &lsquo;지금 무엇을
-          만들면 좋을지&rsquo; 고른 결과는 <Link href="/ideas">지금 만들 만한 영상</Link>에 매시간 정리합니다.
+          카테고리별로 뜨는 유튜버는 <Link href="/category">카테고리 순위</Link>에서 볼 수 있습니다. 구독자 10만 명이 안 되는 채널에서
+          터진 영상은 <Link href="/ideas">작은 채널에서 터진 영상</Link>에 카테고리별로 매시간 정리합니다.
         </p>
       </section>
     </div>

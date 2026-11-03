@@ -571,6 +571,15 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-tagchips { display: flex; flex-wrap: wrap; gap: 8px; }
 .vh-tagchips > span { padding: 6px 12px; border-radius: 999px; background: var(--vh-surface); color: var(--vh-ink); font-size: 13px; font-weight: 600; }
 .vh-tagchips > span span { color: var(--vh-ink-3); font-weight: 500; }
+/* 작은 채널에서 터진 영상 (2026-11-03) */
+.vh-sm-jump { display: flex; flex-wrap: wrap; gap: 8px; }
+.vh-sm-jump a { padding: 6px 12px; border-radius: 999px; background: var(--vh-surface); color: var(--vh-ink); font-size: 13px; font-weight: 600; text-decoration: none; }
+.vh-sm-jump a:hover { background: var(--vh-surface-2); }
+.vh-sm-jump a span { color: var(--vh-ink-3); font-weight: 500; font-variant-numeric: tabular-nums; }
+.vh-sm-block { display: grid; gap: 28px; }
+.vh-sm-sec { scroll-margin-top: 80px; }
+.vh-sm-why { margin-top: 3px; color: var(--vh-ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.vh-sm-why strong { color: var(--vh-ink); font-weight: 700; }
 .vh-plain { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
 .vh-plain span { color: var(--vh-ink-3); }
 .vh-bullets-sm { gap: 5px; color: var(--vh-ink-2); font-size: 13.5px; }

@@ -8,6 +8,9 @@ import { supabase } from "@/lib/supabase";
  * 파이프라인(utube_rank/ideas_report.py)이 매시간 idea_reports 'latest' 행을 덮어쓴다.
  * 고르는 기준(rules)도 payload 에 같이 들어 있어 화면과 메일이 같은 말을 쓴다.
  * 유튜브 API 데이터가 들어가므로 날짜 행은 30일 뒤 지운다(report_mail.py).
+ *
+ * [2026-11-03] /ideas 는 small_by_category('작은 채널에서 터진 영상' 카테고리별)만 보여 준다.
+ * 주제 추천(ideas 등)은 파이프라인이 계속 만들지만 화면에서는 쓰지 않는다.
  */
 
 export interface IdeaVideo {
@@ -39,9 +42,26 @@ export interface TopicRow { topic: string; videos: number; channels: number; med
 export interface FormatStat { videos: number; median_hourly: number; median_views: number }
 export interface CategoryStat { category: string; median_hourly: number; videos: number }
 
+/** 작은 채널에서 터진 영상 한 개. ratio = 조회수 ÷ 구독자 수 */
+export interface SmallVideo extends IdeaVideo { ratio: number }
+export interface SmallSection {
+    category: string;   // 유튜브 카테고리 영문 이름
+    label: string;      // 화면 이름
+    count: number;      // 이 카테고리에서 터진 영상 수 (거른 뒤)
+    videos: SmallVideo[];
+}
+export interface SmallByCategory {
+    sections: SmallSection[];
+    total: number;
+    removed: Record<string, number>;
+    rules: string[];
+    note: string;
+}
+
 export interface IdeaReport {
     generated_at: string;
     sample: { videos: number; topics: number };
+    small_by_category?: SmallByCategory;
     ideas: Idea[];
     small_hits: IdeaVideo[];
     small_hits_note: string;
@@ -67,7 +87,7 @@ const getIdeasFromSupabase = unstable_cache(
         if (!data?.payload) throw new Error("아이디어 리포트가 아직 없습니다");
         return data.payload as IdeaReport;
     },
-    ["sb-ideas-v1"],
+    ["sb-ideas-v2"],   // v2: small_by_category 가 생겼다 (11-03)
     // 매시간 :30 무렵 새로 만들어진다. 30분 캐시면 늦어도 한 시간 안에 반영된다.
     { revalidate: 1800 },
 );

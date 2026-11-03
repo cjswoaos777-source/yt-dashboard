@@ -14,7 +14,7 @@ const MAIN = [
     { href: "/dashboard", label: "지금 뜨는 영상", match: (p: string) => p === "/dashboard" },
     { href: "/channel", label: "떠오르는 채널", match: (p: string) => p === "/channel" || p.startsWith("/channel/") },
     { href: "/category", label: "카테고리", match: (p: string) => p.startsWith("/category") },
-    { href: "/ideas", label: "만들 만한 영상", match: (p: string) => p.startsWith("/ideas") },
+    { href: "/ideas", label: "작은 채널 터진 영상", match: (p: string) => p.startsWith("/ideas") },
     { href: "/report", label: "주간 리포트", match: (p: string) => p.startsWith("/report") },
 ];
 const MORE = [

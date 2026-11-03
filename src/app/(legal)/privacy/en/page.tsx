@@ -36,7 +36,7 @@ export default function PrivacyEnPage() {
                     What we collect: your email address, the frequency you chose, and when you signed up, confirmed and
                     were sent an email, and the page where you signed up.
                 </li>
-                <li>Purpose: only to send the &ldquo;videos worth making now&rdquo; report and the confirmation email. We do not send advertising.</li>
+                <li>Purpose: only to send the report email (&ldquo;small channels breaking out now&rdquo;) and the confirmation email. We do not send advertising.</li>
                 <li>
                     Retention: deleted immediately when you unsubscribe. Sign-ups that are not confirmed are deleted
                     automatically after 7 days.
@@ -118,6 +118,7 @@ export default function PrivacyEnPage() {
             <ul>
                 <li>September 25, 2026: first published</li>
                 <li>October 29, 2026: added the report email section (collecting email addresses)</li>
+                <li>November 3, 2026: renamed the report email to &ldquo;small channels breaking out now&rdquo; (same data and purpose)</li>
             </ul>
         </>
     );
