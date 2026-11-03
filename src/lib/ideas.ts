@@ -9,7 +9,8 @@ import { supabase } from "@/lib/supabase";
  * 고르는 기준(rules)도 payload 에 같이 들어 있어 화면과 메일이 같은 말을 쓴다.
  * 유튜브 API 데이터가 들어가므로 날짜 행은 30일 뒤 지운다(report_mail.py).
  *
- * [2026-11-03] /ideas('지금 만들 만한 영상')는 small_by_category(작은 채널에서 터진 영상, 카테고리별)만 보여 준다.
+ * [2026-11-03] /ideas('지금 만들 만한 영상')는 small_topics(작은 채널 기준 주제, 카테고리별)를 보여 준다.
+ * 그 칸이 없으면 small_by_category(작은 채널 터진 영상)로 보여 준다.
  * 주제 추천(ideas 등)은 파이프라인이 계속 만들지만 화면에서는 쓰지 않는다.
  */
 
@@ -58,9 +59,29 @@ export interface SmallByCategory {
     note: string;
 }
 
+/** [2026-11-03 오후] 작은 채널 기준 주제(태그 묶음). 사용자: 예전 주제 추천처럼, 기준만 작은 채널로. */
+export interface SmallTopic {
+    topic: string;
+    format: "shorts" | "long";
+    headline: string;
+    badges: string[];
+    why: string[];
+    stats: { videos: number; channels: number; hits: number; hit_channels: number; median_hourly: number; new: boolean };
+    examples: SmallVideo[];
+}
+export interface SmallTopicSection { category: string; label: string; topics: SmallTopic[] }
+export interface SmallTopics {
+    sections: SmallTopicSection[];
+    small_videos: number;
+    clean_videos: number;
+    rules: string[];
+    note: string;
+}
+
 export interface IdeaReport {
     generated_at: string;
     sample: { videos: number; topics: number };
+    small_topics?: SmallTopics;
     small_by_category?: SmallByCategory;
     ideas: Idea[];
     small_hits: IdeaVideo[];
@@ -87,7 +108,7 @@ const getIdeasFromSupabase = unstable_cache(
         if (!data?.payload) throw new Error("아이디어 리포트가 아직 없습니다");
         return data.payload as IdeaReport;
     },
-    ["sb-ideas-v2"],   // v2: small_by_category 가 생겼다 (11-03)
+    ["sb-ideas-v3"],   // v3: small_topics 가 생겼다 (11-03 오후)
     // 매시간 :30 무렵 새로 만들어진다. 30분 캐시면 늦어도 한 시간 안에 반영된다.
     { revalidate: 1800 },
 );

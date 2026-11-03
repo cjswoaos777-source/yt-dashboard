@@ -69,7 +69,7 @@ export function SubscribeForm({ source, className = "" }: { source: string; clas
                 <p className="text-[15px] font-semibold text-neutral-900">리포트 메일로 받기</p>
             </div>
             <p className="mb-4 text-[13px] leading-relaxed text-neutral-500">
-                작은 채널에서 터진 영상을 카테고리별로 골라 &lsquo;만들 만한 영상&rsquo; 메일로 보내 드려요. 무료이고, 광고는 넣지 않아요.
+                작은 채널에서 터진 주제를 카테고리별로 골라 &lsquo;만들 만한 영상&rsquo; 메일로 보내 드려요. 무료이고, 광고는 넣지 않아요.
             </p>
 
             <label htmlFor={`sub-email-${source}`} className="sr-only">이메일 주소</label>

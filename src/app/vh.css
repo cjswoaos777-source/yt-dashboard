@@ -580,6 +580,7 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-sm-sec { scroll-margin-top: 80px; }
 .vh-sm-why { margin-top: 3px; color: var(--vh-ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
 .vh-sm-why strong { color: var(--vh-ink); font-weight: 700; }
+.vh-idea-head h3 { font-size: 18px; font-weight: 800; line-height: 1.35; }
 .vh-plain { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
 .vh-plain span { color: var(--vh-ink-3); }
 .vh-bullets-sm { gap: 5px; color: var(--vh-ink-2); font-size: 13.5px; }
