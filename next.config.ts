@@ -17,6 +17,12 @@ import type { NextConfig } from "next";
  * 보관 시간은 데이터가 바뀌는 주기에 맞췄다.
  *   채널·인사이트·카테고리 1시간 (매일 저녁 갱신) / 랭킹·구독자 구간 5분 (매시 25분경 갱신)
  * stale-while-revalidate 동안은 옛 보관본을 즉시 주고 뒤에서 새로 그린다.
+ *
+ * [2026-11-03] Vercel Hobby 의 Active CPU 는 30일에 4시간까지다. 10-29 부터 하루 9~15분을 써서(10-04~11-03 합계 2h55m)
+ * 일주일 안에 넘을 판이었다. 12시간 관측: 채널 성과 카드 이미지 315회 2분(가장 큼), 채널 상세 2,500회 1분(대부분 검색 로봇),
+ * /ideas 613회(보관 없이 매번 그림). 그래서 보관 시간을 늘린다.
+ *   채널 성과 카드 7일(카드 숫자는 하루 한 번 바뀌지만 공유 미리보기에는 충분) / 채널 상세 6시간 /
+ *   /ideas 30분(매시 갱신) / 태그 목록·상세 1시간
  */
 function cdnCache(source: string, seconds: number, staleSeconds: number) {
     return {
@@ -36,9 +42,9 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   async headers() {
     return [
-      cdnCache("/channel/:id", 3600, 86400),
-      // 채널 성과 카드 이미지 (opengraph-image.tsx). 그리는 데 글꼴 받기까지 수백 ms 라 꼭 보관한다.
-      cdnCache("/channel/:id/opengraph-image", 3600, 86400),
+      cdnCache("/channel/:id", 21600, 86400),
+      // 채널 성과 카드 이미지 (opengraph-image.tsx). 그리는 데 글꼴 받기까지 수백 ms 라 꼭 보관한다(11-03: 1시간 → 7일).
+      cdnCache("/channel/:id/opengraph-image", 604800, 604800),
       cdnCache("/channel", 3600, 86400),
       cdnCache("/insights", 3600, 86400),
       cdnCache("/insights/:slug", 3600, 86400),
@@ -49,6 +55,10 @@ const nextConfig: NextConfig = {
       // 카테고리 순위는 채널 지표로 만든다 (매일 저녁 갱신)
       cdnCache("/category", 3600, 86400),
       cdnCache("/category/:slug", 3600, 86400),
+      // 11-03: 보관 없이 매번 그리던 곳 (지금 만들 만한 영상은 매시 갱신, 태그는 매시 적재)
+      cdnCache("/ideas", 1800, 3600),
+      cdnCache("/tag", 3600, 86400),
+      cdnCache("/tag/:slug", 3600, 86400),
     ];
   },
 };
