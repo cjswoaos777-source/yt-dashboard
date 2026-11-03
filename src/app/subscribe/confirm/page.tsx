@@ -34,7 +34,7 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
             <p className="vh-lead">{m.body}</p>
             <div className="vh-about-btns">
                 <Link href="/ideas" className="vh-cta">
-                        작은 채널 터진 영상 보기
+                        지금 만들 만한 영상 보기
                     </Link>
                     {ok && (
                         <Link href={`/subscribe/manage?t=${t}`} className="vh-btn-line">

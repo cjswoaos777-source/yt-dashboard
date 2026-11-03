@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
  * 고르는 기준(rules)도 payload 에 같이 들어 있어 화면과 메일이 같은 말을 쓴다.
  * 유튜브 API 데이터가 들어가므로 날짜 행은 30일 뒤 지운다(report_mail.py).
  *
- * [2026-11-03] /ideas 는 small_by_category('작은 채널에서 터진 영상' 카테고리별)만 보여 준다.
+ * [2026-11-03] /ideas('지금 만들 만한 영상')는 small_by_category(작은 채널에서 터진 영상, 카테고리별)만 보여 준다.
  * 주제 추천(ideas 등)은 파이프라인이 계속 만들지만 화면에서는 쓰지 않는다.
  */
 

@@ -25,7 +25,7 @@ export default async function ManagePage({ searchParams }: { searchParams: Promi
                             구독 정보를 찾을 수 없어요. 이미 해지됐거나 링크가 잘못됐어요. 해지된 주소는 바로 지워져서 더는 메일이 가지 않아요.
                         </p>
                         <Link href="/ideas" className="vh-cta">
-                            작은 채널 터진 영상 보기
+                            지금 만들 만한 영상 보기
                         </Link>
                     </div>
                 )}

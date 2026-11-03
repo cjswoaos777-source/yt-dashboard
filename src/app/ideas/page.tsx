@@ -12,7 +12,7 @@ import { SITE } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 /*
- * [2026-11-03] 작은 채널에서 지금 터진 영상 (카테고리별 3개).
+ * [2026-11-03] 지금 만들 만한 영상 = 작은 채널에서 지금 터진 영상 (카테고리별 3개). 이름은 그대로 둔다(사용자 11-03).
  * 주제 추천은 대형 채널 주제(YG·악뮤)가 많이 나와서, 사용자 결정으로 작은 채널 영상만 카테고리별로 보여 준다.
  * 고르는 기준·주의 문구는 파이프라인(ideas_report.small_by_category)이 payload 에 같이 넣는다 — 메일과 같은 말.
  */
@@ -22,11 +22,11 @@ const DESCRIPTION =
     "게임·엔터테인먼트·교육·동물 등 분야별로, 조회수가 구독자의 몇 배인지 함께 보여 드려요.";
 
 export const metadata: Metadata = {
-    title: "작은 채널에서 지금 터진 영상 — 카테고리별 실시간 정리",
+    title: "지금 만들 만한 영상 — 작은 채널에서 터진 영상 카테고리별 정리",
     description: DESCRIPTION,
     alternates: { canonical: "/ideas" },
     openGraph: {
-        title: "작은 채널에서 지금 터진 영상 | Viral Hunter",
+        title: "지금 만들 만한 영상 | Viral Hunter",
         description: DESCRIPTION,
         url: `${SITE.url}/ideas`,
         type: "website",
@@ -149,9 +149,9 @@ export default async function IdeasPage() {
             </Link>
 
             <header className="vh-phead">
-                <h1>작은 채널에서 지금 터진 영상</h1>
+                <h1>지금 만들 만한 영상</h1>
                 <p className="vh-lead">
-                    구독자 10만 명이 안 되는 채널이 최근 2일 안에 올렸는데, 조회수가 구독자 수보다 훨씬 많이 나온 영상이에요.
+                    작은 채널에서 지금 터진 영상이에요. 구독자 10만 명이 안 되는 채널이 최근 2일 안에 올렸는데, 조회수가 구독자 수보다 훨씬 많이 나왔어요.
                     카테고리마다 3개씩 골랐고 매시간 바뀌어요.
                     {r && <> <span className="vh-lead-dim">({kstLabel(r.generated_at)} 기준)</span></>}
                 </p>

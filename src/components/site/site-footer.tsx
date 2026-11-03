@@ -19,7 +19,7 @@ export function SiteFooterNew() {
                     </div>
                     <div>
                         <b>분석</b>
-                        <Link href="/ideas">작은 채널에서 터진 영상</Link>
+                        <Link href="/ideas">지금 만들 만한 영상</Link>
                         <Link href="/report">주간 리포트</Link>
                         <Link href="/dashboard/benchmarking">벤치마킹</Link>
                         <Link href="/tag">태그</Link>
