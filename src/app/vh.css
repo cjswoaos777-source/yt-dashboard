@@ -506,7 +506,7 @@ tr[data-top] > .vh-trk { color: var(--vh-brand); }
 .vh-tsubs { color: var(--vh-ink-3); }
 .vh-two-even { display: grid; gap: 26px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 860px) { .vh-two-even { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.vh-mlist { margin: 0; padding: 6px 0; list-style: none; border-radius: var(--vh-radius); background: var(--vh-surface); }
+.vh-mlist { margin: 0; min-width: 0; padding: 6px 0; list-style: none; border-radius: var(--vh-radius); background: var(--vh-surface); }
 .vh-mlist li { display: flex; align-items: baseline; gap: 12px; padding: 10px 18px; font-size: 14px; }
 .vh-mlist li + li { border-top: 1px solid var(--vh-surface-2); }
 .vh-mlist-rk { flex: none; width: 22px; text-align: right; color: var(--vh-ink-3); font: 400 19px/1 var(--vh-font-rank); }
