@@ -10,7 +10,8 @@
  *   channel_open  page_type        사이트 안에서 채널 상세로 넘어간 클릭
  *   filter_change board, filter_name, filter_value
  *   share         page_type        공유(주소 복사) 버튼 — 주요 이벤트
- *   report_subscribe page_type, frequency  리포트 메일 신청 (확인 메일 전 단계)
+ *   report_subscribe page_type, frequency  리포트 메일 신청 (확인 메일 전 단계)
+ *   language_change  language, page_type  화면 글자 전환 (English 버튼)
  *
  * gtag 스크립트는 afterInteractive 로 늦게 뜨므로, 아직 없으면 잠깐 기다렸다 보낸다.
  * 광고 차단 등으로 끝내 없으면 조용히 버린다 (화면 동작에는 영향이 없어야 한다).

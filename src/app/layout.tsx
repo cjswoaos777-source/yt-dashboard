@@ -12,6 +12,7 @@ import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooterNew } from "@/components/site/site-footer";
 import { SITE } from "@/lib/site";
+import { LangProvider } from "@/lib/i18n";
 
 // 순위 숫자(B 시안의 굵은 숫자)에만 쓴다.
 const bebasNeue = Bebas_Neue({
@@ -113,12 +114,14 @@ export default function RootLayout({
         <AnalyticsTracker />
 
 
+        <LangProvider>
         <SmoothScroll>
           {/* 모든 화면 공통 머리·바닥글 (예전 사이드바와 화면마다 붙던 SiteFooter 를 대신한다) */}
           <SiteHeader />
           {children}
           <SiteFooterNew />
         </SmoothScroll>
+        </LangProvider>
       </body>
     </html>
   );

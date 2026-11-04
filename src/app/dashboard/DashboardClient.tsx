@@ -10,15 +10,16 @@ import { isSupabase } from "@/lib/datasource";
 import type { NoticeMeta } from "@/lib/notices";
 import { MetricsDisclosure } from "@/components/legal";
 import { track, currentPageType } from "@/lib/analytics";
+import { fmtCount, useT, useUiLang, type UiLang } from "@/lib/i18n";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
-function parseUpdatedHour(raw: string): string {
+function parseUpdatedHour(raw: string, uiLang: UiLang = "ko"): string {
     // '2026-03-31-10' 형식
     const dashMatch = raw.match(/(\d{4}-\d{2}-\d{2})-(\d{1,2})$/);
-    if (dashMatch) return `${parseInt(dashMatch[2], 10)}시`;
+    if (dashMatch) return uiLang === "en" ? `${parseInt(dashMatch[2], 10)}:00` : `${parseInt(dashMatch[2], 10)}시`;
     // 'HH:MM' 형식
     const colonMatch = raw.match(/^(\d{1,2}):(\d{2})$/);
-    if (colonMatch) return `${parseInt(colonMatch[1], 10)}시`;
+    if (colonMatch) return uiLang === "en" ? `${parseInt(colonMatch[1], 10)}:00` : `${parseInt(colonMatch[1], 10)}시`;
     return raw;
 }
 
@@ -94,13 +95,6 @@ async function fetchGzipJson<T>(url: string): Promise<T> {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtKr(n: number, unit = ""): string {
-    if (n >= 100_000_000) return `${(n / 100_000_000).toFixed(1)}억${unit}`;
-    if (n >= 10_000) return `${(n / 10_000).toFixed(1)}만${unit}`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}천${unit}`;
-    return `${n.toLocaleString()}${unit}`;
-}
-
 function getHeroLabel(sortBy: SortKey): string {
     switch (sortBy) {
         case "hourly_views": return "조회수 급상승";
@@ -110,12 +104,12 @@ function getHeroLabel(sortBy: SortKey): string {
     }
 }
 
-function getHeroValue(v: ViralVideo, sortBy: SortKey): string {
+function getHeroValue(v: ViralVideo, sortBy: SortKey, uiLang: UiLang): string {
     switch (sortBy) {
-        case "hourly_views": return fmtKr(v.hourly_view_increase, "회");
-        case "total_views": return fmtKr(v.total_views, "회");
-        case "hourly_likes": return fmtKr(v.hourly_like_increase);
-        case "hourly_comments": return fmtKr(v.hourly_comment_increase);
+        case "hourly_views": return fmtCount(v.hourly_view_increase, uiLang, "회");
+        case "total_views": return fmtCount(v.total_views, uiLang, "회");
+        case "hourly_likes": return fmtCount(v.hourly_like_increase, uiLang);
+        case "hourly_comments": return fmtCount(v.hourly_comment_increase, uiLang);
     }
 }
 
@@ -155,6 +149,8 @@ function Pill({ active, onClick, children }: {
 
 function HomeInfoPanel() {
     const [open, setOpen] = useState(false);
+    const t = useT();
+    const { uiLang } = useUiLang();
     return (
         <div className="vh-pop-wrap">
             <button
@@ -167,7 +163,7 @@ function HomeInfoPanel() {
                     <circle cx="6.5" cy="6.5" r="6" stroke="currentColor" strokeWidth="1.2" />
                     <text x="6.5" y="10" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="700">?</text>
                 </svg>
-                랭킹 산정 방식
+                {t("랭킹 산정 방식")}
                 <svg
                     width="10" height="10" viewBox="0 0 10 10" fill="none"
                     className={cn("transition-transform duration-200", open ? "rotate-180" : "")}
@@ -178,22 +174,35 @@ function HomeInfoPanel() {
 
             {open && (
                 <div className="vh-pop">
-                    {/* 제목 */}
-                    <h3>
-                        🔥 실시간 떡상 영상 랭킹이란?
-                    </h3>
-                    {/* 본문 */}
-                    <p>
-                        채널의 체급(구독자 수)이라는 계급장을 떼고, 지금 이 순간 유튜브 알고리즘의 선택을 받아
-                        가장 무섭게 터지고 있는 <strong>&apos;신규 영상&apos;</strong>들만 모아둔
-                        실시간 트렌드 지표입니다.
-                    </p>
-                    <p>
-                        지금 당장 조회수를 쓸어 담고 있는 영상의 썸네일과 제목 기획을 참고해 보세요.
-                    </p>
+                    {uiLang === "en" ? (
+                        <>
+                            <h3>🔥 What is this ranking?</h3>
+                            <p>
+                                It sets channel size aside and gathers only the <strong>new videos</strong> taking off
+                                on YouTube right now.
+                            </p>
+                            <p>Look at the thumbnails and titles of videos pulling in views at this moment for ideas.</p>
+                        </>
+                    ) : (
+                        <>
+                            {/* 제목 */}
+                            <h3>
+                                🔥 실시간 떡상 영상 랭킹이란?
+                            </h3>
+                            {/* 본문 */}
+                            <p>
+                                채널의 체급(구독자 수)이라는 계급장을 떼고, 지금 이 순간 유튜브 알고리즘의 선택을 받아
+                                가장 무섭게 터지고 있는 <strong>&apos;신규 영상&apos;</strong>들만 모아둔
+                                실시간 트렌드 지표입니다.
+                            </p>
+                            <p>
+                                지금 당장 조회수를 쓸어 담고 있는 영상의 썸네일과 제목 기획을 참고해 보세요.
+                            </p>
+                        </>
+                    )}
                     {/* 닫기 */}
                     <button type="button" onClick={() => setOpen(false)} className="vh-pop-close">
-                        닫기 ✕
+                        {t("닫기 ✕")}
                     </button>
                 </div>
             )}
@@ -223,6 +232,8 @@ function VideoCardSkeleton() {
 
 function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; sortBy: SortKey }) {
     const [imgError, setImgError] = useState(false);
+    const t = useT();
+    const { uiLang } = useUiLang();
     const isShorts = video.video_type === "Shorts 📱";
 
     // [2026-10-30 새 디자인] 카드 → 한 줄. 글·순서·링크(한 줄 전체가 영상 링크)·썸네일 alt 는 그대로 두고
@@ -271,15 +282,15 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
             </span>
             <span className="vh-mv">
                 <small>
-                    {getHeroLabel(sortBy)}
+                    {t(getHeroLabel(sortBy))}
                 </small>
                 <strong>
-                    {getHeroValue(video, sortBy)}
+                    {getHeroValue(video, sortBy, uiLang)}
                 </strong>
             </span>
             <span className="vh-rmeta">
                 <span className="vh-rtot">
-                    총 {fmtKr(video.total_views, "회")} &middot; 좋아요 {fmtKr(video.total_likes)} &middot; 댓글 {fmtKr(video.total_comments)}
+                    {t("총")} {fmtCount(video.total_views, uiLang, "회")} &middot; {t("좋아요")} {fmtCount(video.total_likes, uiLang)} &middot; {t("댓글")} {fmtCount(video.total_comments, uiLang)}
                 </span>
                 {video.category_name && (
                     <span className="vh-rtag">
@@ -287,7 +298,7 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
                     </span>
                 )}
                 <span className="vh-rtag">
-                    {video.origin_type === "DOMESTIC" ? "🇰🇷 국내" : "🌐 해외"}
+                    {t(video.origin_type === "DOMESTIC" ? "🇰🇷 국내" : "🌐 해외")}
                 </span>
             </span>
         </a>
@@ -298,6 +309,7 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
 
 function ShareButton() {
     const [copied, setCopied] = useState(false);
+    const t = useT();
     function handleCopy() {
         track("share", { page_type: currentPageType() });
         navigator.clipboard.writeText(window.location.href).then(() => {
@@ -308,18 +320,18 @@ function ShareButton() {
     return (
         <button
             onClick={handleCopy}
-            title="현재 필터 URL 복사"
+            title={t("현재 필터 URL 복사")}
             className="vh-btn-ghost"
         >
             {copied ? (
                 <>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L4.5 9L10 3" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-emerald-600">링크 복사됨!</span>
+                    <span className="text-emerald-600">{t("링크 복사됨!")}</span>
                 </>
             ) : (
                 <>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1H11V4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M4 11H1V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M11 1L6.5 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M1 11L5.5 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-                    공유
+                    {t("공유")}
                 </>
             )}
         </button>
@@ -342,6 +354,8 @@ export function DashboardClient({
 }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const t = useT();
+    const { uiLang } = useUiLang();
 
     // ── URL 파라미터에서 필터 초기값 읽기 ──────────────────────────────────
     function initSortBy(): SortKey {
@@ -522,7 +536,9 @@ export function DashboardClient({
                     {/* 지역 범위는 아래 필터 pill 이 활성 상태로 이미 보여주므로
                         여기 중복 표기하지 않는다. */}
                     <span>
-                        Live · {liveUpdatedAt ? parseUpdatedHour(liveUpdatedAt) : "-"} 집계
+                        {uiLang === "en"
+                            ? `Live · as of ${liveUpdatedAt ? parseUpdatedHour(liveUpdatedAt, "en") : "-"} KST`
+                            : <>Live · {liveUpdatedAt ? parseUpdatedHour(liveUpdatedAt) : "-"} 집계</>}
                     </span>
                 </p>
                 {/* [2026-10-16] 이 페이지에 h1 이 하나도 없었다(div+span). 검색엔진이
@@ -534,12 +550,12 @@ export function DashboardClient({
                         TOP 1000
                     </span>
                     <span className="vh-h1-sub">
-                        유튜브 실시간 급상승 순위
+                        {t("유튜브 실시간 급상승 순위")}
                     </span>
                 </h1>
                 <div className="vh-tools">
                     <p className="vh-lead">
-                        지금 조회수가 가장 빠르게 오르는 유튜브 동영상을 최대 1,000위까지 · 쇼츠·롱폼, 카테고리, 구독자 구간별로 골라 보세요
+                        {t("지금 조회수가 가장 빠르게 오르는 유튜브 동영상을 최대 1,000위까지 · 쇼츠·롱폼, 카테고리, 구독자 구간별로 골라 보세요")}
                     </p>
                     <HomeInfoPanel />
                     <ShareButton />
@@ -559,7 +575,7 @@ export function DashboardClient({
                         {latestNotice.title}
                     </span>
                     <span className="vh-notice-go">
-                        자세히 →
+                        {t("자세히 →")}
                     </span>
                 </a>
             )}
@@ -570,7 +586,7 @@ export function DashboardClient({
                 {/* Row 1: Sort */}
                 <div className="vh-filter-row">
                     <span>
-                        정렬 기준 ▸
+                        {t("정렬 기준 ▸")}
                     </span>
                     <div className="vh-chips">
                         {([
@@ -579,7 +595,7 @@ export function DashboardClient({
                             { key: "hourly_comments", label: "💬 댓글 급상승" },
                             { key: "total_views", label: "📈 누적 조회수" },
                         ] as { key: SortKey; label: string }[]).map(({ key, label }) => (
-                            <Pill key={key} active={sortBy === key} onClick={() => setSortBy(key)}>{label}</Pill>
+                            <Pill key={key} active={sortBy === key} onClick={() => setSortBy(key)}>{t(label)}</Pill>
                         ))}
                     </div>
                 </div>
@@ -589,9 +605,9 @@ export function DashboardClient({
                 {/* Row 2: Filters */}
                 {/* Format */}
                 <div className="vh-filter-row">
-                    <span>형식</span>
+                    <span>{t("형식")}</span>
                     <div className="vh-chips">
-                        <Pill active={isShorts === null} onClick={() => setIsShorts(null)}>전체</Pill>
+                        <Pill active={isShorts === null} onClick={() => setIsShorts(null)}>{t("전체")}</Pill>
                         <Pill active={isShorts === true} onClick={() => setIsShorts(true)}>📱 Shorts</Pill>
                         <Pill active={isShorts === false} onClick={() => setIsShorts(false)}>📺 Long-form</Pill>
                     </div>
@@ -599,23 +615,23 @@ export function DashboardClient({
 
                 {/* Origin */}
                 <div className="vh-filter-row">
-                    <span>지역</span>
+                    <span>{t("지역")}</span>
                     <div className="vh-chips">
                         {/* 기본값인 국내를 맨 앞에 둔다 */}
-                        <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>🇰🇷 국내</Pill>
-                        <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>🌐 해외</Pill>
-                        <Pill active={origin === null} onClick={() => setOrigin(null)}>국내+해외</Pill>
+                        <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>{t("🇰🇷 국내")}</Pill>
+                        <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>{t("🌐 해외")}</Pill>
+                        <Pill active={origin === null} onClick={() => setOrigin(null)}>{t("국내+해외")}</Pill>
                     </div>
                 </div>
 
                 {/* Language — 해외를 골랐을 때만. 국내는 한국어 하나라 칩이 의미 없다. */}
                 {origin === "IMPORTED" && isSupabase && (
                     <div className="vh-filter-row">
-                        <span>언어</span>
+                        <span>{t("언어")}</span>
                         <div className="vh-chips">
-                            <Pill active={lang === null} onClick={() => setLang(null)}>전체</Pill>
+                            <Pill active={lang === null} onClick={() => setLang(null)}>{t("전체")}</Pill>
                             {LANG_CHIPS.map(({ code, label }) => (
-                                <Pill key={code} active={lang === code} onClick={() => setLang(code)}>{label}</Pill>
+                                <Pill key={code} active={lang === code} onClick={() => setLang(code)}>{t(label)}</Pill>
                             ))}
                         </div>
                     </div>
@@ -623,13 +639,13 @@ export function DashboardClient({
 
                 {/* Tier (구독자 구간) */}
                 <div className="vh-filter-row">
-                    <span>구독자</span>
+                    <span>{t("구독자")}</span>
                     <div className="vh-chips">
                         {TIER_CONFIG.map(({ key, label, sub }) => (
                             <Pill key={key} active={tier === key} onClick={() => setTier(key)}>
-                                {label}
+                                {t(label)}
                                 {sub && (
-                                    <small>{sub}</small>
+                                    <small>{t(sub)}</small>
                                 )}
                             </Pill>
                         ))}
@@ -639,9 +655,9 @@ export function DashboardClient({
                 {/* Category */}
                 {categories.length > 0 && (
                     <div className="vh-filter-row">
-                        <span>카테고리</span>
+                        <span>{t("카테고리")}</span>
                         <div className="vh-chips">
-                            <Pill active={category === null} onClick={() => setCategory(null)}>전체</Pill>
+                            <Pill active={category === null} onClick={() => setCategory(null)}>{t("전체")}</Pill>
                             {categories.map((c) => (
                                 <Pill key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Pill>
                             ))}
@@ -651,8 +667,7 @@ export function DashboardClient({
                             영상이 Music 에 섞여 보인다는 문의가 있었다. 우리가 재분류하지 않고
                             출처를 밝힌다. */}
                         <p className="vh-filter-note">
-                            카테고리는 영상을 올린 사람이 직접 지정한 유튜브 카테고리 기준입니다.
-                            그래서 내용과 다른 카테고리에 들어간 영상이 있을 수 있어요.
+                            {t("카테고리는 영상을 올린 사람이 직접 지정한 유튜브 카테고리 기준입니다. 그래서 내용과 다른 카테고리에 들어간 영상이 있을 수 있어요.")}
                         </p>
                     </div>
                 )}
@@ -663,11 +678,11 @@ export function DashboardClient({
                 <div className="vh-error">
                     <span className="vh-error-ic">🚨</span>
                     <div>
-                        <b>데이터를 불러오지 못했습니다</b>
-                        <p>잠시 후 다시 시도해주세요</p>
+                        <b>{t("데이터를 불러오지 못했습니다")}</b>
+                        <p>{t("잠시 후 다시 시도해주세요")}</p>
                     </div>
                     <button type="button" onClick={refetch}>
-                        다시 시도
+                        {t("다시 시도")}
                     </button>
                 </div>
             )}
@@ -678,9 +693,13 @@ export function DashboardClient({
                     {/* 전체가 몇 개인지 함께 보여준다. 예전에는 50위가 상한이라
                         '50개 표시 중'이 곧 전부였지만, 이제는 더 있다는 걸 알려야 한다. */}
                     <p className="vh-count">
-                        {matched.length > videos.length
-                            ? `${matched.length.toLocaleString()}개 중 ${videos.length}개 표시 중`
-                            : `${videos.length}개 영상 표시 중`}
+                        {uiLang === "en"
+                            ? (matched.length > videos.length
+                                ? `Showing ${videos.length} of ${matched.length.toLocaleString("en")} videos`
+                                : `Showing ${videos.length} videos`)
+                            : matched.length > videos.length
+                                ? `${matched.length.toLocaleString()}개 중 ${videos.length}개 표시 중`
+                                : `${videos.length}개 영상 표시 중`}
                     </p>
                 </div>
             )}
@@ -694,7 +713,7 @@ export function DashboardClient({
                 </div>
             ) : !error && videos.length === 0 ? (
                 <div className="vh-empty">
-                    선택한 필터에 해당하는 영상이 없습니다.
+                    {t("선택한 필터에 해당하는 영상이 없습니다.")}
                 </div>
             ) : !error ? (
                 <>
@@ -711,10 +730,12 @@ export function DashboardClient({
                                 type="button"
                                 onClick={() => setVisibleCount((n) => n + PAGE_STEP)}
                             >
-                                더 보기 (+{Math.min(PAGE_STEP, matched.length - videos.length)})
+                                {t("더 보기")} (+{Math.min(PAGE_STEP, matched.length - videos.length)})
                             </button>
                             <p>
-                                {(matched.length - videos.length).toLocaleString()}개 더 있습니다
+                                {uiLang === "en"
+                                    ? `${(matched.length - videos.length).toLocaleString("en")} more`
+                                    : `${(matched.length - videos.length).toLocaleString()}개 더 있습니다`}
                             </p>
                         </div>
                     )}

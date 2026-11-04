@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT, useUiLang } from "@/lib/i18n";
 
 /**
  * 사이트 머리 메뉴 (2026-10-30 새 디자인). 예전 왼쪽 사이드바를 대신한다.
@@ -27,36 +28,49 @@ const MORE = [
     { href: "/about", label: "소개" },
 ];
 
+/** 버튼을 눌렀을 때만 바꾼다. 자동으로 바꾸지 않는다 (이유는 lib/i18n.tsx). */
+function LangToggle() {
+    const { uiLang, setUiLang } = useUiLang();
+    const next = uiLang === "en" ? "ko" : "en";
+    return (
+        <button type="button" className="vh-lang" lang={next} onClick={() => setUiLang(next)}>
+            {next === "en" ? "English" : "한국어"}
+        </button>
+    );
+}
+
 export function SiteHeader() {
     const path = usePathname() ?? "/";
+    const t = useT();
     return (
         <header className="vh-head">
             <div className="vh-head-in">
-                <Link href="/" className="vh-logo" aria-label="Viral Hunter 홈">
+                <Link href="/" className="vh-logo" aria-label={t("Viral Hunter 홈")}>
                     <span className="vh-logo-mark" aria-hidden="true" />
                     Viral Hunter
                 </Link>
-                <nav className="vh-nav" aria-label="주요 메뉴">
+                <nav className="vh-nav" aria-label={t("주요 메뉴")}>
                     {MAIN.map((m) => (
                         <Link key={m.href} href={m.href} aria-current={m.match(path) ? "page" : undefined}>
-                            {m.label}
+                            {t(m.label)}
                         </Link>
                     ))}
-                    <Link href="/about#support" className="vh-nav-support">☕ 후원</Link>
+                    <Link href="/about#support" className="vh-nav-support">{t("☕ 후원")}</Link>
                 </nav>
                 <details className="vh-navmore">
-                    <summary>더보기</summary>
+                    <summary>{t("더보기")}</summary>
                     <div>
                         {MORE.map((m) => (
                             <Link key={m.href} href={m.href}>
-                                {m.label}
+                                {t(m.label)}
                             </Link>
                         ))}
                     </div>
                 </details>
                 <Link href="/about#support" className="vh-support-link">
-                    ☕ 후원하기
+                    {t("☕ 후원하기")}
                 </Link>
+                <LangToggle />
             </div>
         </header>
     );

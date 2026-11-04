@@ -7,7 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MetricsDisclosure } from "@/components/legal";
 import { track, currentPageType } from "@/lib/analytics";
-import { categoryKo, fmtKr } from "@/components/site/rank";
+import { categoryKo } from "@/components/site/rank";
+import { fmtCount, useT, useUiLang, type UiLang } from "@/lib/i18n";
 import { NEW_CHANNEL_DAYS, channelAgeDays } from "@/lib/tier-channel-types";
 import {
     AGE_BANDS, BOARD_CATEGORIES, BOARD_FORMATS, BOARD_LIMIT, BOARD_PRESETS, BOARD_SORTS,
@@ -34,9 +35,9 @@ function formatDate(d: string | null): string {
 }
 
 /** 1만 미만 소수(바이럴 점수)는 한 자리까지 */
-function fmtValue(v: number, sort: BoardSort): string {
-    if (sort === "viral") return v >= 1_000 ? fmtKr(Math.round(v)) : v.toFixed(1);
-    return fmtKr(Math.abs(Math.round(v)));
+function fmtValue(v: number, sort: BoardSort, uiLang: UiLang): string {
+    if (sort === "viral") return v >= 1_000 ? fmtCount(Math.round(v), uiLang) : v.toFixed(1);
+    return fmtCount(Math.abs(Math.round(v)), uiLang);
 }
 
 function signOf(v: number, sort: BoardSort): string {
@@ -67,6 +68,8 @@ function Pill({ active, onClick, children }: {
 
 function InfoPanel() {
     const [open, setOpen] = useState(false);
+    const t = useT();
+    const { uiLang } = useUiLang();
     return (
         <div className="vh-pop-wrap">
             <button
@@ -79,7 +82,7 @@ function InfoPanel() {
                     <circle cx="6.5" cy="6.5" r="6" stroke="currentColor" strokeWidth="1.2" />
                     <text x="6.5" y="10" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="700">?</text>
                 </svg>
-                순위 산정 방식
+                {t("순위 산정 방식")}
                 <svg
                     width="10" height="10" viewBox="0 0 10 10" fill="none"
                     className={cn("transition-transform duration-200", open ? "rotate-180" : "")}
@@ -90,6 +93,33 @@ function InfoPanel() {
 
             {open && (
                 <div className="vh-pop vh-pop-wide">
+                    {uiLang === "en" ? (
+                        <>
+                            <h3>🚀 How trending channels are ranked</h3>
+                            <p>
+                                We refresh subscribers and views for <strong>every Korean channel</strong> collected in the last 7 days
+                                each evening, then rank them by average daily growth. Channels aren&apos;t hand-picked in advance.
+                            </p>
+                            <ul className="vh-pop-list">
+                                <li>
+                                    <strong>Rising</strong> Daily view growth divided by subscribers, so channels growing fast for their
+                                    size come first. We add a virtual 10,000 subscribers so a channel with a few hundred subscribers
+                                    can&apos;t take first place with one video.
+                                </li>
+                                <li><strong>Views growth</strong> Average daily increase in the channel&apos;s total views.</li>
+                                <li>
+                                    <strong>Subscriber growth</strong> Average daily increase in subscribers. YouTube rounds subscriber
+                                    counts to three digits, so large channels grow in steps.
+                                </li>
+                                <li>
+                                    <strong>Viral score</strong> Average views of videos from the last 7 days divided by subscribers
+                                    (adding 3,000 subscribers for Shorts channels and 1,000 for others).
+                                </li>
+                            </ul>
+                            <p>Korean channels are those where at least half of the videos collected in the last 30 days are in Korean.</p>
+                        </>
+                    ) : (
+                        <>
                     <h3>🚀 지금 뜨는 채널은 이렇게 줄 세웁니다</h3>
                     <p>
                         최근 7일 안에 수집된 <strong>국내 채널 전부</strong>의 구독자·조회수를 매일 저녁 새로 받아,
@@ -112,8 +142,10 @@ function InfoPanel() {
                         </li>
                     </ul>
                     <p>국내 채널은 최근 30일 동안 수집된 영상의 절반 이상이 한국어인 채널입니다.</p>
+                        </>
+                    )}
                     <button type="button" onClick={() => setOpen(false)} className="vh-pop-close">
-                        닫기 ✕
+                        {t("닫기 ✕")}
                     </button>
                 </div>
             )}
@@ -125,6 +157,7 @@ function InfoPanel() {
 
 function ShareButton() {
     const [copied, setCopied] = useState(false);
+    const t = useT();
     function handleCopy() {
         track("share", { page_type: currentPageType() });
         navigator.clipboard.writeText(window.location.href).then(() => {
@@ -133,16 +166,16 @@ function ShareButton() {
         });
     }
     return (
-        <button onClick={handleCopy} title="현재 필터 URL 복사" className="vh-btn-ghost">
+        <button onClick={handleCopy} title={t("현재 필터 URL 복사")} className="vh-btn-ghost">
             {copied ? (
                 <>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L4.5 9L10 3" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-emerald-600">링크 복사됨!</span>
+                    <span className="text-emerald-600">{t("링크 복사됨!")}</span>
                 </>
             ) : (
                 <>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1H11V4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M4 11H1V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M11 1L6.5 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><path d="M1 11L5.5 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-                    공유
+                    {t("공유")}
                 </>
             )}
         </button>
@@ -167,6 +200,8 @@ function RowSkeleton() {
 
 function ChannelRow({ c, rank, sort }: { c: BoardChannel; rank: number; sort: BoardSort }) {
     const [imgError, setImgError] = useState(false);
+    const t = useT();
+    const { uiLang } = useUiLang();
     const metric = boardMetric(c, sort);
     const ageDays = channelAgeDays(c);
     const isNew = ageDays !== null && ageDays <= NEW_CHANNEL_DAYS;
@@ -188,33 +223,43 @@ function ChannelRow({ c, rank, sort }: { c: BoardChannel; rank: number; sort: Bo
                 )}
             </span>
             <span className="vh-rk">{rank}</span>
-            {c.league_group && <span className="vh-rtype">{FORMAT_SHORT[c.league_group]}</span>}
+            {c.league_group && <span className="vh-rtype">{t(FORMAT_SHORT[c.league_group])}</span>}
 
             <span className="vh-tt">
                 <span className="vh-rch">
-                    {c.main_category ? categoryKo(c.main_category) : "분류 없음"}
-                    {isNew && ` · 개설 ${ageDays}일`}
+                    {c.main_category ? (uiLang === "en" ? c.main_category : categoryKo(c.main_category)) : t("분류 없음")}
+                    {isNew && (uiLang === "en" ? ` · ${ageDays} days old` : ` · 개설 ${ageDays}일`)}
                 </span>
                 <h3 className="vh-title">{c.channel_title}</h3>
             </span>
             <span className="vh-mv">
-                <small>{metric.label}</small>
+                <small>{t(metric.label)}</small>
                 <strong>
                     {signOf(metric.value, sort)}
-                    {fmtValue(metric.value, sort)}
-                    {metric.unit}
+                    {fmtValue(metric.value, sort, uiLang)}
+                    {uiLang === "en" ? "" : metric.unit}
                 </strong>
             </span>
             <span className="vh-rmeta">
                 {/* 한 덩어리로 둔다. 따로 두면 휴대폰에서 줄 앞에 '·' 가 걸린다. */}
-                <span>
-                    구독자 {fmtKr(c.subscriber_count)}명 &middot;{" "}
-                    {sort === "subs" || sort === "viral"
-                        ? `하루 조회수 +${fmtKr(Math.max(0, c.avg_daily_view_increase))}회`
-                        : `하루 구독자 ${c.avg_daily_sub_increase < 0 ? "-" : "+"}${fmtKr(Math.abs(c.avg_daily_sub_increase))}명`}
-                    {" "}&middot; 최근 7일 영상 {c.videos_7d.toLocaleString()}개
-                </span>
-                {isNew && <span className="vh-rtag">✨ 신규</span>}
+                {uiLang === "en" ? (
+                    <span>
+                        Subscribers {fmtCount(c.subscriber_count, uiLang)} &middot;{" "}
+                        {sort === "subs" || sort === "viral"
+                            ? `Daily views +${fmtCount(Math.max(0, c.avg_daily_view_increase), uiLang)}`
+                            : `Daily subscribers ${c.avg_daily_sub_increase < 0 ? "-" : "+"}${fmtCount(Math.abs(c.avg_daily_sub_increase), uiLang)}`}
+                        {" "}&middot; Videos (7 days) {c.videos_7d.toLocaleString("en")}
+                    </span>
+                ) : (
+                    <span>
+                        구독자 {fmtCount(c.subscriber_count, uiLang)}명 &middot;{" "}
+                        {sort === "subs" || sort === "viral"
+                            ? `하루 조회수 +${fmtCount(Math.max(0, c.avg_daily_view_increase), uiLang)}회`
+                            : `하루 구독자 ${c.avg_daily_sub_increase < 0 ? "-" : "+"}${fmtCount(Math.abs(c.avg_daily_sub_increase), uiLang)}명`}
+                        {" "}&middot; 최근 7일 영상 {c.videos_7d.toLocaleString()}개
+                    </span>
+                )}
+                {isNew && <span className="vh-rtag">{t("✨ 신규")}</span>}
             </span>
         </>
     );
@@ -256,6 +301,8 @@ export function ChannelBoardClient({
     // router.push 는 같은 페이지라도 서버 컴포넌트를 다시 그려, 필터를 누를 때마다 서버를 한 번 더 거친다.
     // 뒤로 가기도 주소를 따라 그대로 동작한다.
     const searchParams = useSearchParams();
+    const t = useT();
+    const { uiLang } = useUiLang();
     const q = useMemo(() => parseBoardQuery(searchParams), [searchParams]);
     const key = boardQueryString(q);
 
@@ -310,15 +357,18 @@ export function ChannelBoardClient({
         <main className="vh-main">
             {/* ── 머리 ─────────────────────────────────────────── */}
             <div className="vh-rhead">
-                <p className="vh-eyebrow">매일 저녁 갱신 · {formatDate(liveDate)} 집계</p>
+                <p className="vh-eyebrow">
+                    {uiLang === "en"
+                        ? `Updated every evening KST · data as of ${liveDate ? formatDate(liveDate) : "-"}`
+                        : <>매일 저녁 갱신 · {formatDate(liveDate)} 집계</>}
+                </p>
                 <h1>
                     <span className="vh-top1000">TOP 1000</span>
-                    <span className="vh-h1-sub">지금 뜨는 유튜브 채널 순위</span>
+                    <span className="vh-h1-sub">{t("지금 뜨는 유튜브 채널 순위")}</span>
                 </h1>
                 <div className="vh-tools">
                     <p className="vh-lead">
-                        최근 7일 안에 영상이 뜬 국내 채널 전부를 매일 다시 재서, 구독자에 비해 조회수가 빠르게 느는
-                        채널부터 보여 드립니다 · 쇼츠·롱폼, 구독자 규모, 카테고리, 채널 나이로 골라 보세요
+                        {t("최근 7일 안에 영상이 뜬 국내 채널 전부를 매일 다시 재서, 구독자에 비해 조회수가 빠르게 느는 채널부터 보여 드립니다 · 쇼츠·롱폼, 구독자 규모, 카테고리, 채널 나이로 골라 보세요")}
                     </p>
                     <InfoPanel />
                     <ShareButton />
@@ -330,10 +380,10 @@ export function ChannelBoardClient({
             {/* ── 필터 ─────────────────────────────────────────── */}
             <div className="vh-card vh-rfilters">
                 <div className="vh-filter-row">
-                    <span>바로 보기</span>
+                    <span>{t("바로 보기")}</span>
                     <div className="vh-chips">
                         <Pill active={boardQueryString(q) === ""} onClick={() => apply(DEFAULT_BOARD_QUERY, "preset", null)}>
-                            전체 떠오르는 순
+                            {t("전체 떠오르는 순")}
                         </Pill>
                         {BOARD_PRESETS.map((p) => (
                             <Pill
@@ -341,7 +391,7 @@ export function ChannelBoardClient({
                                 active={activePreset === p.key}
                                 onClick={() => apply({ ...DEFAULT_BOARD_QUERY, ...p.query }, "preset", p.key)}
                             >
-                                {p.label}
+                                {t(p.label)}
                             </Pill>
                         ))}
                     </div>
@@ -350,10 +400,10 @@ export function ChannelBoardClient({
                 <div className="vh-rfilters-line" />
 
                 <div className="vh-filter-row">
-                    <span>정렬 기준 ▸</span>
+                    <span>{t("정렬 기준 ▸")}</span>
                     <div className="vh-chips">
                         {BOARD_SORTS.map(({ key, label }) => (
-                            <Pill key={key} active={q.sort === key} onClick={() => set("sort", key)}>{label}</Pill>
+                            <Pill key={key} active={q.sort === key} onClick={() => set("sort", key)}>{t(label)}</Pill>
                         ))}
                     </div>
                 </div>
@@ -361,47 +411,46 @@ export function ChannelBoardClient({
                 <div className="vh-rfilters-line" />
 
                 <div className="vh-filter-row">
-                    <span>형식</span>
+                    <span>{t("형식")}</span>
                     <div className="vh-chips">
-                        <Pill active={q.format === null} onClick={() => set("format", null)}>전체</Pill>
+                        <Pill active={q.format === null} onClick={() => set("format", null)}>{t("전체")}</Pill>
                         {BOARD_FORMATS.map((f) => (
-                            <Pill key={f.key} active={q.format === f.key} onClick={() => set("format", f.key)}>{f.label}</Pill>
+                            <Pill key={f.key} active={q.format === f.key} onClick={() => set("format", f.key)}>{t(f.label)}</Pill>
                         ))}
                     </div>
                 </div>
 
                 <div className="vh-filter-row">
-                    <span>구독자</span>
+                    <span>{t("구독자")}</span>
                     <div className="vh-chips">
-                        <Pill active={q.size === null} onClick={() => set("size", null)}>전체</Pill>
+                        <Pill active={q.size === null} onClick={() => set("size", null)}>{t("전체")}</Pill>
                         {SIZE_BANDS.map((b) => (
-                            <Pill key={b.key} active={q.size === b.key} onClick={() => set("size", b.key)}>{b.label}</Pill>
+                            <Pill key={b.key} active={q.size === b.key} onClick={() => set("size", b.key)}>{t(b.label)}</Pill>
                         ))}
                     </div>
                 </div>
 
                 <div className="vh-filter-row">
-                    <span>카테고리</span>
+                    <span>{t("카테고리")}</span>
                     <div className="vh-chips">
-                        <Pill active={q.category === null} onClick={() => set("category", null)}>전체</Pill>
+                        <Pill active={q.category === null} onClick={() => set("category", null)}>{t("전체")}</Pill>
                         {BOARD_CATEGORIES.map((c) => (
-                            <Pill key={c} active={q.category === c} onClick={() => set("category", c)}>{categoryKo(c)}</Pill>
+                            <Pill key={c} active={q.category === c} onClick={() => set("category", c)}>{uiLang === "en" ? c : categoryKo(c)}</Pill>
                         ))}
                     </div>
                     {/* 채널 카테고리는 수집한 영상에 붙은 유튜브 카테고리로 정한다(utube_rank collector·tracker).
                         영상 카테고리는 올린 사람이 고르는 값이라 내용과 다를 수 있다 (영상 순위의 안내와 같은 취지). */}
                     <p className="vh-filter-note">
-                        카테고리는 채널 영상에 지정된 유튜브 카테고리를 바탕으로 정했습니다.
-                        그래서 내용과 다른 카테고리에 들어간 채널이 있을 수 있어요.
+                        {t("카테고리는 채널 영상에 지정된 유튜브 카테고리를 바탕으로 정했습니다. 그래서 내용과 다른 카테고리에 들어간 채널이 있을 수 있어요.")}
                     </p>
                 </div>
 
                 <div className="vh-filter-row">
-                    <span>채널 나이</span>
+                    <span>{t("채널 나이")}</span>
                     <div className="vh-chips">
-                        <Pill active={q.age === null} onClick={() => set("age", null)}>전체</Pill>
+                        <Pill active={q.age === null} onClick={() => set("age", null)}>{t("전체")}</Pill>
                         {AGE_BANDS.map((b) => (
-                            <Pill key={b.key} active={q.age === b.key} onClick={() => set("age", b.key)}>{b.label}</Pill>
+                            <Pill key={b.key} active={q.age === b.key} onClick={() => set("age", b.key)}>{t(b.label)}</Pill>
                         ))}
                     </div>
                 </div>
@@ -412,11 +461,11 @@ export function ChannelBoardClient({
                 <div className="vh-error">
                     <span className="vh-error-ic">🚨</span>
                     <div>
-                        <b>데이터를 불러오지 못했습니다</b>
-                        <p>잠시 후 다시 시도해주세요</p>
+                        <b>{t("데이터를 불러오지 못했습니다")}</b>
+                        <p>{t("잠시 후 다시 시도해주세요")}</p>
                     </div>
                     <button type="button" onClick={() => { setFailedKey(null); setRetry((n) => n + 1); }}>
-                        다시 시도
+                        {t("다시 시도")}
                     </button>
                 </div>
             )}
@@ -424,9 +473,19 @@ export function ChannelBoardClient({
             {/* ── 개수 ─────────────────────────────────────────── */}
             {!error && !loading && (
                 <p className="vh-count">
-                    조건에 맞는 채널 {total.toLocaleString()}곳
-                    {total > BOARD_LIMIT && ` · 상위 ${BOARD_LIMIT.toLocaleString()}곳까지`}
-                    {" "}· {visible.length.toLocaleString()}곳 표시 중
+                    {uiLang === "en" ? (
+                        <>
+                            {total.toLocaleString("en")} channels match
+                            {total > BOARD_LIMIT && ` · top ${BOARD_LIMIT.toLocaleString("en")} available`}
+                            {" "}· showing {visible.length.toLocaleString("en")}
+                        </>
+                    ) : (
+                        <>
+                            조건에 맞는 채널 {total.toLocaleString()}곳
+                            {total > BOARD_LIMIT && ` · 상위 ${BOARD_LIMIT.toLocaleString()}곳까지`}
+                            {" "}· {visible.length.toLocaleString()}곳 표시 중
+                        </>
+                    )}
                 </p>
             )}
 
@@ -436,7 +495,7 @@ export function ChannelBoardClient({
                     {Array.from({ length: 8 }).map((_, i) => <RowSkeleton key={i} />)}
                 </div>
             ) : !error && visible.length === 0 ? (
-                <div className="vh-empty">선택한 필터에 해당하는 채널이 없습니다.</div>
+                <div className="vh-empty">{t("선택한 필터에 해당하는 채널이 없습니다.")}</div>
             ) : !error ? (
                 <>
                     <div className={cn("vh-list vh-rlist", loading && "vh-dim")}>
@@ -449,9 +508,9 @@ export function ChannelBoardClient({
                     {rows.length > visible.length && (
                         <div className="vh-loadmore">
                             <button type="button" onClick={() => setShown({ key, n: visibleCount + PAGE_STEP })}>
-                                더 보기 (+{Math.min(PAGE_STEP, rows.length - visible.length)})
+                                {t("더 보기")} (+{Math.min(PAGE_STEP, rows.length - visible.length)})
                             </button>
-                            <p>{(rows.length - visible.length).toLocaleString()}곳 더 있습니다</p>
+                            <p>{uiLang === "en" ? `${(rows.length - visible.length).toLocaleString("en")} more` : `${(rows.length - visible.length).toLocaleString()}곳 더 있습니다`}</p>
                         </div>
                     )}
                 </>

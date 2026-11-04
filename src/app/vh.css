@@ -46,6 +46,8 @@
 .vh-navmore div a:hover { background: var(--vh-surface-2); }
 .vh-support-link { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid #FFD8C2; border-radius: 999px; background: #FFF4EC; color: var(--vh-brand-ink); font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .vh-support-link:hover { background: #FFE9DA; }
+.vh-lang { display: inline-flex; align-items: center; margin-left: -16px; padding: 6px 11px; border: 1px solid var(--vh-line); border-radius: 999px; background: var(--vh-surface); color: var(--vh-ink-2); font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.vh-lang:hover { color: var(--vh-ink); background: var(--vh-surface-2); }
 @media (max-width: 760px) {
   .vh-nav { order: 3; width: 100%; }
   .vh-navmore { display: none; }

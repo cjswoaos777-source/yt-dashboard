@@ -1,3 +1,4 @@
+import { MetricsDisclosureText } from "@/components/site/metrics-text";
 import Link from "next/link";
 
 /**
@@ -18,9 +19,7 @@ export const CONTACT_EMAIL = "cjswoaos777@gmail.com";
 export function MetricsDisclosure({ className = "" }: { className?: string }) {
     return (
         <p className={`text-[11px] leading-relaxed text-neutral-400 ${className}`}>
-            순위·시간당 증가량·구독자 구간·성장 지표는 Viral Hunter가 YouTube API
-            서비스로 받은 공개 데이터를 바탕으로 <strong className="font-semibold text-neutral-500">자체 계산한 지표</strong>이며,
-            YouTube가 제공하거나 보증하는 수치가 아닙니다.
+            <MetricsDisclosureText />
         </p>
     );
 }
