@@ -50,10 +50,16 @@ export default async function ChannelBoardPage({ searchParams }: { searchParams:
     const q = parseBoardQuery(sp);
     let rows: BoardChannel[] = [];
     let total = 0;
-    try {
-        ({ rows, total } = await cachedBoard(q));
-    } catch {
-        // 실패하면 빈 목록으로 그리고, 화면이 뜬 뒤 다시 받는다.
+    // 조회가 실패한 채로 그리면 빈 목록이 CDN 에 1시간 남아 크롤러가 채널 링크를 못 본다
+    // (2026-11-04 배포 직후 실측: 표를 막 바꾼 뒤라 첫 조회가 느렸다). 몇 번 더 해 본다.
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            ({ rows, total } = await cachedBoard(q));
+            break;
+        } catch {
+            // 그래도 실패하면 빈 목록으로 그리고, 화면이 뜬 뒤 다시 받는다.
+            if (attempt < 2) await new Promise((r) => setTimeout(r, 800));
+        }
     }
 
     const itemListLd = {
