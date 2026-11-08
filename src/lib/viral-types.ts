@@ -17,4 +17,7 @@ export interface ViralVideo {
   hourly_comment_increase: number;
 
   updated_at: string;
+
+  // [2026-11-08] 올라온 시각 (ISO). Supabase 경로에만 있고, 파이프라인이 채우기 전 행은 null.
+  published_at?: string | null;
 }

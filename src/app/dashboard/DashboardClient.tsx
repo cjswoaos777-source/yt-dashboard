@@ -11,6 +11,7 @@ import type { NoticeMeta } from "@/lib/notices";
 import { MetricsDisclosure } from "@/components/legal";
 import { track, currentPageType } from "@/lib/analytics";
 import { fmtCount, useT, useUiLang, type UiLang } from "@/lib/i18n";
+import { categoryKo } from "@/components/site/rank";
 
 // ─── updatedAt 파싱: '2026-03-31-10' 또는 HH:MM → '10시'
 function parseUpdatedHour(raw: string, uiLang: UiLang = "ko"): string {
@@ -23,11 +24,31 @@ function parseUpdatedHour(raw: string, uiLang: UiLang = "ko"): string {
     return raw;
 }
 
+/**
+ * [2026-11-08] 올라온 지 얼마나 됐는지 ('3시간 전', '2일 전').
+ * 기준은 지금 시계가 아니라 집계 시각(updated_at, 한국 시각 'YYYY-MM-DD-HH')이라 서버와 브라우저가 같은 글자를 그린다.
+ * 파이프라인이 published_at 을 채우기 전 행은 null — 아무것도 안 그린다.
+ */
+function ageLabel(publishedAt: string | null | undefined, updatedAt: string, uiLang: UiLang): string | null {
+    if (!publishedAt) return null;
+    const pub = Date.parse(publishedAt);
+    const m = updatedAt.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{1,2})$/);
+    if (!Number.isFinite(pub) || !m) return null;
+    const ref = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9);
+    const h = Math.max(0, Math.floor((ref - pub) / 3_600_000));
+    if (h < 1) return uiLang === "en" ? "<1h ago" : "1시간 안";
+    if (h < 24) return uiLang === "en" ? `${h}h ago` : `${h}시간 전`;
+    const d = Math.floor(h / 24);
+    return uiLang === "en" ? `${d}d ago` : `${d}일 전`;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SortKey = "hourly_views" | "total_views" | "hourly_likes" | "hourly_comments";
 type ShortsState = null | boolean;
 type OriginState = null | "DOMESTIC" | "IMPORTED";
+/** [2026-11-08] 순위 범위. 'new' = 지금까지의 순위(신규 영상), '7d' = 올라온 지 7일 안 된 영상 전체. */
+type PeriodState = "new" | "7d";
 
 /**
  * 해외 탭의 언어 칩.
@@ -39,19 +60,21 @@ type OriginState = null | "DOMESTIC" | "IMPORTED";
  * 순서는 해외 영상 비중순 (2026-09-15 실측: 영어 39%, 힌디 15%, 스페인어 4%,
  * 일본어 3.6%, 인도네시아어 3.4%, 아랍어 2.8%, 포르투갈어 2%, 러시아어 1.7%).
  * 코드는 지역 접미사를 뗀 기본 코드다 (en-US 도 en 으로 들어온다).
+ *
+ * [2026-11-08] 국기 그림을 뺐다. 윈도우는 국기 이모지를 'US' 같은 두 글자로 그린다(10-30 점검).
  */
 const LANG_CHIPS: { code: string; label: string }[] = [
-    { code: "en", label: "🇺🇸 영어" },
-    { code: "hi", label: "🇮🇳 힌디어" },
-    { code: "es", label: "🇪🇸 스페인어" },
-    { code: "ja", label: "🇯🇵 일본어" },
-    { code: "id", label: "🇮🇩 인도네시아어" },
-    { code: "ar", label: "🇸🇦 아랍어" },
-    { code: "pt", label: "🇧🇷 포르투갈어" },
-    { code: "ru", label: "🇷🇺 러시아어" },
-    { code: "vi", label: "🇻🇳 베트남어" },
-    { code: "th", label: "🇹🇭 태국어" },
-    { code: "zh", label: "🇨🇳 중국어" },
+    { code: "en", label: "영어" },
+    { code: "hi", label: "힌디어" },
+    { code: "es", label: "스페인어" },
+    { code: "ja", label: "일본어" },
+    { code: "id", label: "인도네시아어" },
+    { code: "ar", label: "아랍어" },
+    { code: "pt", label: "포르투갈어" },
+    { code: "ru", label: "러시아어" },
+    { code: "vi", label: "베트남어" },
+    { code: "th", label: "태국어" },
+    { code: "zh", label: "중국어" },
 ];
 const LANG_CODES = new Set(LANG_CHIPS.map((c) => c.code));
 /**
@@ -69,12 +92,13 @@ const PAGE_STEP = 50;
 
 // ─── Tier Config ──────────────────────────────────────────────────────────────
 
+// [2026-11-08] 'Tier 1·마이크로' 대신 구독자 수를 그대로 쓴다 (지금 뜨는 채널 화면과 같은 말).
 const TIER_CONFIG: { key: TierKey; label: string; sub: string }[] = [
-    { key: "all",   label: "전체",       sub: "" },
-    { key: "tier1", label: "Tier 1",    sub: "100만+" },
-    { key: "tier2", label: "Tier 2",    sub: "10~100만" },
-    { key: "tier3", label: "Tier 3",    sub: "1~10만" },
-    { key: "micro", label: "마이크로",   sub: "~1만" },
+    { key: "all",   label: "전체",        sub: "" },
+    { key: "tier1", label: "100만 이상",  sub: "" },
+    { key: "tier2", label: "10만~100만",  sub: "" },
+    { key: "tier3", label: "1만~10만",    sub: "" },
+    { key: "micro", label: "1만 미만",    sub: "" },
 ];
 
 // ─── Gzip Fetch Helper (browser DecompressionStream) ─────────────────────────
@@ -105,11 +129,12 @@ function getHeroLabel(sortBy: SortKey): string {
 }
 
 function getHeroValue(v: ViralVideo, sortBy: SortKey, uiLang: UiLang): string {
+    // [2026-11-08] 늘어난 양에는 '+' 를 붙여 누적 숫자와 헷갈리지 않게 한다.
     switch (sortBy) {
-        case "hourly_views": return fmtCount(v.hourly_view_increase, uiLang, "회");
+        case "hourly_views": return `+${fmtCount(v.hourly_view_increase, uiLang, "회")}`;
         case "total_views": return fmtCount(v.total_views, uiLang, "회");
-        case "hourly_likes": return fmtCount(v.hourly_like_increase, uiLang);
-        case "hourly_comments": return fmtCount(v.hourly_comment_increase, uiLang);
+        case "hourly_likes": return `+${fmtCount(v.hourly_like_increase, uiLang)}`;
+        case "hourly_comments": return `+${fmtCount(v.hourly_comment_increase, uiLang)}`;
     }
 }
 
@@ -235,6 +260,7 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
     const t = useT();
     const { uiLang } = useUiLang();
     const isShorts = video.video_type === "Shorts 📱";
+    const age = ageLabel(video.published_at, video.updated_at ?? "", uiLang);
 
     // [2026-10-30 새 디자인] 카드 → 한 줄. 글·순서·링크(한 줄 전체가 영상 링크)·썸네일 alt 는 그대로 두고
     // 배치만 바꿨다. 화면 위치는 vh.css 의 .vh-rrow 격자가 정한다.
@@ -268,7 +294,7 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
                 {rank}
             </span>
             <span className="vh-rtype">
-                {video.video_type}
+                {t(isShorts ? "쇼츠" : "롱폼")}
             </span>
 
             {/* Body */}
@@ -292,13 +318,18 @@ function VideoCard({ video, rank, sortBy }: { video: ViralVideo; rank: number; s
                 <span className="vh-rtot">
                     {t("총")} {fmtCount(video.total_views, uiLang, "회")} &middot; {t("좋아요")} {fmtCount(video.total_likes, uiLang)} &middot; {t("댓글")} {fmtCount(video.total_comments, uiLang)}
                 </span>
+                {age && (
+                    <span className="vh-rtag">
+                        {age}
+                    </span>
+                )}
                 {video.category_name && (
                     <span className="vh-rtag">
-                        {video.category_name}
+                        {uiLang === "en" ? video.category_name : categoryKo(video.category_name)}
                     </span>
                 )}
                 <span className="vh-rtag">
-                    {t(video.origin_type === "DOMESTIC" ? "🇰🇷 국내" : "🌐 해외")}
+                    {t(video.origin_type === "DOMESTIC" ? "국내" : "해외")}
                 </span>
             </span>
         </a>
@@ -390,8 +421,13 @@ export function DashboardClient({
         const v = searchParams.get("lang");
         return v && LANG_CODES.has(v) && initOrigin() === "IMPORTED" ? v : null;
     }
+    // [2026-11-08] 범위. 기본(신규 영상)은 파라미터를 안 붙이고, 7일은 period=7d.
+    function initPeriod(): PeriodState {
+        return isSupabase && searchParams.get("period") === "7d" ? "7d" : "new";
+    }
 
     const [sortBy, setSortByState] = useState<SortKey>(initSortBy);
+    const [period, setPeriodState] = useState<PeriodState>(initPeriod);
     const [isShorts, setIsShortsState] = useState<ShortsState>(initIsShorts);
     const [origin, setOriginState] = useState<OriginState>(initOrigin);
     const [lang, setLangState] = useState<string | null>(initLang);
@@ -429,6 +465,7 @@ export function DashboardClient({
         });
     }
     function setLang(v: string | null) { setLangState(v); syncUrl({ lang: v }); }
+    function setPeriod(v: PeriodState) { setPeriodState(v); syncUrl({ period: v === "7d" ? "7d" : null }); }
     function setCategory(v: string | null) { setCategoryState(v); syncUrl({ category: v }); }
     function setTier(v: TierKey) { setTierState(v); syncUrl({ tier: v === "all" ? null : v }); }
 
@@ -471,12 +508,17 @@ export function DashboardClient({
               (origin === "IMPORTED" && lang ? `&lang=${lang}` : "") +
               (isShorts === true ? "&format=Shorts" : isShorts === false ? "&format=Long-form" : "") +
               (category ? `&category=${encodeURIComponent(category)}` : "") +
-              (sortBy !== "hourly_views" ? `&sort=${sortBy}` : "")
+              (sortBy !== "hourly_views" ? `&sort=${sortBy}` : "") +
+              (period === "7d" ? "&period=7d" : "")
             : RANKING_TIER_URLS[tier];
 
         fetchGzipJson<ViralVideo[]>(source)
-            .then((data) => {
+            .then((raw) => {
                 if (seq !== requestSeq.current) return;
+                // [2026-11-08] '7일 안'은 두 표를 합친 것이라 표가 바뀌는 매시 2~6분 사이에 드물게 같은 영상이
+                // 두 번 올 수 있다(파이프라인이 겹침을 지우지만 안전장치). 앞(순위가 높은) 것만 둔다.
+                const seen = new Set<string>();
+                const data = raw.filter((v) => (seen.has(v.video_id) ? false : (seen.add(v.video_id), true)));
                 setAllVideos(data);
                 // 카테고리 목록은 합집합으로 유지한다. 지역으로 걸러 받으면
                 // 그 지역에 없는 카테고리가 목록에서 사라지는데, 사용자가
@@ -489,7 +531,7 @@ export function DashboardClient({
             })
             .catch((e) => { if (seq === requestSeq.current) setError(e.message); })
             .finally(() => { if (seq === requestSeq.current) setLoading(false); });
-    }, [tier, origin, lang, isShorts, category, sortBy]);
+    }, [tier, origin, lang, isShorts, category, sortBy, period]);
 
     useEffect(() => { refetch(); }, [refetch]);
 
@@ -520,7 +562,14 @@ export function DashboardClient({
     // (200개를 펼쳐둔 상태에서 카테고리를 바꾸면 엉뚱하게 200개가 그대로 보인다)
     useEffect(() => {
         setVisibleCount(DISPLAY_LIMIT);
-    }, [isShorts, origin, lang, category, sortBy, tier]);
+    }, [isShorts, origin, lang, category, sortBy, tier, period]);
+
+    // 카테고리 칩은 화면 글자(한글 이름) 순서로 세운다. 영어 화면은 원래 이름 그대로.
+    const catLabel = useCallback((c: string) => (uiLang === "en" ? c : categoryKo(c)), [uiLang]);
+    const sortedCategories = useMemo(
+        () => [...categories].sort((a, b) => catLabel(a).localeCompare(catLabel(b), uiLang === "en" ? "en" : "ko")),
+        [categories, catLabel, uiLang],
+    );
 
     return (
         /* [2026-10-30 새 디자인] 글·순서·링크는 main 그대로 두고 모양만 바꿨다 (SEO: 순위 화면은 2단계 때 글을 바꾼다). */
@@ -603,13 +652,31 @@ export function DashboardClient({
                 <div className="vh-rfilters-line" />
 
                 {/* Row 2: Filters */}
+                {/* [2026-11-08] 범위 — 기본은 지금까지의 순위(신규 영상), '7일 안 전체'는 7일 추적 영상까지.
+                    '2일 안'이라고 쓰지 않는 이유: 기본 순위는 오후 5시에 찾은 영상을 다음 날 오후 5시까지 두어
+                    절반이 올라온 지 2일을 넘는다(11-08 13시 중간 2.1일, 최대 3.6일). */}
+                {isSupabase && (
+                    <div className="vh-filter-row">
+                        <span>{t("범위")}</span>
+                        <div className="vh-chips">
+                            <Pill active={period === "new"} onClick={() => setPeriod("new")}>{t("신규 영상")}</Pill>
+                            <Pill active={period === "7d"} onClick={() => setPeriod("7d")}>{t("7일 안 전체")}</Pill>
+                        </div>
+                        {period === "7d" && (
+                            <p className="vh-filter-note">
+                                {t("지난 7일 동안 찾은 영상을 매시간 다시 재서 함께 줄 세웠어요. 신규 영상 순위에 없는 영상은 시간당 조회수 증가 순으로 국내 3만 개, 해외 5천 개까지 넣었어요.")}
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {/* Format */}
                 <div className="vh-filter-row">
                     <span>{t("형식")}</span>
                     <div className="vh-chips">
                         <Pill active={isShorts === null} onClick={() => setIsShorts(null)}>{t("전체")}</Pill>
-                        <Pill active={isShorts === true} onClick={() => setIsShorts(true)}>📱 Shorts</Pill>
-                        <Pill active={isShorts === false} onClick={() => setIsShorts(false)}>📺 Long-form</Pill>
+                        <Pill active={isShorts === true} onClick={() => setIsShorts(true)}>{t("쇼츠")}</Pill>
+                        <Pill active={isShorts === false} onClick={() => setIsShorts(false)}>{t("롱폼")}</Pill>
                     </div>
                 </div>
 
@@ -618,8 +685,8 @@ export function DashboardClient({
                     <span>{t("지역")}</span>
                     <div className="vh-chips">
                         {/* 기본값인 국내를 맨 앞에 둔다 */}
-                        <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>{t("🇰🇷 국내")}</Pill>
-                        <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>{t("🌐 해외")}</Pill>
+                        <Pill active={origin === "DOMESTIC"} onClick={() => setOrigin("DOMESTIC")}>{t("국내")}</Pill>
+                        <Pill active={origin === "IMPORTED"} onClick={() => setOrigin("IMPORTED")}>{t("해외")}</Pill>
                         <Pill active={origin === null} onClick={() => setOrigin(null)}>{t("국내+해외")}</Pill>
                     </div>
                 </div>
@@ -658,8 +725,8 @@ export function DashboardClient({
                         <span>{t("카테고리")}</span>
                         <div className="vh-chips">
                             <Pill active={category === null} onClick={() => setCategory(null)}>{t("전체")}</Pill>
-                            {categories.map((c) => (
-                                <Pill key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Pill>
+                            {sortedCategories.map((c) => (
+                                <Pill key={c} active={category === c} onClick={() => setCategory(c)}>{catLabel(c)}</Pill>
                             ))}
                         </div>
                         {/* [2026-10-01] 카테고리는 유튜브가 내용을 보고 정한 값이 아니라 업로더가

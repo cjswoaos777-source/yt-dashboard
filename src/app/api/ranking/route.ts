@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import {
-    fetchRanking, fetchRankingVersion, rankingCacheSeconds, RANKING_SORT_COLUMNS,
-    type TierKey, type RankingSort,
+    fetchRanking, fetchRankingVersion, fetchWeekVersion, rankingCacheSeconds, RANKING_SORT_COLUMNS,
+    type TierKey, type RankingSort, type RankingPeriod,
 } from "@/lib/supabase";
 
 /**
@@ -36,14 +36,15 @@ type Origin = "DOMESTIC" | "IMPORTED" | undefined;
 
 type Format = "Shorts" | "Long-form" | undefined;
 
+// [2026-11-08] v6: 응답에 published_at 이 붙고 '7일 안'(period=7d)이 생겼다. 옛 항목을 쓰지 않게 올린다.
 const cachedRanking = (
     version: string, tier: TierKey, origin: Origin, lang: string | undefined,
-    format: Format, category: string | undefined, sort: RankingSort,
+    format: Format, category: string | undefined, sort: RankingSort, period: RankingPeriod,
     limit: number, offset: number,
 ) =>
     unstable_cache(
-        () => fetchRanking({ tier, origin, lang, format, category, sort, limit, offset }),
-        ["api-ranking-v5", version, tier, origin ?? "all", lang ?? "any",
+        () => fetchRanking({ tier, origin, lang, format, category, sort, period, limit, offset }),
+        ["api-ranking-v6", version, period, tier, origin ?? "all", lang ?? "any",
          format ?? "any", category ?? "any", sort, String(limit), String(offset)],
         { revalidate: REVALIDATE_SECONDS },
     )();
@@ -88,17 +89,25 @@ export async function GET(request: Request) {
     const rawSort = searchParams.get("sort") ?? "hourly_views";
     const sort: RankingSort = Object.hasOwn(RANKING_SORT_COLUMNS, rawSort) ? (rawSort as RankingSort) : "hourly_views";
 
+    // [2026-11-08] 범위. '7d' 만 받고 나머지는 지금까지의 순위로 본다.
+    const period: RankingPeriod = searchParams.get("period") === "7d" ? "7d" : "new";
+
     // 상한을 두지 않으면 한 번에 수만 행을 요청해 응답이 커진다.
     const limit = Math.min(toInt(searchParams.get("limit"), 500), 1000);
     const offset = toInt(searchParams.get("offset"), 0);
 
     try {
-        const { version, syncedAt } = await fetchRankingVersion();
-        const rows = await cachedRanking(version, tier, origin, lang, format, category, sort, limit, offset);
+        const { version: baseVersion, syncedAt } = await fetchRankingVersion();
+        // '7일 안'은 두 표를 합친 것이라 7일 쪽 표가 바뀐 시각도 버전에 넣는다.
+        const weekSyncedAt = period === "7d" ? await fetchWeekVersion() : "";
+        const version = period === "7d" ? `${baseVersion}|${weekSyncedAt}` : baseVersion;
+        const rows = await cachedRanking(version, tier, origin, lang, format, category, sort, period, limit, offset);
         // CDN 캐시는 다음 스냅샷이 올 때까지만. 그 뒤엔 짧게 잡아 자주 확인한다.
         // stale-while-revalidate 를 두지 않는 이유: 만료 뒤 옛 응답을 내보내며
         // 뒤에서 갱신하면, 그 옛 응답이 또 한 시간 캐시되는 일이 있었다.
-        const sMaxAge = rankingCacheSeconds(syncedAt);
+        // '7일 안': 기본 순위는 바뀌었는데 7일 쪽이 아직이면(매시 2~6분 사이) 2분 뒤 다시 확인한다.
+        const weekBehind = period === "7d" && (!weekSyncedAt || Date.parse(weekSyncedAt) < Date.parse(syncedAt));
+        const sMaxAge = weekBehind ? 120 : rankingCacheSeconds(syncedAt);
         return new Response(JSON.stringify(rows), {
             status: 200,
             headers: {

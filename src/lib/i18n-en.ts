@@ -91,6 +91,26 @@ export const EN: Record<string, string> = {
     "카테고리는 영상을 올린 사람이 직접 지정한 유튜브 카테고리 기준입니다. 그래서 내용과 다른 카테고리에 들어간 영상이 있을 수 있어요.":
         "Categories are the YouTube categories chosen by each uploader, so some videos may sit in a category that doesn't match their content.",
     "선택한 필터에 해당하는 영상이 없습니다.": "No videos match these filters.",
+    // [2026-11-08] 범위 버튼·국기 없는 지역/언어·구독자 수 글자
+    "범위": "Scope",
+    "신규 영상": "New videos",
+    "7일 안 전체": "All from last 7 days",
+    "지난 7일 동안 찾은 영상을 매시간 다시 재서 함께 줄 세웠어요. 신규 영상 순위에 없는 영상은 시간당 조회수 증가 순으로 국내 3만 개, 해외 5천 개까지 넣었어요.":
+        "Every video found in the last 7 days, re-measured hourly and ranked together. Videos outside the New videos ranking are added up to 30,000 from Korea and 5,000 from overseas, by views gained per hour.",
+    "국내": "Korea",
+    "해외": "Overseas",
+    "영어": "English",
+    "힌디어": "Hindi",
+    "스페인어": "Spanish",
+    "일본어": "Japanese",
+    "인도네시아어": "Indonesian",
+    "아랍어": "Arabic",
+    "포르투갈어": "Portuguese",
+    "러시아어": "Russian",
+    "베트남어": "Vietnamese",
+    "태국어": "Thai",
+    "중국어": "Chinese",
+    "1만 미만": "Under 10K",
 
     // 지금 뜨는 채널
     "지금 뜨는 유튜브 채널 순위": "Trending YouTube Channels",

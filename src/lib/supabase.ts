@@ -49,7 +49,7 @@ const VIDEO_COLUMNS =
     "video_id,title,channel_title,channel_id,video_type,origin_type," +
     "category_name,sub_tier,total_views,total_likes,total_comments," +
     "hourly_view_increase,hourly_like_increase,hourly_comment_increase,updated_at," +
-    "audio_lang";
+    "audio_lang,published_at";
 
 export interface RankingRow extends ViralVideo {
     /** GitHub JSON 에는 없던 값. 영상 카드에서 채널 페이지로 이동할 때 쓴다. */
@@ -58,6 +58,17 @@ export interface RankingRow extends ViralVideo {
     /** 오디오 언어 기본 코드. 파이프라인이 채우기 전 행은 null. */
     audio_lang: string | null;
 }
+
+/**
+ * [2026-11-08] 순위 범위. 'new' 는 지금까지의 순위(video_ranking = 매일 오후 5시 수집 + 매시간 새 영상),
+ * '7d' 는 올라온 지 7일 안 된 영상 전체(video_ranking_7d = video_ranking + 7일 추적 영상,
+ * utube_rank/sql/steps/22_video_ranking_week.sql). 다른 페이지는 모두 'new' 를 읽는다.
+ */
+export type RankingPeriod = "new" | "7d";
+const RANKING_SOURCE: Record<RankingPeriod, string> = {
+    new: "video_ranking",
+    "7d": "video_ranking_7d",
+};
 
 /**
  * 급상승 랭킹.
@@ -104,6 +115,8 @@ export async function fetchRanking(opts: {
     format?: "Shorts" | "Long-form";
     category?: string;
     sort?: RankingSort;
+    /** [2026-11-08] 'new'(기본) 또는 '7d'. RankingPeriod 주석 참고. */
+    period?: RankingPeriod;
     limit?: number;
     offset?: number;
 }): Promise<RankingRow[]> {
@@ -113,7 +126,7 @@ export async function fetchRanking(opts: {
     const sortColumn = RANKING_SORT_COLUMNS[opts.sort ?? "hourly_views"];
 
     let q = supabase()
-        .from("video_ranking")
+        .from(RANKING_SOURCE[opts.period ?? "new"])
         .select(VIDEO_COLUMNS)
         .order(sortColumn, { ascending: false })
         .range(offset, offset + limit - 1);
@@ -155,6 +168,23 @@ export async function fetchRankingVersion(): Promise<{ version: string; syncedAt
     if (error || !data) return { version: "", syncedAt: "" };
     const row = data as unknown as { updated_at: string | null; synced_at: string | null };
     return { version: row.updated_at ?? "", syncedAt: row.synced_at ?? "" };
+}
+
+/**
+ * [2026-11-08] '7일 안' 쪽 표(video_ranking_week)가 언제 바뀌었는지.
+ *
+ * 기본 순위는 매시 2분 무렵, 이 표는 7일 추적이 끝난 매시 6분 무렵에 바뀐다. 그래서 '7일 안'
+ * 응답의 캐시 키에는 두 시각이 모두 들어가야 한다. 한 번에 통째로 넣어 모든 행이 같은 값이라 1행만 읽는다.
+ * 실패하거나 비어 있으면 빈 문자열 — 호출부는 기본 순위 버전만으로 캐시한다.
+ */
+export async function fetchWeekVersion(): Promise<string> {
+    const { data, error } = await supabase()
+        .from("video_ranking_week")
+        .select("synced_at")
+        .limit(1)
+        .maybeSingle();
+    if (error || !data) return "";
+    return (data as unknown as { synced_at: string | null }).synced_at ?? "";
 }
 
 /**
