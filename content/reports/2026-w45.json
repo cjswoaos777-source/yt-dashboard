@@ -1,0 +1,593 @@
+{
+ "slug": "2026-w45",
+ "period_start": "2026-11-02",
+ "period_end": "2026-11-08",
+ "prev_start": "2026-10-26",
+ "generated_at": "2026-11-10 19:13 KST",
+ "median_basis": "올린 날마다 조회수 상위 5,000개",
+ "totals": {
+  "prev": {
+   "videos": 89033,
+   "shorts": 48055,
+   "median_views": 142146,
+   "median_views_all": 51236,
+   "channels": 24852
+  },
+  "cur": {
+   "videos": 89825,
+   "shorts": 48501,
+   "median_views": 137798,
+   "median_views_all": 51897,
+   "channels": 24924
+  }
+ },
+ "format": [
+  {
+   "wk": "prev",
+   "is_shorts": true,
+   "n": 48055,
+   "median_views": 146322,
+   "p90_views": 554740,
+   "median_views_all": 70579
+  },
+  {
+   "wk": "cur",
+   "is_shorts": false,
+   "n": 41324,
+   "median_views": 136619,
+   "p90_views": 430011,
+   "median_views_all": 31052
+  },
+  {
+   "wk": "prev",
+   "is_shorts": false,
+   "n": 40978,
+   "median_views": 136741,
+   "p90_views": 428095,
+   "median_views_all": 31875
+  },
+  {
+   "wk": "cur",
+   "is_shorts": true,
+   "n": 48501,
+   "median_views": 145682,
+   "p90_views": 510391,
+   "median_views_all": 70281
+  }
+ ],
+ "categories": [
+  {
+   "category": "People & Blogs",
+   "n": 22073,
+   "prev_n": 22041,
+   "top_n": 9188,
+   "prev_top_n": 9083,
+   "median_views": 146618,
+   "prev_median_views": 146548,
+   "shorts_n": 15165
+  },
+  {
+   "category": "Entertainment",
+   "n": 17325,
+   "prev_n": 17046,
+   "top_n": 6815,
+   "prev_top_n": 6633,
+   "median_views": 141929,
+   "prev_median_views": 143400,
+   "shorts_n": 9703
+  },
+  {
+   "category": "News & Politics",
+   "n": 13549,
+   "prev_n": 13655,
+   "top_n": 5076,
+   "prev_top_n": 5342,
+   "median_views": 135307,
+   "prev_median_views": 136598,
+   "shorts_n": 3428
+  },
+  {
+   "category": "Gaming",
+   "n": 9387,
+   "prev_n": 9199,
+   "top_n": 3503,
+   "prev_top_n": 3475,
+   "median_views": 143354,
+   "prev_median_views": 145961,
+   "shorts_n": 4232
+  },
+  {
+   "category": "Sports",
+   "n": 5778,
+   "prev_n": 5846,
+   "top_n": 2284,
+   "prev_top_n": 2414,
+   "median_views": 134383,
+   "prev_median_views": 140562,
+   "shorts_n": 3313
+  },
+  {
+   "category": "Film & Animation",
+   "n": 4017,
+   "prev_n": 3714,
+   "top_n": 1506,
+   "prev_top_n": 1416,
+   "median_views": 139936,
+   "prev_median_views": 139378,
+   "shorts_n": 2626
+  },
+  {
+   "category": "Education",
+   "n": 3988,
+   "prev_n": 3792,
+   "top_n": 1200,
+   "prev_top_n": 1186,
+   "median_views": 127996,
+   "prev_median_views": 132889,
+   "shorts_n": 1452
+  },
+  {
+   "category": "Music",
+   "n": 3501,
+   "prev_n": 3538,
+   "top_n": 1408,
+   "prev_top_n": 1422,
+   "median_views": 142043,
+   "prev_median_views": 140419,
+   "shorts_n": 2616
+  },
+  {
+   "category": "Howto & Style",
+   "n": 3218,
+   "prev_n": 3228,
+   "top_n": 1084,
+   "prev_top_n": 1138,
+   "median_views": 126177,
+   "prev_median_views": 125765,
+   "shorts_n": 1758
+  },
+  {
+   "category": "Comedy",
+   "n": 2262,
+   "prev_n": 2244,
+   "top_n": 1302,
+   "prev_top_n": 1268,
+   "median_views": 172202,
+   "prev_median_views": 168228,
+   "shorts_n": 1889
+  },
+  {
+   "category": "Pets & Animals",
+   "n": 1392,
+   "prev_n": 1272,
+   "top_n": 570,
+   "prev_top_n": 529,
+   "median_views": 129627,
+   "prev_median_views": 129652,
+   "shorts_n": 1132
+  },
+  {
+   "category": "Travel & Events",
+   "n": 1232,
+   "prev_n": 1253,
+   "top_n": 395,
+   "prev_top_n": 361,
+   "median_views": 134451,
+   "prev_median_views": 141300,
+   "shorts_n": 348
+  },
+  {
+   "category": "Autos & Vehicles",
+   "n": 868,
+   "prev_n": 920,
+   "top_n": 227,
+   "prev_top_n": 256,
+   "median_views": 134851,
+   "prev_median_views": 118889,
+   "shorts_n": 248
+  },
+  {
+   "category": "Science & Technology",
+   "n": 858,
+   "prev_n": 940,
+   "top_n": 363,
+   "prev_top_n": 419,
+   "median_views": 147369,
+   "prev_median_views": 137704,
+   "shorts_n": 496
+  },
+  {
+   "category": "Nonprofits & Activism",
+   "n": 377,
+   "prev_n": 345,
+   "top_n": 79,
+   "prev_top_n": 58,
+   "median_views": 156730,
+   "prev_median_views": 124576,
+   "shorts_n": 95
+  }
+ ],
+ "top_videos": [
+  {
+   "video_id": "pdqij5LE7Hc",
+   "title": "P1Harmony (피원하모니) - ‘BLOW UP’ MV",
+   "channel_id": "UCe-XzQhLaq4zS_mPXzuc_2Q",
+   "channel_title": "P1Harmony",
+   "category": "Entertainment",
+   "is_shorts": false,
+   "views": 14722218,
+   "subs": 1800000,
+   "d": "2026-11-06"
+  },
+  {
+   "video_id": "Hy_iXKT74mw",
+   "title": "평화로운 육아? 제 사전엔 없습니다 3탄",
+   "channel_id": "UCDq8DReBjIVxkzPaWReSzkw",
+   "channel_title": "귀여움할당제",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 9922163,
+   "subs": 86500,
+   "d": "2026-11-02"
+  },
+  {
+   "video_id": "pey3E47eSc8",
+   "title": "RESCENE (리센느) 'With' Official MV",
+   "channel_id": "UCtKtCiaWRz-d3EZn2xd1mdA",
+   "channel_title": "RESCENE",
+   "category": "Entertainment",
+   "is_shorts": false,
+   "views": 9750526,
+   "subs": 1370000,
+   "d": "2026-11-03"
+  },
+  {
+   "video_id": "TyYYNkYfzDA",
+   "title": "가장 좋아하는 아이스크림 맛은 뭐예요?😋🍦",
+   "channel_id": "UCGOI2V72wEbWOcY2cHqpeSQ",
+   "channel_title": "Kiki Pop Fun💕",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 9294524,
+   "subs": 9170,
+   "d": "2026-11-08"
+  },
+  {
+   "video_id": "FnoDp3-KK_0",
+   "title": "권총 알람 시계",
+   "channel_id": "UC168TymjwW76s3USTY2ZaOQ",
+   "channel_title": "또샀템",
+   "category": "Howto & Style",
+   "is_shorts": true,
+   "views": 6355023,
+   "subs": 26800,
+   "d": "2026-11-02"
+  },
+  {
+   "video_id": "6duedn_aPns",
+   "title": "강남스타일 댄스 챌린지 중.. 갑자기 구경하던 시민이 난입?! 😂",
+   "channel_id": "UCMBr8QqDoYOYUkBUrk56B4g",
+   "channel_title": "민서율 seoyool",
+   "category": "Music",
+   "is_shorts": true,
+   "views": 6319727,
+   "subs": 535000,
+   "d": "2026-11-08"
+  },
+  {
+   "video_id": "mjjEk17DTS4",
+   "title": "불륜처럼 보였던 '가능한 사랑' 바다 장면 해석",
+   "channel_id": "UCbhHc7RIyiVO8ObKfPMzPIg",
+   "channel_title": "퍼니페이스",
+   "category": "Film & Animation",
+   "is_shorts": true,
+   "views": 6132278,
+   "subs": 3340,
+   "d": "2026-11-08"
+  },
+  {
+   "video_id": "lg89iQsaGkE",
+   "title": "삼겹살 기름 절대 버리지 말라는 이유",
+   "channel_id": "UCPDKAhacqpqmP7aXWem3_Jg",
+   "channel_title": "지식줄고양",
+   "category": "Comedy",
+   "is_shorts": true,
+   "views": 5724995,
+   "subs": 929000,
+   "d": "2026-11-07"
+  },
+  {
+   "video_id": "3MPUCncZBR0",
+   "title": "TWS (투어스) '내 이름을 불러줘' Official MV",
+   "channel_id": "UC3IZKseVpdzPSBaWxBxundA",
+   "channel_title": "HYBE LABELS",
+   "category": "Music",
+   "is_shorts": false,
+   "views": 5714570,
+   "subs": 83200000,
+   "d": "2026-11-02"
+  },
+  {
+   "video_id": "M2zuQk9WO88",
+   "title": "연봉 130억 선수의 레전드 품격 ㄷㄷ",
+   "channel_id": "UCRsWaxPvmvDGYhduEfMKLtg",
+   "channel_title": "블루꼬꼬",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 5045320,
+   "subs": 26200,
+   "d": "2026-11-02"
+  }
+ ],
+ "small_channel_hits": [
+  {
+   "video_id": "zx9sbeSo08o",
+   "title": "#shorts 딜이 들어 왔습니다. 어디로?",
+   "channel_id": "UCPESdegGGyC3W64quyQji1g",
+   "channel_title": "카카오 톡딜",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 1234566,
+   "subs": 53,
+   "d": "2026-11-02",
+   "ratio": 12345.66
+  },
+  {
+   "video_id": "uLL08ftdBlQ",
+   "title": "박진영 '생각을 멈추다 보면', 이건 그냥 반칙임",
+   "channel_id": "UCqEcNWqIWh5cehy_QD7AGQg",
+   "channel_title": "숏못살",
+   "category": "Music",
+   "is_shorts": true,
+   "views": 691106,
+   "subs": 87,
+   "d": "2026-11-03",
+   "ratio": 6911.06
+  },
+  {
+   "video_id": "1edW3cLir7o",
+   "title": "월즈 복기 중 도란의 지적을 받은 페이커 반응",
+   "channel_id": "UCNyVM2XgBaCA8xPBR4StmhQ",
+   "channel_title": "할린데예",
+   "category": "Gaming",
+   "is_shorts": true,
+   "views": 864687,
+   "subs": 155,
+   "d": "2026-11-06",
+   "ratio": 5578.63
+  },
+  {
+   "video_id": "86Tc8CrLyl8",
+   "title": "이제서야 이해되는 상황들 #축구 #손흥민 #96 #국가대표",
+   "channel_id": "UCrc_d9-6BjOekbiakN331jw",
+   "channel_title": "에이스픽",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 549955,
+   "subs": 83,
+   "d": "2026-11-06",
+   "ratio": 5499.55
+  },
+  {
+   "video_id": "JaUaa65jNW0",
+   "title": "거미가 엿들은 친오빠의 전라도 사랑싸움, 신동엽·다이나믹 듀오 빵 터짐ㅋㅋ #shorts",
+   "channel_id": "UC8yVrfZigxw_1f40jnbQP1A",
+   "channel_title": "호롱불 조선사",
+   "category": "Entertainment",
+   "is_shorts": true,
+   "views": 523288,
+   "subs": 127,
+   "d": "2026-11-04",
+   "ratio": 4120.38
+  },
+  {
+   "video_id": "n4CH9UTgWxE",
+   "title": "베프 이름 대는데 해원아 옆에 좀 봐ㅋㅋ #NMIXX #해원 #설윤",
+   "channel_id": "UCuIe9L_4hPO-P7ci99Pnc1A",
+   "channel_title": "입덕픽",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 402825,
+   "subs": 63,
+   "d": "2026-11-07",
+   "ratio": 4028.25
+  },
+  {
+   "video_id": "2Flc4tqRzhE",
+   "title": "써마드 PLX, 하체 속근육 자극을 위한 독보적 기술력",
+   "channel_id": "UC90TzmQgOyyGouNRxslvyjQ",
+   "channel_title": "Ricalzmedi",
+   "category": "People & Blogs",
+   "is_shorts": false,
+   "views": 402275,
+   "subs": 44,
+   "d": "2026-11-02",
+   "ratio": 4022.75
+  },
+  {
+   "video_id": "QQfn1HyXPtg",
+   "title": "GENER8ION – STORM | 페이커 버전 AI 팬메이드",
+   "channel_id": "UCLj5kvKe6A1h8O0dcB4V_UQ",
+   "channel_title": "나사식 연구소",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 391795,
+   "subs": 57,
+   "d": "2026-11-07",
+   "ratio": 3917.95
+  },
+  {
+   "video_id": "3SL0W2G_hSY",
+   "title": "261106 꿀잠 자고 온 리센느 출근길☀️ 리센느 RESCENE KBS 뮤직뱅크 출근길",
+   "channel_id": "UCE3f0NBMaV_NAXYnx4zjZCQ",
+   "channel_title": "캠폴더",
+   "category": "People & Blogs",
+   "is_shorts": true,
+   "views": 1239008,
+   "subs": 324,
+   "d": "2026-11-06",
+   "ratio": 3824.1
+  },
+  {
+   "video_id": "pC-r1i2mp1s",
+   "title": "가격 폭락 큰일이네요;;",
+   "channel_id": "UC1n6xPz-XG98525rPBcWMCw",
+   "channel_title": "내츄럴리뷰",
+   "category": "Music",
+   "is_shorts": true,
+   "views": 374212,
+   "subs": 9,
+   "d": "2026-11-04",
+   "ratio": 3742.12
+  }
+ ],
+ "new_channels": [
+  {
+   "channel_id": "UCGOI2V72wEbWOcY2cHqpeSQ",
+   "channel_title": "Kiki Pop Fun💕",
+   "created": "2026-10-29",
+   "subs": 9170,
+   "video_id": "TyYYNkYfzDA",
+   "title": "가장 좋아하는 아이스크림 맛은 뭐예요?😋🍦",
+   "views": 9294524,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCbhHc7RIyiVO8ObKfPMzPIg",
+   "channel_title": "퍼니페이스",
+   "created": "2026-08-08",
+   "subs": 3340,
+   "video_id": "mjjEk17DTS4",
+   "title": "불륜처럼 보였던 '가능한 사랑' 바다 장면 해석",
+   "views": 6132278,
+   "is_shorts": true,
+   "category": "Film & Animation"
+  },
+  {
+   "channel_id": "UCF10VsIQX1_f9k0K4fQ2i6A",
+   "channel_title": "아워무비",
+   "created": "2026-08-13",
+   "subs": 28500,
+   "video_id": "XlrLz8jUrU0",
+   "title": "빌런과 접대 골프를 쳐도 떳떳할 수 있는 방법 #슬기로운의사생활 #슬의생 #언젠가는슬기로울전공의생활 #언슬전 #조정석 #유연석 #정경호 #안은진",
+   "views": 3904179,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCoJTnldRu0WsgMAyJJpSHvw",
+   "channel_title": "웃찾동",
+   "created": "2026-08-28",
+   "subs": 4930,
+   "video_id": "ZLTeE6CR4IE",
+   "title": "진돗개 자존심을 건드려버린 외국인",
+   "views": 2064611,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCND6Ox1wVvKToDQAZLpuPsg",
+   "channel_title": "카르띠띠",
+   "created": "2026-08-31",
+   "subs": 21200,
+   "video_id": "Tcsn8QMKlNk",
+   "title": "페비츄비의 험난한 배달(feat.카멜탈)",
+   "views": 2050817,
+   "is_shorts": true,
+   "category": "Gaming"
+  },
+  {
+   "channel_id": "UCWWy1-RWw2CuEPGpo9BOPdw",
+   "channel_title": "오늘도 안세영",
+   "created": "2026-09-05",
+   "subs": 7420,
+   "video_id": "ETkB9bVO-NI",
+   "title": "안세영 상대로 역전당하자 비매너 챔피언 결국! 대참사",
+   "views": 1957786,
+   "is_shorts": true,
+   "category": "Sports"
+  },
+  {
+   "channel_id": "UCa9CUNybf0y8D-Km4L-ooQg",
+   "channel_title": "혼뚜니",
+   "created": "2026-10-21",
+   "subs": 990,
+   "video_id": "BOZPKCiz1o0",
+   "title": "장난 한 번에 인생 하드모드 된 남편ㅋㅋ",
+   "views": 1906083,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UCV5uBVf34ildyxrfeYYdlog",
+   "channel_title": "웃긴순",
+   "created": "2026-09-12",
+   "subs": 5820,
+   "video_id": "s49Gco3M-w8",
+   "title": "따라 외우면 시험 망치는 엄마의 상식 TOP3",
+   "views": 1772602,
+   "is_shorts": true,
+   "category": "Music"
+  },
+  {
+   "channel_id": "UCAoGaiP4lMSmzA3AE8UW3PQ",
+   "channel_title": "여의도운동권",
+   "created": "2026-08-24",
+   "subs": 78000,
+   "video_id": "uDflG9DDR_c",
+   "title": "이재명도 당선 무효형입니다",
+   "views": 1580074,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  },
+  {
+   "channel_id": "UC3nk2wGX7K6dB_WM4AnSozA",
+   "channel_title": "엄마! 내말 1분만 들어! 똑순이 딸의 잔소리",
+   "created": "2026-09-15",
+   "subs": 1630,
+   "video_id": "_tyu_XdesHM",
+   "title": "별세 9일 전 모습, 끝까지 곁을 지킨 아내",
+   "views": 1469092,
+   "is_shorts": true,
+   "category": "People & Blogs"
+  }
+ ],
+ "by_day": [
+  {
+   "d": "2026-11-02",
+   "n": 12891,
+   "median_views": 145560
+  },
+  {
+   "d": "2026-11-03",
+   "n": 13060,
+   "median_views": 142484
+  },
+  {
+   "d": "2026-11-04",
+   "n": 12730,
+   "median_views": 136949
+  },
+  {
+   "d": "2026-11-05",
+   "n": 13256,
+   "median_views": 142322
+  },
+  {
+   "d": "2026-11-06",
+   "n": 12571,
+   "median_views": 122397
+  },
+  {
+   "d": "2026-11-07",
+   "n": 12881,
+   "median_views": 145424
+  },
+  {
+   "d": "2026-11-08",
+   "n": 12436,
+   "median_views": 139249
+  }
+ ]
+}
