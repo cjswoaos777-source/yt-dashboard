@@ -138,7 +138,7 @@ export default async function TierPage({
                             >
                                 <Image
                                     src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`}
-                                    alt=""
+                                    alt={`${v.title} 썸네일`}
                                     fill
                                     sizes="(max-width: 640px) 96px, 128px"
                                     unoptimized

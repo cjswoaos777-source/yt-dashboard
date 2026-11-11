@@ -68,7 +68,7 @@ export function RankRowStatic({ r, rank }: { r: RankingRow; rank: number }) {
         <li className="vh-row" data-top={rank <= 3 ? "" : undefined} data-wide={rank >= 100 ? "" : undefined}>
             <span className="vh-rk">{rank}</span>
             <a className="vh-th" href={watch(r.video_id)} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
-                <Image src={thumb(r.video_id)} alt="" fill sizes="(max-width: 640px) 96px, 128px" unoptimized />
+                <Image src={thumb(r.video_id)} alt={`${r.title} 썸네일`} fill sizes="(max-width: 640px) 96px, 128px" unoptimized />
                 {isShorts(r) && <span className="vh-th-tag">쇼츠</span>}
             </a>
             <div className="vh-tt">
@@ -96,7 +96,7 @@ export function BigCard({ r }: { r: RankingRow }) {
     return (
         <article className="vh-big">
             <a className="vh-big-th" href={watch(r.video_id)} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
-                <Image src={thumb(r.video_id, "hq")} alt="" fill sizes="(max-width: 960px) 100vw, 560px" unoptimized priority />
+                <Image src={thumb(r.video_id, "hq")} alt={`${r.title} 썸네일`} fill sizes="(max-width: 960px) 100vw, 560px" unoptimized priority />
                 <span className="vh-big-rk">1</span>
             </a>
             <div className="vh-big-body">

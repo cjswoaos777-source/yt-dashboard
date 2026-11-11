@@ -64,7 +64,7 @@ function SmallLine({ v }: { v: SmallVideo }) {
                 <span className="vh-vt-th">
                     <Image
                         src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`}
-                        alt=""
+                        alt={`${plainTitle(v.title)} 썸네일`}
                         fill
                         sizes="96px"
                         unoptimized

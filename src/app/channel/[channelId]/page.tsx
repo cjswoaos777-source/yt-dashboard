@@ -12,6 +12,7 @@ import { buildInsight } from "@/lib/channel-insight";
 import { buildExtraView } from "@/lib/channel-extra";
 import { seoGroup } from "@/lib/seo-experiment";
 import { Num } from "@/components/site/rank";
+import { withJosa } from "@/lib/josa";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
@@ -140,7 +141,7 @@ export default async function ChannelDetailPage({
             ? channel.subscriber_count / categoryMedianSubscribers
             : 0;
     const summarySentences = [
-        `${channel.channel_title}은(는) ${channel.main_category} 카테고리에 속한 ` +
+        `${withJosa(channel.channel_title, "은는")} ${channel.main_category} 카테고리에 속한 ` +
             (channel.league_group ? `${LEAGUE_LABEL[channel.league_group] ?? channel.league_group} 채널로, ` : "채널로, ") +
             `구독자 ${fmtKr(channel.subscriber_count, "명")}을 보유하고 있습니다.`,
         // 순위 비교 문장은 오늘 보드에 있을 때만. 기록 모드에서는 이력 문장으로 대체한다.
@@ -402,7 +403,7 @@ export default async function ChannelDetailPage({
                 {/* 채널 고유 정보 — SEO 실험군만 (seo-experiment.ts) */}
                 {extraView && extraView.sentences.length > 0 && (
                     <section className="vh-sec">
-                        <h2 className="vh-sec-h">{channel.channel_title}이(가) 다루는 주제와 업로드 습관</h2>
+                        <h2 className="vh-sec-h">{withJosa(channel.channel_title, "이가")} 다루는 주제와 업로드 습관</h2>
                         <div className="vh-card">
                             {extraView.topics.length > 0 && (
                                 <div className="vh-tags vh-tags-plain">
@@ -530,7 +531,7 @@ export default async function ChannelDetailPage({
                                         <span className="vh-vcard-th">
                                             <Image
                                                 src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`}
-                                                alt=""
+                                                alt={`${v.t} 썸네일`}
                                                 fill
                                                 sizes="(max-width: 640px) 50vw, 240px"
                                                 unoptimized

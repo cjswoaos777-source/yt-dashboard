@@ -86,7 +86,7 @@ function VideoTable({ rows, extra }: { rows: ReportRow[]; extra?: "ratio" | "cre
                                     <span className="vh-vt-th">
                                         <Image
                                             src={`https://img.youtube.com/vi/${r.video_id}/mqdefault.jpg`}
-                                            alt=""
+                                            alt={`${r.title} 썸네일`}
                                             fill
                                             sizes="96px"
                                             unoptimized
