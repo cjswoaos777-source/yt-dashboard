@@ -10,9 +10,9 @@ import { ChannelShare } from "./ChannelShare";
 import { MetricsDisclosure } from "@/components/legal";
 import { buildInsight } from "@/lib/channel-insight";
 import { buildExtraView } from "@/lib/channel-extra";
-import { seoGroup } from "@/lib/seo-experiment";
 import { Num } from "@/components/site/rank";
 import { withJosa } from "@/lib/josa";
+import { buildChannelTitle } from "@/lib/channel-title";
 
 // 대상 채널이 1,100개가 넘으므로 빌드 시 전량 프리렌더하지 않고 요청 시 SSR 한다.
 // 채널 수치는 하루 1회(매일 저녁) 갱신되며, 데이터는 getChannel 내부에서 캐싱된다.
@@ -41,7 +41,19 @@ export async function generateMetadata({
     if (!data) return { title: "채널을 찾을 수 없습니다", robots: { index: false } };
 
     const { channel, categoryRank, categoryTotal, isCurrent, lastSeen } = data;
-    const title = `${channel.channel_title} 채널 분석 — 구독자·조회수 추이`;
+    // [2026-11-11] 제목을 채널마다 다른 사실로 만든다 (channel-title.ts).
+    const metaInsight = data.recent?.insight ? buildInsight(data.recent.insight, channel.subscriber_count ?? 0) : null;
+    const title = buildChannelTitle({
+        name: channel.channel_title,
+        subsText: fmtKr(channel.subscriber_count, "명"),
+        mainCategory: channel.main_category,
+        league: channel.league_group,
+        isCurrent,
+        categoryRank,
+        daysSeen: data.daysSeen,
+        tags: metaInsight?.tags ?? [],
+    });
+    const topics = (data.extra?.topics ?? []).slice(0, 3).map((t) => `#${t.t}`);
     const rankSentence = isCurrent
         ? `${channel.main_category} 카테고리 국내 채널 ${categoryTotal.toLocaleString()}곳 중 구독자 ${categoryRank.toLocaleString()}위. `
         : `${channel.main_category} 카테고리. ${lastSeen ?? ""}까지 Viral Hunter 채널 순위에 올랐던 채널. `;
@@ -53,7 +65,9 @@ export async function generateMetadata({
         rankSentence +
         (topVideo
             ? `최근 30일 포착 영상 ${data.recent!.videos_30d}개, 가장 많이 본 영상 「${topVideo.t}」.`
-            : `일평균 조회수 증가와 성장 지수를 매일 저녁 갱신되는 데이터로 확인하세요.`);
+            : topics.length > 0
+              ? `자주 다루는 주제 ${topics.join(" ")}.`
+              : `일평균 조회수 증가와 성장 지수를 매일 저녁 갱신되는 데이터로 확인하세요.`);
 
     // [2026-09-11] 색인 정책을 '등장 일수'로 정한다.
     //
@@ -80,7 +94,7 @@ export async function generateMetadata({
         robots: { index: indexable, follow: true, googleBot: { index: googleIndexable, follow: true } },
         alternates: { canonical: `/channel/${channelId}` },
         openGraph: {
-            title: `${channel.channel_title} 채널 분석 | Viral Hunter`,
+            title: `${title} | Viral Hunter`,
             description,
             url: `${SITE.url}/channel/${channelId}`,
             type: "profile",
@@ -122,10 +136,9 @@ export default async function ChannelDetailPage({
     const recentVideos = recent?.videos ?? [];
     // 사이트맵 채널만 분석이 있다 (channel-insight.ts)
     const insight = recent?.insight ? buildInsight(recent.insight, channel.subscriber_count ?? 0) : null;
-    // [2026-10-24] SEO 실험 ch-unique-2026-10 (seo-experiment.ts): 실험군에만 채널 고유 정보를 더하고
-    // 공통 지표 설명을 링크로 줄인다. 대조군은 그대로 둔다. 11-21 판정.
-    const seoTreatment = seoGroup(channel.channel_id) === "treatment";
-    const extraView = seoTreatment && data.extra ? buildExtraView(data.extra) : null;
+    // 채널 고유 정보(주제 태그·업로드 요일·영상 길이).
+    // [2026-11-11] SEO 실험 ch-unique-2026-10 때는 실험군(절반)에만 보였다. 실험이 10-29 에 닫혀서 모든 채널에 보인다.
+    const extraView = data.extra ? buildExtraView(data.extra) : null;
 
     // 측정이 1회뿐이면 일평균이 0 으로 저장되는데 이는 '성장 없음'이 아니라 '계산 불가'다.
     // 그냥 항목을 숨기면 왜 없는지 알 수 없으므로 이유를 밝힌다.
@@ -400,7 +413,7 @@ export default async function ChannelDetailPage({
                     </section>
                 )}
 
-                {/* 채널 고유 정보 — SEO 실험군만 (seo-experiment.ts) */}
+                {/* 채널 고유 정보 — 그 채널 영상에서 나온 주제와 습관 */}
                 {extraView && extraView.sentences.length > 0 && (
                     <section className="vh-sec">
                         <h2 className="vh-sec-h">{withJosa(channel.channel_title, "이가")} 다루는 주제와 업로드 습관</h2>
@@ -421,51 +434,14 @@ export default async function ChannelDetailPage({
                     </section>
                 )}
 
-                {/* 지표 정의. 특히 '성장 지수'는 값만 보면 무슨 뜻인지 알 수 없다.
-                    SEO 실험군은 모든 페이지에 똑같이 붙던 이 설명을 /about/metrics 링크로 줄인다. */}
-                {seoTreatment ? (
-                    <p className="vh-chd-note">
-                        일평균 증가·성장 지수·순위를 어떻게 계산하는지는{" "}
-                        <Link href="/about/metrics">지표 설명</Link>
-                        에서 볼 수 있습니다.
-                    </p>
-                ) : (
-                <details className="vh-card vh-defs">
-                    <summary>각 지표는 무슨 뜻인가요?</summary>
-                    <dl>
-                        <div>
-                            <dt>일평균 증가</dt>
-                            <dd>
-                                최근 측정된 기간의 증가량을 <strong>실제 경과 일수</strong>로 나눈
-                                값입니다. 최대 7일치를 봅니다.
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>성장 지수</dt>
-                            <dd>
-                                <strong>최근 7일 평균 조회수 ÷ 구독자 수</strong>로 계산합니다
-                                (숏츠 채널은 분모에 3,000, 롱폼은 1,000을 더해 소형 채널의 거품을
-                                걸러냅니다). 조회수 절대량이 아니라{" "}
-                                <strong>구독자 대비 얼마나 잘 나오는지</strong>를 재는 값이라,
-                                구독자가 많을수록 낮게 나옵니다.
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>순위</dt>
-                            <dd>
-                                한국 유튜브 전체가 아니라, 최근 7일 안에 영상이 수집된 국내 채널
-                                {isCurrent ? ` ${overallTotal.toLocaleString()}곳` : ""} 안에서의 상대 위치입니다.
-                                떠오르는 순은 하루 조회수 증가를 구독자 수(가상의 구독자 1만 명을 더한 값)로 나눈 값의
-                                순서라, 구독자에 비해 조회수가 빠르게 느는 채널이 앞에 옵니다.
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>갱신 주기</dt>
-                            <dd>채널 지표는 매일 저녁 1회 갱신됩니다.</dd>
-                        </div>
-                    </dl>
-                </details>
-                )}
+                {/* 지표 정의는 /about/metrics 한 곳에 둔다.
+                    [2026-11-11] 전에는 절반의 채널(SEO 실험 대조군)에 긴 설명이 그대로 붙어 있었다.
+                    모든 페이지에 똑같이 붙는 글이라 한 줄 링크로 줄였다. */}
+                <p className="vh-chd-note">
+                    일평균 증가·성장 지수·순위를 어떻게 계산하는지는{" "}
+                    <Link href="/about/metrics">지표 설명</Link>
+                    에서 볼 수 있습니다.
+                </p>
 
                 {/* 요약 */}
                 <section className="vh-sec">

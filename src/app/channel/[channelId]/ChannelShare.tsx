@@ -62,9 +62,7 @@ export function ChannelShare({
     return (
         <section className="vh-card vh-share">
             <h2>📣 이 채널 성과 공유하기</h2>
-            <p className="vh-share-lead">
-                채널 주인이라면 시청자에게, 팬이라면 친구에게 자랑해 보세요. 링크를 붙이면 아래 카드가 미리보기로 떠요.
-            </p>
+            <p className="vh-share-lead">링크를 붙이면 아래 카드가 미리보기로 떠요.</p>
 
             {/* 미리보기. CDN 에 보관되는 이미지라 반복 조회 비용은 작다(next.config). */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -101,13 +99,16 @@ export function ChannelShare({
                 >
                     🖼️ 카드 이미지 저장
                 </a>
-                <button type="button" onClick={() => copy(badgeHtml, "badge")} className={btn}>
+                {/* 배지 안내는 버튼 설명(title)으로 옮겼다 — 모든 페이지에 똑같이 붙는 글을 줄인다. */}
+                <button
+                    type="button"
+                    onClick={() => copy(badgeHtml, "badge")}
+                    className={btn}
+                    title="HTML을 붙일 수 있는 블로그(티스토리 등)에 넣으면 카드 이미지가 이 페이지 링크와 함께 보입니다."
+                >
                     {copied === "badge" ? "✅ 배지 코드 복사됨" : "🧩 블로그 배지 코드 복사"}
                 </button>
             </div>
-            <p className="vh-share-note">
-                블로그 배지 코드는 HTML을 붙일 수 있는 블로그(티스토리 등)에 넣으면 카드 이미지가 이 페이지 링크와 함께 보입니다.
-            </p>
         </section>
     );
 }
